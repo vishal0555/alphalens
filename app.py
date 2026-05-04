@@ -8,10 +8,12 @@ No run controls, no config, no file system access.
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 
-from flask import Flask, abort, redirect, render_template, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 # Load DB connection env — ~/.alphalens/dbconnector.env takes precedence
 try:
@@ -28,6 +30,36 @@ except ImportError:
 import db as _db
 
 app = Flask(__name__, template_folder="templates")
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
+
+
+# ── Auth ───────────────────────────────────────────────────────────────────────
+
+def _login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login", next=request.path))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        password = os.environ.get("AUTH_PASSWORD", "")
+        if password and request.form.get("password") == password:
+            session["logged_in"] = True
+            return redirect(request.args.get("next") or url_for("index"))
+        error = "Incorrect password."
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
 # ── Dot-accessible namespace ───────────────────────────────────────────────────
@@ -256,6 +288,7 @@ def _build_signal_context(payload: dict) -> dict:
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 @app.route("/")
+@_login_required
 def index():
     briefings = _db.list_briefings()
     signals   = _db.list_signals(limit=10)
@@ -269,6 +302,7 @@ def index():
 
 
 @app.route("/briefing/latest")
+@_login_required
 def briefing_latest():
     bid = _db.get_latest_briefing_id()
     if not bid:
@@ -277,6 +311,7 @@ def briefing_latest():
 
 
 @app.route("/briefing/<int:row_id>")
+@_login_required
 def briefing_view(row_id: int):
     payload = _db.get_briefing(row_id)
     if payload is None:
@@ -317,6 +352,7 @@ def briefing_view(row_id: int):
 
 
 @app.route("/signal/latest")
+@_login_required
 def signal_latest():
     ticker = None  # latest across all tickers
     sid = _db.get_latest_signal_id(ticker)
@@ -326,6 +362,7 @@ def signal_latest():
 
 
 @app.route("/signal/<int:row_id>")
+@_login_required
 def signal_view(row_id: int):
     payload = _db.get_signal(row_id)
     if payload is None:
