@@ -28,6 +28,15 @@
   .coming-soon-icon { font-size:48px; margin-bottom:16px; }
   .coming-soon-title { font-size:22px; font-weight:800; margin-bottom:8px; }
   .coming-soon-sub { font-size:13px; color:var(--muted); }
+
+  .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  @media (max-width: 600px) {
+    .hide-mobile { display:none; }
+    .briefings-table td, .briefings-table th,
+    .signals-table td, .signals-table th { padding:8px 10px; }
+    .hero { padding:16px 18px; }
+    .hero-title { font-size:18px; }
+  }
 </style>
 {% endblock %}
 
@@ -56,13 +65,14 @@
     <a class="btn btn-primary btn-sm" href="/briefing/latest">View Latest →</a>
   </div>
   {% if briefings %}
+  <div class="table-scroll">
   <table class="briefings-table">
     <thead>
       <tr>
         <th>Date</th>
         <th>Mode</th>
-        <th>Model</th>
-        <th>Generated</th>
+        <th class="hide-mobile">Model</th>
+        <th class="hide-mobile">Generated</th>
         <th></th>
       </tr>
     </thead>
@@ -71,13 +81,14 @@
       <tr>
         <td style="font-weight:700;">{{ b.date or '—' }}</td>
         <td><span class="badge badge-{{ b.mode }}">{{ b.mode }}</span></td>
-        <td style="color:var(--muted);">{{ b.model or '—' }}</td>
-        <td style="color:var(--muted);">{{ b.generated_at.strftime('%b %d %H:%M') if b.generated_at else '—' }}</td>
+        <td class="hide-mobile" style="color:var(--muted);">{{ b.model or '—' }}</td>
+        <td class="hide-mobile" style="color:var(--muted);">{{ b.generated_at.strftime('%b %d %H:%M') if b.generated_at else '—' }}</td>
         <td><a class="btn btn-secondary btn-sm" href="/briefing/{{ b.id }}">View</a></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div class="card-body">
     <div class="empty-state">
@@ -95,6 +106,7 @@
     <a class="btn btn-primary btn-sm" href="/signal/latest">View Latest →</a>
   </div>
   {% if signals %}
+  <div class="table-scroll">
   <table class="signals-table">
     <thead>
       <tr>
@@ -102,7 +114,7 @@
         <th>Ticker</th>
         <th>Label</th>
         <th>Score</th>
-        <th>Generated</th>
+        <th class="hide-mobile">Generated</th>
         <th></th>
       </tr>
     </thead>
@@ -114,12 +126,13 @@
         <td style="font-weight:700;font-family:monospace;">{{ s.ticker }}</td>
         <td><span class="badge badge-{{ lc }}">{{ s.label }}</span></td>
         <td style="color:var(--muted);">{{ s.final_score | int }}/90</td>
-        <td style="color:var(--muted);">{{ s.generated_at.strftime('%b %d %H:%M') if s.generated_at else '—' }}</td>
+        <td class="hide-mobile" style="color:var(--muted);">{{ s.generated_at.strftime('%b %d %H:%M') if s.generated_at else '—' }}</td>
         <td><a class="btn btn-secondary btn-sm" href="/signal/{{ s.id }}">View</a></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div class="card-body">
     <div class="empty-state">

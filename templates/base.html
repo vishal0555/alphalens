@@ -90,7 +90,11 @@
     @media (max-width: 768px) {
       .sidebar { display: none; }
       .topnav  { display: block; }
-      .main { padding: 12px 12px 24px; }
+      .main { padding: 12px 12px 24px; max-width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .card-header { flex-wrap: wrap; gap: 8px; }
+      .btn-sm { padding: 5px 10px; }
     }
   </style>
   {% block head %}{% endblock %}

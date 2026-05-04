@@ -751,9 +751,20 @@
     .rc-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 600px) {
-    .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .container { padding: 0 14px; }
+    .topnav { padding: 0 14px; }
+    .hero { padding: 24px 0 20px; }
+    .section { padding: 24px 0; }
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
     .topnav-links { display: none; }
-    .score-breakdown { gap: 16px; }
+    .topnav-brand { font-size: 12px; margin-right: 12px; }
+    .score-breakdown { flex-wrap: wrap; gap: 12px; }
+    .score-sep { display: none; }
+    .verdict-card { padding: 20px 24px; }
+    .verdict-label { font-size: 34px; }
+    .brief-card { padding: 20px; }
+    .brief-text { font-size: 13px; }
+    .gauge-track-wrap { max-width: 100%; }
   }
 
   /* ── Print ───────────────────────────────────────────────── */
