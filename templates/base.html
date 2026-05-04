@@ -27,8 +27,8 @@
       --topnav-h:  48px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.6; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.6; overflow-x: hidden; }
 
     .layout { display: flex; min-height: 100vh; }
 
@@ -90,10 +90,12 @@
     @media (max-width: 768px) {
       .sidebar { display: none; }
       .topnav  { display: block; }
-      .main { padding: 12px 12px 24px; max-width: 100%; }
+      .layout  { display: block; }
+      .main { width: 100%; max-width: 100%; padding: 12px 14px 32px; }
+      .card-header { flex-wrap: wrap; gap: 6px; }
     }
     @media (max-width: 480px) {
-      .card-header { flex-wrap: wrap; gap: 8px; }
+      .main { padding: 10px 12px 32px; }
       .btn-sm { padding: 5px 10px; }
     }
   </style>

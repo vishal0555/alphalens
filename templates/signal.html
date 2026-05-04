@@ -50,6 +50,9 @@
   a { color: var(--blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
+  /* prevent horizontal overflow on all screens */
+  html, body { overflow-x: hidden; max-width: 100%; }
+
   /* ── Layout ─────────────────────────────────────────────── */
   .container { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
   .section { padding: 36px 0; border-bottom: 1px solid var(--border); }
@@ -749,22 +752,29 @@
     .verdict-card { min-width: unset; }
     .grid-4 { grid-template-columns: repeat(2, 1fr); }
     .rc-grid { grid-template-columns: 1fr; }
+    .score-breakdown { flex-wrap: wrap; gap: 16px; }
+    .score-sep { display: none; }
   }
   @media (max-width: 600px) {
-    .container { padding: 0 14px; }
-    .topnav { padding: 0 14px; }
-    .hero { padding: 24px 0 20px; }
-    .section { padding: 24px 0; }
-    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .container { padding: 0 16px; }
+    .topnav { padding: 0 16px; }
+    .topnav-inner { gap: 0; }
+    .topnav-brand { font-size: 12px; margin-right: 10px; }
     .topnav-links { display: none; }
-    .topnav-brand { font-size: 12px; margin-right: 12px; }
-    .score-breakdown { flex-wrap: wrap; gap: 12px; }
-    .score-sep { display: none; }
-    .verdict-card { padding: 20px 24px; }
-    .verdict-label { font-size: 34px; }
-    .brief-card { padding: 20px; }
-    .brief-text { font-size: 13px; }
+    .hero { padding: 24px 0 20px; }
+    .section { padding: 22px 0; }
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .score-breakdown { gap: 12px; }
+    .score-item-value { font-size: 18px; }
     .gauge-track-wrap { max-width: 100%; }
+    .verdict-card { padding: 20px; }
+    .verdict-label { font-size: 32px; }
+    .verdict-score-num { font-size: 28px; }
+    .brief-card { padding: 18px 16px; }
+    .brief-text { font-size: 13px; line-height: 1.7; }
+    .chart-container { height: 260px; }
+    .veto-banner { padding: 10px 16px; }
+    .footer { padding: 20px 0; }
   }
 
   /* ── Print ───────────────────────────────────────────────── */
