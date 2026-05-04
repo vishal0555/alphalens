@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% set active = "index" %}
+
+{% block head %}
+<style>
+  .hero { background: linear-gradient(135deg,#0d1117 0%,#161b22 50%,#1a2332 100%); border: 1px solid var(--border); border-radius: 10px; padding: 22px 28px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .hero::before { content:''; position:absolute; top:0; right:0; width:300px; height:100%; background:radial-gradient(ellipse at top right,rgba(88,166,255,.06) 0%,transparent 70%); pointer-events:none; }
+  .hero-eyebrow { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+  .hero-title { font-size:22px; font-weight:800; margin-bottom:4px; }
+  .hero-sub { font-size:12px; color:var(--muted); }
+
+  .briefings-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .briefings-table th { background:var(--bg3); font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border); text-align:left; }
+  .briefings-table td { padding:9px 12px; border-bottom:1px solid var(--border2); vertical-align:middle; }
+  .briefings-table tr:last-child td { border-bottom:none; }
+  .briefings-table tr:hover td { background:var(--bg3); }
+
+  .signals-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .signals-table th { background:var(--bg3); font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border); text-align:left; }
+  .signals-table td { padding:9px 12px; border-bottom:1px solid var(--border2); vertical-align:middle; }
+  .signals-table tr:last-child td { border-bottom:none; }
+  .signals-table tr:hover td { background:var(--bg3); }
+
+  .empty-state { text-align:center; padding:32px; color:var(--muted); font-size:12px; }
+  .empty-state-icon { font-size:32px; margin-bottom:8px; }
+
+  .coming-soon { text-align:center; padding:60px 32px; }
+  .coming-soon-icon { font-size:48px; margin-bottom:16px; }
+  .coming-soon-title { font-size:22px; font-weight:800; margin-bottom:8px; }
+  .coming-soon-sub { font-size:13px; color:var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if not db_ok %}
+{# ── DB unavailable ──────────────────────────────────────────────────────────── #}
+<div class="coming-soon">
+  <div class="coming-soon-icon">📡</div>
+  <div class="coming-soon-title">Coming Soon</div>
+  <div class="coming-soon-sub">Database is unavailable. Check back once data has been seeded.</div>
+</div>
+
+{% else %}
+
+<div class="hero">
+  <div class="hero-eyebrow">AlphaLens · Investment Intelligence Viewer</div>
+  <div class="hero-title">Dashboard</div>
+  <div class="hero-sub">Read-only view of briefings and signals stored in Postgres.</div>
+</div>
+
+{# ── Recent Briefings ─────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">📰 Recent Briefings</span>
+    <a class="btn btn-primary btn-sm" href="/briefing/latest">View Latest →</a>
+  </div>
+  {% if briefings %}
+  <table class="briefings-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Mode</th>
+        <th>Model</th>
+        <th>Generated</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in briefings %}
+      <tr>
+        <td style="font-weight:700;">{{ b.date or '—' }}</td>
+        <td><span class="badge badge-{{ b.mode }}">{{ b.mode }}</span></td>
+        <td style="color:var(--muted);">{{ b.model or '—' }}</td>
+        <td style="color:var(--muted);">{{ b.generated_at.strftime('%b %d %H:%M') if b.generated_at else '—' }}</td>
+        <td><a class="btn btn-secondary btn-sm" href="/briefing/{{ b.id }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      No briefings in the database yet.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Recent Signals ───────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">📡 Recent Signals</span>
+    <a class="btn btn-primary btn-sm" href="/signal/latest">View Latest →</a>
+  </div>
+  {% if signals %}
+  <table class="signals-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Ticker</th>
+        <th>Label</th>
+        <th>Score</th>
+        <th>Generated</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in signals %}
+      {% set lc = 'buy' if s.label == 'BUY' else ('hold' if s.label == 'HOLD' else 'nosig') %}
+      <tr>
+        <td style="font-weight:700;">{{ s.date or '—' }}</td>
+        <td style="font-weight:700;font-family:monospace;">{{ s.ticker }}</td>
+        <td><span class="badge badge-{{ lc }}">{{ s.label }}</span></td>
+        <td style="color:var(--muted);">{{ s.final_score | int }}/90</td>
+        <td style="color:var(--muted);">{{ s.generated_at.strftime('%b %d %H:%M') if s.generated_at else '—' }}</td>
+        <td><a class="btn btn-secondary btn-sm" href="/signal/{{ s.id }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      No signals in the database yet.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

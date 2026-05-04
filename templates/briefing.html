@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Daily Investment Briefing — {{ date_str }}</title>
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --bg2:       #161b22;
+      --bg3:       #1c2128;
+      --border:    #30363d;
+      --border2:   #21262d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --green:     #3fb950;
+      --green-bg:  #0d2818;
+      --green-bd:  #1a4731;
+      --red:       #f85149;
+      --red-bg:    #2d0f0e;
+      --red-bd:    #5a1e1c;
+      --amber:     #d29922;
+      --amber-bg:  #2b1d09;
+      --amber-bd:  #5a3a0a;
+      --blue:      #58a6ff;
+      --blue-bg:   #0c1f3d;
+      --blue-bd:   #1c3d7a;
+      --sidebar-w: 200px;
+      --topnav-h:  48px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: var(--bg2); border-right: 1px solid var(--border);
+      padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar-logo { padding: 0 16px 16px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+    .sidebar-logo-text { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+    .sidebar-date { font-size: 10px; color: var(--muted); margin-top: 3px; }
+    .nav-section { padding: 0 8px; margin-bottom: 4px; }
+    .nav-section-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 8px 8px 4px; }
+    .nav-link { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 12px; color: var(--muted); text-decoration: none; transition: all .15s; cursor: pointer; }
+    .nav-link:hover, .nav-link.active { background: var(--bg3); color: var(--text); }
+    .nav-link .nav-icon { font-size: 13px; width: 16px; text-align: center; }
+    .nav-ticker { display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; border-radius: 6px; font-size: 12px; color: var(--muted); text-decoration: none; transition: all .15s; cursor: pointer; }
+    .nav-ticker:hover { background: var(--bg3); color: var(--text); }
+    .nav-ticker-sym { font-weight: 700; font-size: 11px; color: var(--text); }
+
+    .main { flex: 1; padding: 24px 28px; max-width: 960px; overflow-x: hidden; }
+
+    .topnav {
+      display: none; position: sticky; top: 0; z-index: 100;
+      background: rgba(22,27,34,.97); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; white-space: nowrap; scrollbar-width: none; height: var(--topnav-h); padding: 0 12px;
+    }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav-inner { display: inline-flex; align-items: center; gap: 4px; height: 100%; }
+    .topnav-link { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: all .15s; }
+    .topnav-link:hover, .topnav-link.active { background: var(--bg3); color: var(--text); }
+
+    .hero { background: linear-gradient(135deg,#0d1117 0%,#161b22 50%,#1a2332 100%); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 20px; position: relative; overflow: hidden; }
+    .hero::before { content:''; position:absolute; top:0; right:0; width:300px; height:100%; background:radial-gradient(ellipse at top right,rgba(88,166,255,.08) 0%,transparent 70%); pointer-events:none; }
+    .hero-eyebrow { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+    .hero-title { font-size:24px; font-weight:800; margin-bottom:4px; }
+    .hero-date  { font-size:13px; color:var(--muted); margin-bottom:16px; }
+    .ticker-strip { display:flex; flex-wrap:wrap; gap:8px; }
+    .ticker-chip { display:flex; align-items:center; gap:6px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; text-decoration:none; transition:all .15s; -webkit-tap-highlight-color:transparent; }
+    .ticker-chip:hover { border-color:var(--accent); color:var(--accent); }
+    .ticker-chip-chg { font-weight:400; font-size:11px; }
+
+    .card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; margin-bottom:20px; overflow:hidden; }
+    .card-header { background:var(--bg3); border-bottom:1px solid var(--border); padding:10px 18px; display:flex; justify-content:space-between; align-items:center; }
+    .card-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+    .card-sub   { font-size:11px; color:var(--muted); }
+    .card-body  { padding:16px 18px; }
+
+    .divider { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); display:flex; align-items:center; gap:8px; margin:16px 0 10px; }
+    .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border2); }
+
+    .grid-auto { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:10px; }
+    .idx-card { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:12px 14px; }
+    .idx-name  { font-size:11px; font-weight:600; color:var(--muted); margin-bottom:2px; }
+    .idx-level { font-size:17px; font-weight:700; }
+    .idx-chg   { font-size:12px; font-weight:600; margin-top:2px; }
+    .idx-note  { font-size:10px; color:var(--muted); margin-top:5px; line-height:1.3; }
+
+    .macro-card { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:10px 12px; }
+    .macro-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+    .macro-value { font-size:16px; font-weight:700; margin:3px 0 2px; }
+    .macro-chg   { font-size:11px; font-weight:600; }
+    .macro-note  { font-size:10px; color:var(--muted); margin-top:3px; line-height:1.3; }
+
+    .pos  { color:var(--green); }
+    .neg  { color:var(--red); }
+    .flat { color:var(--muted); }
+
+    .badge { display:inline-flex; align-items:center; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; white-space:nowrap; border:1px solid transparent; }
+    .sig-Long      { color:var(--green); background:var(--green-bg); border-color:var(--green-bd); }
+    .sig-Short     { color:var(--red);   background:var(--red-bg);   border-color:var(--red-bd);   }
+    .sig-Neutral   { color:var(--muted); background:var(--bg3);      border-color:var(--border);   }
+    .sig-Watchlist { color:var(--amber); background:var(--amber-bg); border-color:var(--amber-bd); }
+    .conv-High   { color:var(--blue);  background:var(--blue-bg);  border-color:var(--blue-bd); animation:glow 3s ease-in-out infinite; }
+    .conv-Medium { color:var(--amber); background:var(--amber-bg); border-color:var(--amber-bd); }
+    .conv-Low    { color:var(--muted); background:var(--bg3);      border-color:var(--border); }
+    @keyframes glow { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 8px rgba(88,166,255,.4)} }
+
+    .tag { display:inline-block; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; white-space:nowrap; margin-right:5px; }
+    .tag-Earnings    { background:var(--green-bg); color:var(--green); border:1px solid var(--green-bd); }
+    .tag-Macro       { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-bd); }
+    .tag-Geopolitics { background:var(--blue-bg);  color:var(--blue);  border:1px solid var(--blue-bd);  }
+    .tag-Risk        { background:var(--red-bg);   color:var(--red);   border:1px solid var(--red-bd);   }
+    .tag-CompanyEvent { background:var(--blue-bg); color:var(--blue);  border:1px solid var(--blue-bd);  }
+
+    .cat-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .cat-table th { background:var(--bg3); font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border); text-align:left; }
+    .cat-table td { padding:9px 12px; border-bottom:1px solid var(--border2); vertical-align:middle; }
+    .cat-table tr:last-child td { border-bottom:none; }
+    .cat-table tr:hover td { background:var(--bg3); }
+
+    .ticker-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+    .ttab { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; background:var(--bg3); border:1px solid var(--border); color:var(--muted); cursor:pointer; transition:all .15s; -webkit-tap-highlight-color:transparent; }
+    .ttab:hover { color:var(--text); border-color:var(--muted); }
+    .ttab.active { background:var(--accent); border-color:var(--accent); color:#0d1117; }
+    .ticker-panel { display:none; }
+    .ticker-panel.active { display:block; }
+
+    .tp-header { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+    .tp-symbol { font-size:22px; font-weight:800; }
+    .tp-price  { font-size:20px; font-weight:700; }
+    .tp-chg    { font-size:14px; font-weight:600; }
+    .tp-badges { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+    .sparkline-img { height:40px; border-radius:4px; }
+
+    .range-wrap  { margin:4px 0 12px; }
+    .range-track { height:6px; background:var(--bg3); border-radius:9999px; border:1px solid var(--border2); position:relative; overflow:visible; }
+    .range-fill  { height:6px; border-radius:9999px; background:linear-gradient(90deg,var(--amber),var(--accent)); transition:width .8s cubic-bezier(.4,0,.2,1); }
+    .range-dot   { position:absolute; top:-3px; width:12px; height:12px; border-radius:50%; background:var(--text); border:2px solid var(--bg); transform:translateX(-50%); }
+    .range-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:6px; }
+
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-bottom:14px; }
+    .stat-box   { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:8px 10px; }
+    .stat-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+    .stat-value { font-size:14px; font-weight:700; margin-top:2px; }
+    .stat-sub   { font-size:10px; color:var(--muted); margin-top:1px; }
+    .ma-above { color:var(--green); }
+    .ma-below { color:var(--red); }
+
+    .news-item { padding:10px 0; border-bottom:1px solid var(--border2); }
+    .news-item:last-child { border-bottom:none; }
+    .news-headline { font-size:12px; font-weight:600; margin-bottom:3px; }
+    .news-summary  { font-size:11px; color:var(--muted); line-height:1.4; }
+    .narrative { background:var(--bg3); border-left:3px solid var(--accent); border-radius:0 6px 6px 0; padding:10px 14px; font-size:12px; color:var(--muted); line-height:1.6; margin-top:12px; }
+
+    .filter-bar { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+    .filter-btn { padding:4px 12px; border-radius:20px; font-size:11px; font-weight:600; background:var(--bg3); border:1px solid var(--border); color:var(--muted); cursor:pointer; transition:all .15s; -webkit-tap-highlight-color:transparent; }
+    .filter-btn:hover { color:var(--text); }
+    .filter-btn.active { background:var(--accent); border-color:var(--accent); color:#0d1117; }
+
+    .sig-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .sig-table th { background:var(--bg3); font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); padding:8px 12px; border-bottom:2px solid var(--border); text-align:left; }
+    .sig-table td { padding:10px 12px; border-bottom:1px solid var(--border2); vertical-align:middle; }
+    .sig-table tr:hover td { background:var(--bg3); }
+    .tp-pill { display:inline-block; border-radius:4px; padding:2px 7px; font-size:10px; font-weight:700; white-space:nowrap; margin:1px; }
+    .tp-entry  { background:#374151; color:#fff; }
+    .tp-target { background:var(--green-bg); border:1px solid var(--green-bd); color:var(--green); }
+    .tp-stop   { background:var(--red-bg);   border:1px solid var(--red-bd);   color:var(--red); }
+
+    .gp-section { border:1px solid var(--border2); border-radius:8px; margin-bottom:10px; overflow:hidden; }
+    .gp-section-header { background:var(--bg3); padding:10px 14px; display:flex; align-items:center; gap:10px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .gp-section-header:hover { background:var(--border2); }
+    .gp-letter { width:24px; height:24px; border-radius:6px; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .gp-letter-a { background:var(--accent); color:#0d1117; }
+    .gp-letter-b { background:var(--green);  color:#0d1117; }
+    .gp-letter-c { background:var(--amber);  color:#0d1117; }
+    .gp-title-text { font-size:12px; font-weight:600; flex:1; }
+    .gp-chevron { color:var(--muted); transition:transform .2s; font-size:12px; }
+    .gp-section.open .gp-chevron { transform:rotate(180deg); }
+    .gp-body { padding:0 14px; max-height:0; overflow:hidden; transition:max-height .3s ease,padding .3s ease; }
+    .gp-section.open .gp-body { max-height:1000px; padding:12px 14px; }
+    .gp-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--border2); }
+    .gp-item:last-child { border-bottom:none; }
+    .gp-rank { width:20px; height:20px; border-radius:50%; background:var(--border); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+    .gp-content { font-size:12px; color:var(--muted); line-height:1.55; }
+
+    .earnings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px; }
+    .earn-card { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:12px 14px; transition:border-color .15s; }
+    .earn-card:hover { border-color:var(--border); }
+    .earn-ticker  { font-size:14px; font-weight:800; }
+    .earn-quarter { font-size:10px; color:var(--muted); margin-bottom:6px; }
+    .earn-date    { display:inline-block; font-size:10px; font-weight:600; background:var(--blue-bg); color:var(--accent); border:1px solid var(--blue-bd); border-radius:4px; padding:1px 7px; margin-bottom:6px; }
+    .earn-row     { display:flex; justify-content:space-between; margin-top:3px; }
+    .earn-key     { font-size:10px; color:var(--muted); }
+    .earn-val     { font-size:10px; font-weight:600; }
+    .earn-metric  { font-size:10px; color:var(--muted); margin-top:5px; font-style:italic; }
+
+    .footer { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px 20px; font-size:10px; color:var(--muted); text-align:center; margin-top:8px; line-height:1.6; }
+
+    .aistack-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+    .aistack-card { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; overflow:hidden; }
+    .aistack-card-head { padding:10px 12px 8px; border-bottom:1px solid var(--border2); }
+    .aistack-layer-name { font-size:12px; font-weight:700; }
+    .aistack-layer-desc { font-size:10px; color:var(--muted); margin-top:1px; }
+    .aistack-avg { font-size:11px; font-weight:700; margin-top:4px; }
+    .aistack-ticker-row { display:flex; justify-content:space-between; align-items:center; padding:5px 12px; border-bottom:1px solid var(--border2); font-size:11px; }
+    .aistack-ticker-row:last-child { border-bottom:none; }
+    .aistack-sym { font-weight:700; color:var(--text); min-width:44px; }
+    .aistack-co  { color:var(--muted); flex:1; padding:0 6px; font-size:10px; }
+    .aistack-chg { font-weight:600; text-align:right; min-width:50px; }
+    .aistack-chg-1w { font-size:10px; color:var(--muted); text-align:right; min-width:44px; }
+
+    .narrative-card { background:linear-gradient(135deg,#0d1117 0%,#0c1a2e 100%); border:1px solid var(--blue-bd); border-radius:10px; margin-bottom:20px; overflow:hidden; }
+    .narrative-card-header { background:rgba(88,166,255,.07); border-bottom:1px solid var(--blue-bd); padding:12px 20px; display:flex; align-items:center; gap:10px; }
+    .narrative-card-title { font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.5px; }
+    .narrative-card-sub   { font-size:11px; color:var(--muted); margin-left:auto; }
+    .narrative-body { padding:20px 24px; display:flex; flex-direction:column; gap:18px; }
+    .narrative-para-heading { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent); margin-bottom:5px; }
+    .narrative-para-text { font-size:13px; line-height:1.75; color:var(--text); }
+
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+    .fade-in { animation:fadeIn .4s ease both; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 768px) {
+      .sidebar { display:none; }
+      .topnav  { display:block; }
+      .main { padding:12px 12px 24px; }
+      .hero { padding:16px; border-radius:8px; margin-bottom:14px; }
+      .hero-title { font-size:20px; }
+      .ticker-strip { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+      .ticker-strip::-webkit-scrollbar { display:none; }
+      .ticker-chip { flex-shrink:0; padding:5px 10px; }
+      .card { border-radius:8px; margin-bottom:14px; }
+      .card-header { padding:9px 14px; }
+      .card-body   { padding:12px 14px; }
+      .grid-auto    { grid-template-columns:repeat(2,1fr); gap:8px; }
+      .stats-grid   { grid-template-columns:repeat(2,1fr); gap:6px; }
+      .earnings-grid { grid-template-columns:repeat(2,1fr); gap:6px; }
+      .ticker-tabs { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+      .ticker-tabs::-webkit-scrollbar { display:none; }
+      .ttab { flex-shrink:0; padding:7px 14px; font-size:13px; }
+      .tp-header { gap:8px; }
+      .tp-symbol { font-size:20px; }
+      .tp-price  { font-size:18px; }
+      .tp-badges { margin-left:0; width:100%; }
+      .sig-table .hide-mobile { display:none; }
+      .sig-table th, .sig-table td { padding:8px 8px; font-size:11px; }
+      .cat-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .cat-table th, .cat-table td { padding:8px 10px; white-space:nowrap; }
+      .gp-body { padding:0 10px; }
+      .gp-section.open .gp-body { padding:10px 10px; }
+    }
+    @media (max-width: 420px) {
+      .grid-auto  { grid-template-columns:1fr 1fr; }
+      .macro-value { font-size:14px; }
+      .idx-level  { font-size:15px; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">AlphaLens</div>
+      <div class="sidebar-date">{{ date_str }}</div>
+    </div>
+    <div class="nav-section" style="margin-bottom:8px;">
+      <a class="nav-link" href="/"><span class="nav-icon">←</span> Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Sections</div>
+      {% if sections.market %}<a class="nav-link active" href="#market"><span class="nav-icon">🌏</span> Market</a>{% endif %}
+      {% if sections.market %}<a class="nav-link" href="#macro"><span class="nav-icon">📊</span> Macro</a>{% endif %}
+      {% if sections.catalysts %}<a class="nav-link" href="#catalysts"><span class="nav-icon">⚡</span> Catalysts</a>{% endif %}
+      {% if sections.tickers %}<a class="nav-link" href="#tickers"><span class="nav-icon">🔍</span> Deep Dive</a>{% endif %}
+      {% if sections.signals %}<a class="nav-link" href="#signals"><span class="nav-icon">📡</span> Signals</a>{% endif %}
+      {% if sections.game_plan %}<a class="nav-link" href="#gameplan"><span class="nav-icon">🎯</span> Game Plan</a>{% endif %}
+      {% if sections.earnings and briefing.earnings_calendar %}<a class="nav-link" href="#earnings"><span class="nav-icon">📅</span> Earnings</a>{% endif %}
+      {% if sections.ai_stack and ai_stack_layers %}<a class="nav-link" href="#aistack"><span class="nav-icon">🤖</span> AI Stack</a>{% endif %}
+      {% if sections.narrative and narrative_paras %}<a class="nav-link" href="#narrative"><span class="nav-icon">📝</span> Narrative</a>{% endif %}
+      {% if sections.ops %}<a class="nav-link" href="#ops"><span class="nav-icon">⚙️</span> Ops</a>{% endif %}
+    </div>
+    <div class="nav-section" style="margin-top:8px;">
+      <div class="nav-section-label">Watchlist</div>
+      {% for ticker, td in briefing.tickers.items() %}
+      <a class="nav-ticker" href="#tickers" onclick="switchTab('{{ ticker }}')">
+        <span>
+          <span class="nav-ticker-sym">{{ ticker }}</span>
+          <span style="font-size:10px;margin-left:4px;" class="{{ 'pos' if td.change_pct_24h > 0 else 'neg' if td.change_pct_24h < 0 else 'flat' }}">{{ "+" if td.change_pct_24h > 0 }}{{ "%.1f"|format(td.change_pct_24h) }}%</span>
+        </span>
+        {% if td.signal %}<span class="badge sig-{{ td.signal.direction }}" style="font-size:8px;padding:1px 5px;">{{ td.signal.direction }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </nav>
+
+  <div class="topnav">
+    <div class="topnav-inner">
+      <a class="topnav-link" href="/" style="color:var(--muted);">← App</a>
+      {% if sections.market %}<a class="topnav-link active" href="#market">🌏 Market</a>{% endif %}
+      {% if sections.market %}<a class="topnav-link" href="#macro">📊 Macro</a>{% endif %}
+      {% if sections.catalysts %}<a class="topnav-link" href="#catalysts">⚡ Catalysts</a>{% endif %}
+      {% if sections.tickers %}<a class="topnav-link" href="#tickers">🔍 Tickers</a>{% endif %}
+      {% if sections.signals %}<a class="topnav-link" href="#signals">📡 Signals</a>{% endif %}
+      {% if sections.game_plan %}<a class="topnav-link" href="#gameplan">🎯 Plan</a>{% endif %}
+      {% if sections.earnings and briefing.earnings_calendar %}<a class="topnav-link" href="#earnings">📅 Earnings</a>{% endif %}
+      {% if sections.ai_stack and ai_stack_layers %}<a class="topnav-link" href="#aistack">🤖 AI Stack</a>{% endif %}
+      {% if sections.narrative and narrative_paras %}<a class="topnav-link" href="#narrative">📝 Narrative</a>{% endif %}
+      {% if sections.ops %}<a class="topnav-link" href="#ops">⚙️ Ops</a>{% endif %}
+    </div>
+  </div>
+
+  <main class="main">
+
+    <div class="hero fade-in">
+      <div class="hero-eyebrow"><span class="live-dot"></span> AI Investment Briefing</div>
+      <div class="hero-title">Daily Investment Briefing</div>
+      <div class="hero-date">{{ date_str }}</div>
+      <div class="ticker-strip">
+        {% for ticker, td in briefing.tickers.items() %}
+        <a class="ticker-chip" href="#tickers" onclick="switchTab('{{ ticker }}')">
+          <span>{{ ticker }}</span>
+          <span class="ticker-chip-chg {{ 'pos' if td.change_pct_24h > 0 else 'neg' if td.change_pct_24h < 0 else 'flat' }}">{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%</span>
+          {% if td.signal %}<span class="badge sig-{{ td.signal.direction }}" style="font-size:9px;padding:1px 6px;">{{ td.signal.direction }}</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if sections.market %}
+    <div id="market" class="card fade-in">
+      <div class="card-header"><span class="card-label">🌏 Overnight Market Context</span><span class="card-sub">Index levels &amp; moves</span></div>
+      <div class="card-body">
+        {% for region in ['Asia','Europe','US'] %}
+        {% set ridx = briefing.market.indices | selectattr('region','equalto',region) | list %}
+        {% if ridx %}
+        <div class="divider">{{ region }}</div>
+        <div class="grid-auto" style="margin-bottom:8px;">
+          {% for idx in ridx %}
+          <div class="idx-card">
+            <div class="idx-name">{{ idx.index_name }}</div>
+            {% if idx.close_level %}<div class="idx-level">{{ "{:,.0f}".format(idx.close_level) }}</div>{% endif %}
+            <div class="idx-chg {{ 'pos' if idx.change_pct > 0 else 'neg' if idx.change_pct < 0 else 'flat' }}">{{ "+" if idx.change_pct > 0 }}{{ "%.2f"|format(idx.change_pct) }}%</div>
+            <div class="idx-note">{{ idx.driver_note }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="macro" class="card fade-in">
+      <div class="card-header"><span class="card-label">📊 Macro Indicators</span><span class="card-sub">Rates · FX · Commodities</span></div>
+      <div class="card-body">
+        <div class="grid-auto">
+          {% for m in briefing.market.macro %}
+          <div class="macro-card">
+            <div class="macro-label">{{ m.indicator }}</div>
+            <div class="macro-value">{% if m.unit == '%' %}{{ "%.2f"|format(m.value) }}%{% elif m.unit == 'index' %}{{ "{:,.1f}".format(m.value) }}{% else %}{{ "{:,.2f}".format(m.value) }}{% endif %}</div>
+            {% if m.change_pct is not none %}<div class="macro-chg {{ 'pos' if m.change_pct > 0 else 'neg' if m.change_pct < 0 else 'flat' }}">{{ "+" if m.change_pct > 0 }}{{ "%.2f"|format(m.change_pct) }}%</div>{% endif %}
+            <div class="macro-note">{{ m.note | truncate(55,True,'…') }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% set earnings_today = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
+    {% set econ_today     = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
+    {% if sections.catalysts and (earnings_today or econ_today) %}
+    <div id="catalysts" class="card fade-in">
+      <div class="card-header"><span class="card-label">⚡ Catalyst Prep</span><span class="card-sub">Today's events</span></div>
+      <div class="card-body">
+        {% if earnings_today %}
+        <div class="divider">Earnings Today</div>
+        <div class="cat-table-wrap">
+          <table class="cat-table" style="margin-bottom:14px;"><thead><tr><th>Company</th><th>Timing</th><th>EPS Est.</th><th>Impact</th></tr></thead>
+          <tbody>{% for ev in earnings_today %}<tr><td style="font-weight:700;">{{ ev.event_name }}</td><td><span class="tag tag-Earnings">{{ 'BMO' if ev.event_type=='earnings_bmo' else 'AMC' }}</span></td><td>{{ ev.consensus or '—' }}</td><td style="color:var(--muted);">{{ ev.impact_note }}</td></tr>{% endfor %}</tbody></table>
+        </div>
+        {% endif %}
+        {% if econ_today %}
+        <div class="divider">Economic Releases</div>
+        <div class="cat-table-wrap">
+          <table class="cat-table"><thead><tr><th>Release</th><th>Time ET</th><th>Prior</th><th>Consensus</th><th>Impact</th></tr></thead>
+          <tbody>{% for ev in econ_today %}<tr><td style="font-weight:700;">{{ ev.event_name }}</td><td style="color:var(--accent);">{{ ev.timing or '—' }}</td><td>{{ ev.prior_value or '—' }}</td><td>{{ ev.consensus or '—' }}</td><td style="color:var(--muted);font-size:11px;">{{ ev.impact_note }}</td></tr>{% endfor %}</tbody></table>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.tickers %}
+    <div id="tickers" class="card fade-in">
+      <div class="card-header"><span class="card-label">🔍 Ticker Deep Dive</span><span class="card-sub">Price · Technicals · News · Narrative</span></div>
+      <div class="card-body">
+        <div class="ticker-tabs" id="ticker-tabs">
+          {% for ticker, td in briefing.tickers.items() %}
+          <button class="ttab {% if loop.first %}active{% endif %}" onclick="switchTab('{{ ticker }}')" data-ticker="{{ ticker }}">
+            {{ ticker }}{% if td.signal %}<span class="badge sig-{{ td.signal.direction }}" style="font-size:9px;padding:0 5px;margin-left:4px;border-radius:4px;">{{ td.signal.direction }}</span>{% endif %}
+          </button>
+          {% endfor %}
+        </div>
+
+        {% for ticker, td in briefing.tickers.items() %}
+        <div class="ticker-panel {% if loop.first %}active{% endif %}" id="panel-{{ ticker }}">
+
+          <div class="tp-header">
+            <div class="tp-symbol">{{ ticker }}</div>
+            <div class="tp-price {{ 'pos' if td.change_pct_24h > 0 else 'neg' if td.change_pct_24h < 0 else 'flat' }}">${{ "%.2f"|format(td.price) }}</div>
+            <div class="tp-chg {{ 'pos' if td.change_pct_24h > 0 else 'neg' if td.change_pct_24h < 0 else 'flat' }}">{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%</div>
+            {% if td.sparkline %}<img class="sparkline-img" src="data:image/png;base64,{{ td.sparkline }}" alt="{{ ticker }}"/>{% endif %}
+            <div class="tp-badges">
+              {% if td.signal %}
+              <span class="badge sig-{{ td.signal.direction }}">{{ td.signal.direction }}</span>
+              <span class="badge conv-{{ td.signal.conviction }}">{{ td.signal.conviction }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if td.week52 %}
+          {% set fill_pct = td.week52.pct_of_range %}
+          <div class="range-wrap">
+            <div class="range-track">
+              <div class="range-fill" style="width:{{ [fill_pct,100]|min }}%;"></div>
+              <div class="range-dot"  style="left:{{ [fill_pct,100]|min }}%;"></div>
+            </div>
+            <div class="range-labels">
+              <span>52wk L ${{ "%.2f"|format(td.week52.low) }}</span>
+              <span style="color:var(--accent);font-weight:700;">{{ "%.0f"|format(fill_pct) }}% of range</span>
+              <span>52wk H ${{ "%.2f"|format(td.week52.high) }}</span>
+            </div>
+          </div>
+          {% endif %}
+
+          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px;">
+            {% if td.technicals and td.technicals.rsi is not none %}
+            {% set rsi_v = td.technicals.rsi | float %}
+            {% set rsi_color = '#f85149' if rsi_v > 70 else '#3fb950' if rsi_v < 30 else '#58a6ff' %}
+            <div style="text-align:center;min-width:90px;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">RSI-14</div>
+              <svg width="90" height="52" viewBox="0 0 90 52">
+                <path d="M 10 45 A 35 35 0 0 1 80 45" fill="none" stroke="#30363d" stroke-width="6" stroke-linecap="round"/>
+                <path d="M 10 45 A 35 35 0 0 1 80 45" fill="none" stroke="{{ rsi_color }}" stroke-width="6" stroke-linecap="round" stroke-dasharray="110" stroke-dashoffset="{{ (110 - (rsi_v / 100 * 110)) | int }}"/>
+                <text x="45" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="{{ rsi_color }}">{{ td.technicals.rsi }}</text>
+                <text x="12" y="52" text-anchor="middle" font-size="8" fill="#8b949e">30</text>
+                <text x="78" y="52" text-anchor="middle" font-size="8" fill="#8b949e">70</text>
+              </svg>
+            </div>
+            {% endif %}
+            <div class="stats-grid" style="flex:1;">
+              {% if td.technicals and td.technicals.above_50ma is not none %}<div class="stat-box"><div class="stat-label">50-day MA</div><div class="stat-value {{ 'ma-above' if td.technicals.above_50ma else 'ma-below' }}">{{ '▲ Above' if td.technicals.above_50ma else '▼ Below' }}</div></div>{% endif %}
+              {% if td.technicals and td.technicals.above_200ma is not none %}<div class="stat-box"><div class="stat-label">200-day MA</div><div class="stat-value {{ 'ma-above' if td.technicals.above_200ma else 'ma-below' }}">{{ '▲ Above' if td.technicals.above_200ma else '▼ Below' }}</div></div>{% endif %}
+              {% if td.analyst and td.analyst.rating %}<div class="stat-box"><div class="stat-label">Consensus</div><div class="stat-value" style="font-size:12px;">{{ td.analyst.rating }}</div></div>{% endif %}
+              {% if td.analyst and td.analyst.target %}
+              <div class="stat-box">
+                <div class="stat-label">Price Target</div>
+                <div class="stat-value">${{ "%.0f"|format(td.analyst.target) }}</div>
+                {% if td.analyst.upside_pct is not none %}<div class="stat-sub {{ 'pos' if td.analyst.upside_pct > 0 else 'neg' }}">{{ "+" if td.analyst.upside_pct > 0 }}{{ "%.0f"|format(td.analyst.upside_pct) }}% upside</div>{% endif %}
+              </div>
+              {% endif %}
+              {% if td.signal and td.signal.entry_low %}<div class="stat-box"><div class="stat-label">Entry Zone</div><div class="stat-value" style="font-size:12px;">${{ "%.0f"|format(td.signal.entry_low) }}–{{ "%.0f"|format(td.signal.entry_high) }}</div></div>{% endif %}
+              {% if td.signal and td.signal.target %}<div class="stat-box"><div class="stat-label">Target / Stop</div><div class="stat-value" style="font-size:11px;"><span class="pos">${{ "%.0f"|format(td.signal.target) }}</span>{% if td.signal.stop %} / <span class="neg">${{ "%.0f"|format(td.signal.stop) }}</span>{% endif %}</div></div>{% endif %}
+            </div>
+          </div>
+
+          {% if td.news %}
+          <div>
+            {% for item in td.news %}
+            <div class="news-item">
+              <div class="news-headline"><span class="tag tag-{{ item.tag | replace(' ', '') }}">{{ item.tag }}</span>{{ item.headline }}</div>
+              {% if item.summary %}<div class="news-summary">{{ item.summary }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="narrative">{{ td.narrative }}</div>
+
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.signals %}
+    <div id="signals" class="card fade-in">
+      <div class="card-header"><span class="card-label">📡 Signal Summary</span><span class="card-sub">AI-generated · not investment advice</span></div>
+      <div class="card-body">
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="filterSignals('all',this)">All</button>
+          <button class="filter-btn" onclick="filterSignals('Long',this)">🟢 Long</button>
+          <button class="filter-btn" onclick="filterSignals('Short',this)">🔴 Short</button>
+          <button class="filter-btn" onclick="filterSignals('Neutral',this)">⚪ Neutral</button>
+          <button class="filter-btn" onclick="filterSignals('Watchlist',this)">🟡 Watchlist</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="sig-table" id="signal-table">
+            <thead><tr><th>Ticker</th><th>Price</th><th>24h%</th><th>Signal</th><th>Conv.</th><th class="hide-mobile">Key Catalyst</th><th class="hide-mobile">Trade Idea</th></tr></thead>
+            <tbody>
+              {% for ticker, td in briefing.tickers.items() %}
+              {% if td.signal %}
+              <tr data-signal="{{ td.signal.direction }}">
+                <td style="font-weight:800;font-size:13px;"><a href="#tickers" onclick="switchTab('{{ ticker }}')" style="color:var(--text);text-decoration:none;">{{ ticker }}</a></td>
+                <td style="font-weight:600;">${{ "%.2f"|format(td.price) }}</td>
+                <td class="{{ 'pos' if td.change_pct_24h > 0 else 'neg' if td.change_pct_24h < 0 else '' }}" style="font-weight:600;">{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%</td>
+                <td><span class="badge sig-{{ td.signal.direction }}">{{ td.signal.direction }}</span></td>
+                <td><span class="badge conv-{{ td.signal.conviction }}">{{ td.signal.conviction }}</span></td>
+                <td class="hide-mobile" style="color:var(--muted);font-size:11px;max-width:200px;">{{ td.signal.catalyst }}</td>
+                <td class="hide-mobile" style="white-space:nowrap;">
+                  {% if td.signal.entry_low %}<span class="tp-pill tp-entry">ENTRY ${{ "%.0f"|format(td.signal.entry_low) }}–{{ "%.0f"|format(td.signal.entry_high) }}</span>{% endif %}
+                  {% if td.signal.target %}<span class="tp-pill tp-target">▲ ${{ "%.0f"|format(td.signal.target) }}</span>{% endif %}
+                  {% if td.signal.stop %}<span class="tp-pill tp-stop">▼ ${{ "%.0f"|format(td.signal.stop) }}</span>{% endif %}
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.game_plan %}
+    <div id="gameplan" class="card fade-in">
+      <div class="card-header"><span class="card-label">🎯 Game Plan</span><span class="card-sub">What matters · Trade candidates · Watch at open</span></div>
+      <div class="card-body" style="padding-top:8px;">
+        {% for section_items, letter_cls, letter, title in [
+            (briefing.game_plan.what_matters,    'gp-letter-a', 'A', 'What Matters Today'),
+            (briefing.game_plan.trade_candidates,'gp-letter-b', 'B', 'Trade Candidates'),
+            (briefing.game_plan.watch_at_open,   'gp-letter-c', 'C', 'Watch at the Open')
+        ] %}
+        {% if section_items %}
+        <div class="gp-section open" id="gp-{{ loop.index }}">
+          <div class="gp-section-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="gp-letter {{ letter_cls }}">{{ letter }}</div>
+            <div class="gp-title-text">{{ title }}</div>
+            <span class="gp-chevron">▼</span>
+          </div>
+          <div class="gp-body">
+            {% for item in section_items %}
+            <div class="gp-item"><div class="gp-rank">{{ item.rank }}</div><div class="gp-content">{{ item.content }}</div></div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.earnings and briefing.earnings_calendar %}
+    <div id="earnings" class="card fade-in">
+      <div class="card-header"><span class="card-label">📅 Upcoming Earnings</span><span class="card-sub">Next 14 days</span></div>
+      <div class="card-body">
+        <div class="earnings-grid">
+          {% for entry in (briefing.earnings_calendar | selectattr('date') | sort(attribute='date')) + (briefing.earnings_calendar | rejectattr('date') | list) %}
+          <div class="earn-card">
+            <div class="earn-ticker">{{ entry.ticker }}</div>
+            <div class="earn-quarter">{{ entry.quarter or '—' }}</div>
+            <div class="earn-date">{{ entry.date or 'TBD' }}</div>
+            <div class="earn-row"><span class="earn-key">EPS Est.</span><span class="earn-val">{{ "$%.2f"|format(entry.eps_est) if entry.eps_est else '—' }}</span></div>
+            <div class="earn-row"><span class="earn-key">Rev Est.</span><span class="earn-val">{{ "$%.1fB"|format(entry.revenue_est_bn) if entry.revenue_est_bn else '—' }}</span></div>
+            {% if entry.key_metric %}<div class="earn-metric">{{ entry.key_metric }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.ai_stack and ai_stack_layers %}
+    <div id="aistack" class="card fade-in">
+      <div class="card-header"><span class="card-label">🤖 AI Stack Monitor</span><span class="card-sub">7 layers · 1d &amp; 1w % change</span></div>
+      <div class="card-body">
+        <div class="aistack-grid">
+          {% for layer in ai_stack_layers %}
+          {% set avg = layer.avg_change_1d %}
+          <div class="aistack-card" style="border-top:3px solid {{ 'var(--green)' if avg is not none and avg > 0 else 'var(--red)' if avg is not none and avg < 0 else 'var(--border)' }};">
+            <div class="aistack-card-head">
+              <div class="aistack-layer-name">{{ layer.name }}</div>
+              <div class="aistack-layer-desc">{{ layer.description }}</div>
+              {% if avg is not none %}
+              <div class="aistack-avg {{ 'pos' if avg > 0 else 'neg' if avg < 0 else 'flat' }}">avg 1d: {{ "+" if avg > 0 }}{{ "%.2f"|format(avg) }}%</div>
+              {% endif %}
+            </div>
+            {% for t in layer.tickers %}
+            <div class="aistack-ticker-row">
+              <span class="aistack-sym">{{ t.ticker }}</span>
+              <span class="aistack-co">{{ t.name }}</span>
+              {% if t.change_pct_1d is not none %}
+              <span class="aistack-chg {{ 'pos' if t.change_pct_1d > 0 else 'neg' if t.change_pct_1d < 0 else 'flat' }}">{{ "+" if t.change_pct_1d > 0 }}{{ "%.2f"|format(t.change_pct_1d) }}%</span>
+              {% else %}
+              <span class="aistack-chg flat">—</span>
+              {% endif %}
+              {% if t.change_pct_1w is not none %}
+              <span class="aistack-chg-1w {{ 'pos' if t.change_pct_1w > 0 else 'neg' if t.change_pct_1w < 0 else 'flat' }}">{{ "+" if t.change_pct_1w > 0 }}{{ "%.1f"|format(t.change_pct_1w) }}%</span>
+              {% else %}
+              <span class="aistack-chg-1w flat">—</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.narrative and narrative_paras %}
+    <div id="narrative" class="narrative-card fade-in">
+      <div class="narrative-card-header">
+        <span class="narrative-card-title">📝 Morning Narrative</span>
+        <span class="narrative-card-sub">AI-synthesised · {{ date_str }}</span>
+      </div>
+      <div class="narrative-body">
+        {% for para in narrative_paras %}
+        <div>
+          <div class="narrative-para-heading">{{ para.heading }}</div>
+          <div class="narrative-para-text">{{ para.body }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if sections.ops %}
+    <div id="ops" class="card fade-in" style="font-family:var(--mono,monospace);font-size:11px;">
+      <div class="card-header"><span class="card-label">⚙️ Run Ops</span><span class="card-sub">model · mode · token usage</span></div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;">
+        <div>
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Mode</div>
+          <div style="font-size:13px;font-weight:700;color:{{ 'var(--green)' if briefing.meta.mode == 'live' else 'var(--amber)' }};">{{ briefing.meta.mode | upper }}</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Model</div>
+          <div style="color:var(--text);">{{ briefing.meta.model }}</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Generated</div>
+          <div style="color:var(--text);">{{ briefing.meta.generated_at }}</div>
+        </div>
+        {% if briefing.tokens %}
+        <div>
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Tokens In / Out</div>
+          <div style="color:var(--text);">{{ briefing.tokens.input_tokens }} / {{ briefing.tokens.output_tokens }}<span style="color:var(--muted);"> (total {{ briefing.tokens.total_tokens }})</span></div>
+        </div>
+        {% if briefing.tokens.web_searches %}
+        <div>
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Web Searches</div>
+          <div style="color:var(--text);">{{ briefing.tokens.web_searches }}</div>
+        </div>
+        {% endif %}
+        {% if briefing.tokens.cost_usd %}
+        <div>
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Est. Cost</div>
+          <div style="color:var(--text);">${{ "%.4f"|format(briefing.tokens.cost_usd) }}</div>
+        </div>
+        {% endif %}
+        {% if briefing.tokens.recommendations %}
+        <div style="flex-basis:100%;margin-top:4px;">
+          <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Recommendations</div>
+          {% for r in briefing.tokens.recommendations %}
+          <div style="color:var(--amber);margin-bottom:3px;">▸ {{ r }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+      This report is generated by an AI model for informational purposes only.
+      It does not constitute investment advice. Past performance is not indicative of future results.
+      Always consult a qualified financial adviser before making investment decisions.
+    </div>
+  </main>
+</div>
+
+<script>
+  function switchTab(ticker) {
+    document.querySelectorAll('.ttab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.ticker-panel').forEach(p => p.classList.remove('active'));
+    const btn   = document.querySelector(`.ttab[data-ticker="${ticker}"]`);
+    const panel = document.getElementById(`panel-${ticker}`);
+    if (btn)   btn.classList.add('active');
+    if (panel) panel.classList.add('active');
+    document.getElementById('tickers').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function filterSignals(sig, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#signal-table tbody tr').forEach(row => {
+      row.style.display = (sig === 'all' || row.dataset.signal === sig) ? '' : 'none';
+    });
+  }
+
+  const sections = ['market','macro','catalysts','tickers','signals','gameplan','earnings','aistack','narrative'];
+  window.addEventListener('scroll', () => {
+    let current = sections[0];
+    sections.forEach(id => { const el = document.getElementById(id); if (el && el.getBoundingClientRect().top <= 80) current = id; });
+    document.querySelectorAll('.nav-link').forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${current}`));
+    document.querySelectorAll('.topnav-link').forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${current}`));
+  }, { passive:true });
+
+  document.querySelectorAll('.fade-in').forEach((el, i) => { el.style.animationDelay = `${i * 0.06}s`; });
+</script>
+</body>
+</html>

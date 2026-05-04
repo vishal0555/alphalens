@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+dbconnector.env
+.next/
+node_modules/
+*.log
+.DS_Store
