@@ -26,7 +26,7 @@
       --blue:     #58a6ff;
       --blue-bg:  rgba(88,166,255,.08);
       --blue-bd:  rgba(88,166,255,.2);
-      --nav-h:    60px;
+      --top-h:    60px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -36,7 +36,8 @@
       color: var(--text);
       font-size: 20px;
       line-height: 1.65;
-      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 8px);
+      padding-top: calc(var(--top-h) + env(safe-area-inset-top, 0px));
+      padding-bottom: 24px;
     }
     .page { max-width: 640px; margin: 0 auto; padding: 0 16px; }
 
@@ -44,30 +45,35 @@
     .neg  { color: var(--red); }
     .flat { color: var(--muted); }
 
-    /* ── Bottom nav ──────────────────────────────────── */
-    .bottom-nav {
+    /* ── Top bar ─────────────────────────────────────── */
+    .top-bar {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      top: 0; left: 0; right: 0;
+      height: calc(var(--top-h) + env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
       background: rgba(22,27,34,.97);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
       display: flex;
+      align-items: center;
+      padding-left: 16px;
+      padding-right: 16px;
+      gap: 12px;
       z-index: 200;
     }
-    .bottom-nav a {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 3px; color: var(--muted); text-decoration: none;
-      font-size: 13px; font-weight: 600; letter-spacing: .5px;
+    .top-back {
+      background: none; border: none; color: var(--accent);
+      font-size: 20px; font-weight: 700; cursor: pointer; padding: 8px 0;
       -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
     }
-    .bottom-nav a.active { color: var(--accent); }
-    .bnav-icon { font-size: 26px; line-height: 1; }
+    .top-back-arrow { font-size: 22px; }
+    .top-title { flex: 1; font-size: 18px; font-weight: 800; text-align: center; }
+    .top-date  { font-size: 15px; color: var(--muted); flex-shrink: 0; text-align: right; }
 
     /* ── Page header ─────────────────────────────────── */
-    .page-header { padding: 24px 0 14px; }
+    .page-header { padding: 20px 0 14px; }
     .page-eyebrow { font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
     .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
@@ -256,6 +262,16 @@
   </style>
 </head>
 <body>
+
+<!-- ── Top bar ───────────────────────────────────────────── -->
+<div class="top-bar">
+  <button class="top-back" onclick="backToOverview()">
+    <span class="top-back-arrow">‹</span> Overview
+  </button>
+  <div class="top-title">AlphaLens</div>
+  <div class="top-date">{{ date_str }}</div>
+</div>
+
 <div class="page">
 
   <!-- Page header -->
@@ -284,9 +300,9 @@
     <button class="sec-head" onclick="tog('market')">
       <span class="sec-icon">🌏</span>
       <div class="sec-title">Market<div class="sec-sub">Overnight indices &amp; macro</div></div>
-      <span class="sec-chev open" id="chev-market">▼</span>
+      <span class="sec-chev" id="chev-market">▼</span>
     </button>
-    <div class="sec-body open" id="b-market">
+    <div class="sec-body" id="b-market">
       {% for region in ['Asia','Europe','US'] %}
       {% set ridx = briefing.market.indices | selectattr('region','equalto',region) | list %}
       {% if ridx %}
@@ -328,9 +344,9 @@
     <button class="sec-head" onclick="tog('catalysts')">
       <span class="sec-icon">⚡</span>
       <div class="sec-title">Catalyst Prep<div class="sec-sub">Today's events</div></div>
-      <span class="sec-chev open" id="chev-catalysts">▼</span>
+      <span class="sec-chev" id="chev-catalysts">▼</span>
     </button>
-    <div class="sec-body open" id="b-catalysts">
+    <div class="sec-body" id="b-catalysts">
       {% if earnings_today %}
       <div class="divider">Earnings Today</div>
       <div class="cat-table-wrap">
@@ -355,9 +371,9 @@
     <button class="sec-head" onclick="tog('gameplan')">
       <span class="sec-icon">🎯</span>
       <div class="sec-title">Game Plan<div class="sec-sub">What matters · Trade candidates · Watch at open</div></div>
-      <span class="sec-chev open" id="chev-gameplan">▼</span>
+      <span class="sec-chev" id="chev-gameplan">▼</span>
     </button>
-    <div class="sec-body open" id="b-gameplan">
+    <div class="sec-body" id="b-gameplan">
       {% for section_items, letter_cls, letter, title in [
           (briefing.game_plan.what_matters,    'gp-letter-a', 'A', 'What Matters Today'),
           (briefing.game_plan.trade_candidates,'gp-letter-b', 'B', 'Trade Candidates'),
@@ -388,9 +404,9 @@
     <button class="sec-head" onclick="tog('tickers')">
       <span class="sec-icon">🔍</span>
       <div class="sec-title">Ticker Deep Dive<div class="sec-sub">Price · Technicals · News</div></div>
-      <span class="sec-chev open" id="chev-tickers">▼</span>
+      <span class="sec-chev" id="chev-tickers">▼</span>
     </button>
-    <div class="sec-body open" id="b-tickers">
+    <div class="sec-body" id="b-tickers">
       <div class="ticker-tabs" id="ticker-tabs">
         {% for ticker, td in briefing.tickers.items() %}
         <button class="ttab {% if loop.first %}active{% endif %}" onclick="switchTab('{{ ticker }}')" data-ticker="{{ ticker }}">
@@ -592,14 +608,14 @@
 
 </div><!-- /page -->
 
-<!-- ── Bottom nav ──────────────────────────────────────── -->
-<nav class="bottom-nav">
-  <a href="/"><span class="bnav-icon">📊</span><span style="font-size:10px;font-weight:600;letter-spacing:.5px;">Dashboard</span></a>
-  <a href="/briefing/latest" class="active"><span class="bnav-icon">📰</span><span style="font-size:10px;font-weight:600;letter-spacing:.5px;">Briefing</span></a>
-  <a href="/signal/latest"><span class="bnav-icon">📡</span><span style="font-size:10px;font-weight:600;letter-spacing:.5px;">Signal</span></a>
-</nav>
 
 <script>
+function backToOverview() {
+  document.querySelectorAll('.sec-body.open').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.sec-chev.open').forEach(c => c.classList.remove('open'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function tog(id) {
   const body = document.getElementById('b-' + id);
   const chev = document.getElementById('chev-' + id);

@@ -290,15 +290,7 @@ def _build_signal_context(payload: dict) -> dict:
 @app.route("/")
 @_login_required
 def index():
-    briefings = _db.list_briefings()
-    signals   = _db.list_signals(limit=10)
-    db_ok     = briefings is not None
-    return render_template(
-        "index.html",
-        briefings=briefings or [],
-        signals=signals or [],
-        db_ok=db_ok,
-    )
+    return redirect(url_for("briefing_latest"))
 
 
 @app.route("/briefing/latest")
