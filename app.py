@@ -33,6 +33,14 @@ app = Flask(__name__, template_folder="templates")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
 
 
+@app.after_request
+def _no_cache(response):
+    response.headers["Cache-Control"] = "no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 # ── Auth ───────────────────────────────────────────────────────────────────────
 
 def _login_required(f):
