@@ -804,7 +804,7 @@
 
   <!-- ── Market pulse strip ────────────────────────────── -->
   {% if briefing.tickers %}
-  <div class="mp-label">📈 Market Pulse</div>
+  <div class="mp-label">🛰 Tech Tape</div>
   <div class="mp-strip">
     {% for ticker, td in briefing.tickers.items() %}
     {% set chg = td.change_pct_24h %}
@@ -824,15 +824,16 @@
 
   <!-- ── Section nav chips ─────────────────────────────── -->
   <div class="secnav" id="secnav">
-    {% if sections.market %}<button class="secnav-chip" data-target="market" onclick="openSection('market')">Market</button>{% endif %}
     {% set _earn = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
     {% set _econ = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
-    {% if sections.catalysts and (_earn or _econ) %}<button class="secnav-chip" data-target="catalysts" onclick="openSection('catalysts')">Catalysts</button>{% endif %}
+    {% set _sig_count_nav = briefing.tickers.values() | selectattr('signal') | list | length %}
     {% if sections.game_plan %}<button class="secnav-chip" data-target="gameplan" onclick="openSection('gameplan')">Plan</button>{% endif %}
-    {% if sections.tickers %}<button class="secnav-chip" data-target="tickers" onclick="openSection('tickers')">Tickers</button>{% endif %}
-    {% if sections.signals %}<button class="secnav-chip" data-target="signals" onclick="openSection('signals')">Signals</button>{% endif %}
-    {% if sections.earnings and briefing.earnings_calendar %}<button class="secnav-chip" data-target="earnings" onclick="openSection('earnings')">Earnings</button>{% endif %}
+    {% if sections.signals and _sig_count_nav > 0 %}<button class="secnav-chip" data-target="signals" onclick="openSection('signals')">Trades</button>{% endif %}
     {% if sections.ai_stack and ai_stack_layers %}<button class="secnav-chip" data-target="aistack" onclick="openSection('aistack')">AI Stack</button>{% endif %}
+    {% if sections.catalysts and (_earn or _econ) %}<button class="secnav-chip" data-target="catalysts" onclick="openSection('catalysts')">Catalysts</button>{% endif %}
+    {% if sections.tickers %}<button class="secnav-chip" data-target="tickers" onclick="openSection('tickers')">Tickers</button>{% endif %}
+    {% if sections.market %}<button class="secnav-chip" data-target="market" onclick="openSection('market')">Macro</button>{% endif %}
+    {% if sections.earnings and briefing.earnings_calendar %}<button class="secnav-chip" data-target="earnings" onclick="openSection('earnings')">Earnings</button>{% endif %}
   </div>
 
   <!-- ── Narrative (always-visible insight card) ──────── -->
@@ -853,57 +854,126 @@
   </div>
   {% endif %}
 
-  <!-- ── Market ─────────────────────────────────────────── -->
-  {% if sections.market %}
-  {% set _idx_count = briefing.market.indices | length if briefing.market.indices else 0 %}
-  {% set _macro_count = briefing.market.macro | length if briefing.market.macro else 0 %}
-  <div class="sec" data-tone="blue" id="sec-market">
+  <!-- ── Game Plan ──────────────────────────────────────── -->
+  {% if sections.game_plan %}
+  {% set _gp_count = (briefing.game_plan.what_matters | length if briefing.game_plan.what_matters else 0) + (briefing.game_plan.trade_candidates | length if briefing.game_plan.trade_candidates else 0) + (briefing.game_plan.watch_at_open | length if briefing.game_plan.watch_at_open else 0) %}
+  <div class="sec" data-tone="green" id="sec-gameplan">
     <div class="sec-accent"></div>
-    <button class="sec-head" onclick="toggleSection('market', this)">
-      <div class="sec-icon-wrap">🌏</div>
+    <button class="sec-head" onclick="toggleSection('gameplan', this)">
+      <div class="sec-icon-wrap">🎯</div>
       <div class="sec-text">
-        <div class="sec-title">Market</div>
-        <div class="sec-preview">{{ _idx_count }} indices · {{ _macro_count }} macro indicators</div>
+        <div class="sec-title">Game Plan</div>
+        <div class="sec-preview">Today's playbook · {{ _gp_count }} items</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
-    <div class="sec-body" id="b-market">
-      {% for region in ['Asia','Europe','US'] %}
-      {% set ridx = briefing.market.indices | selectattr('region','equalto',region) | list %}
-      {% if ridx %}
-      <div class="divider">{{ region }}</div>
-      <div class="grid-auto" style="margin-bottom:10px;">
-        {% for idx in ridx %}
-        <div class="idx-card">
-          <div class="idx-name">{{ idx.index_name }}</div>
-          {% if idx.close_level %}<div class="idx-level num">{{ "{:,.0f}".format(idx.close_level) }}</div>{% endif %}
-          <div class="idx-chg num {{ 'pos' if idx.change_pct > 0 else 'neg' if idx.change_pct < 0 else 'flat' }}">{{ "+" if idx.change_pct > 0 }}{{ "%.2f"|format(idx.change_pct) }}%</div>
-          {% if idx.driver_note %}<div class="idx-note">{{ idx.driver_note }}</div>{% endif %}
+    <div class="sec-body" id="b-gameplan">
+      {% for section_items, letter_cls, letter, title in [
+          (briefing.game_plan.what_matters,    'gp-letter-a', 'A', 'What Matters Today'),
+          (briefing.game_plan.trade_candidates,'gp-letter-b', 'B', 'Trade Candidates'),
+          (briefing.game_plan.watch_at_open,   'gp-letter-c', 'C', 'Watch at the Open')
+      ] %}
+      {% if section_items %}
+      <div class="gp-section open">
+        <div class="gp-section-header" onclick="this.parentElement.classList.toggle('open')">
+          <div class="gp-letter {{ letter_cls }}">{{ letter }}</div>
+          <div class="gp-title-text">{{ title }}</div>
+          <span class="gp-chevron">›</span>
         </div>
-        {% endfor %}
+        <div class="gp-body">
+          {% for item in section_items %}
+          <div class="gp-item">
+            <div class="gp-rank">{{ item.rank }}</div>
+            <div class="gp-content">{{ item.content }}</div>
+          </div>
+          {% endfor %}
+        </div>
       </div>
       {% endif %}
       {% endfor %}
-      {% if briefing.market.macro %}
-      <div class="divider">Macro</div>
-      <div class="grid-auto">
-        {% for m in briefing.market.macro %}
-        <div class="macro-card">
-          <div class="macro-label">{{ m.indicator }}</div>
-          <div class="macro-row">
-            <div class="macro-value num">{% if m.unit == '%' %}{{ "%.2f"|format(m.value) }}%{% elif m.unit == 'index' %}{{ "{:,.1f}".format(m.value) }}{% else %}{{ "{:,.2f}".format(m.value) }}{% endif %}</div>
-            {% if m.change_pct is not none %}<div class="macro-chg num {{ 'pos' if m.change_pct > 0 else 'neg' if m.change_pct < 0 else 'flat' }}">{{ "+" if m.change_pct > 0 }}{{ "%.2f"|format(m.change_pct) }}%</div>{% endif %}
-          </div>
-          {% if m.note %}<div class="macro-note">{{ m.note | truncate(70,True,'…') }}</div>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
     </div>
   </div>
   {% endif %}
 
-  <!-- ── Catalysts ──────────────────────────────────────── -->
+  <!-- ── Today's Trades (Signals) ──────────────────────── -->
+  {% if sections.signals %}
+  {% set _sig_count = briefing.tickers.values() | selectattr('signal') | list | length %}
+  {% if _sig_count > 0 %}
+  <div class="sec" data-tone="blue" id="sec-signals">
+    <div class="sec-accent"></div>
+    <button class="sec-head" onclick="toggleSection('signals', this)">
+      <div class="sec-icon-wrap">⚡</div>
+      <div class="sec-text">
+        <div class="sec-title">Today's Trades</div>
+        <div class="sec-preview">{{ _sig_count }} active signals · tap to filter</div>
+      </div>
+      <span class="sec-chev">›</span>
+    </button>
+    <div class="sec-body" id="b-signals">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterSignals('all',this)">All</button>
+        <button class="filter-btn" onclick="filterSignals('Long',this)">🟢 Long</button>
+        <button class="filter-btn" onclick="filterSignals('Short',this)">🔴 Short</button>
+        <button class="filter-btn" onclick="filterSignals('Neutral',this)">⚪ Neutral</button>
+        <button class="filter-btn" onclick="filterSignals('Watchlist',this)">🟡 Watch</button>
+      </div>
+      <div class="sig-list" id="signal-list">
+        {% for ticker, td in briefing.tickers.items() %}{% if td.signal %}
+        <a class="sig-card" data-signal="{{ td.signal.direction }}" href="javascript:void(0)" onclick="openSection('tickers');switchTab('{{ ticker }}');">
+          <div class="sig-card-tk">{{ ticker }}</div>
+          <div class="sig-card-prc num">${{ "%.2f"|format(td.price) if td.price else '—' }}</div>
+          <div class="sig-card-pct num {{ 'pos' if td.change_pct_24h and td.change_pct_24h > 0 else 'neg' if td.change_pct_24h and td.change_pct_24h < 0 else '' }}">{% if td.change_pct_24h is not none %}{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%{% else %}—{% endif %}</div>
+          <div class="sig-card-bd">
+            <span class="badge sig-{{ td.signal.direction }}">{{ td.signal.direction }}</span>
+            <span class="badge conv-{{ td.signal.conviction }}">{{ td.signal.conviction }}</span>
+          </div>
+        </a>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- ── AI Compute Stack ───────────────────────────────── -->
+  {% if sections.ai_stack and ai_stack_layers %}
+  <div class="sec" data-tone="purple" id="sec-aistack">
+    <div class="sec-accent"></div>
+    <button class="sec-head" onclick="toggleSection('aistack', this)">
+      <div class="sec-icon-wrap">🤖</div>
+      <div class="sec-text">
+        <div class="sec-title">AI Compute Stack</div>
+        <div class="sec-preview">{{ ai_stack_layers | length }} layers · foundries → hyperscalers</div>
+      </div>
+      <span class="sec-chev">›</span>
+    </button>
+    <div class="sec-body" id="b-aistack">
+      {% for layer in ai_stack_layers %}
+      {% set avg = layer.avg_change_1d %}
+      <div class="aistack-card" style="border-top:3px solid {{ 'var(--green)' if avg is not none and avg > 0 else 'var(--red)' if avg is not none and avg < 0 else 'var(--border)' }};">
+        <div class="aistack-card-head">
+          <div class="aistack-row1">
+            <div>
+              <div class="aistack-layer-name">{{ layer.name }}</div>
+              <div class="aistack-layer-desc">{{ layer.description }}</div>
+            </div>
+            {% if avg is not none %}<div class="aistack-avg num {{ 'pos' if avg > 0 else 'neg' if avg < 0 else 'flat' }}">{{ "+" if avg > 0 }}{{ "%.2f"|format(avg) }}%</div>{% endif %}
+          </div>
+        </div>
+        {% for t in layer.tickers %}
+        <div class="aistack-ticker-row">
+          <span class="aistack-sym">{{ t.ticker }}</span>
+          <span class="aistack-co">{{ t.name }}</span>
+          {% if t.change_pct_1d is not none %}<span class="aistack-chg num {{ 'pos' if t.change_pct_1d > 0 else 'neg' if t.change_pct_1d < 0 else 'flat' }}">{{ "+" if t.change_pct_1d > 0 }}{{ "%.2f"|format(t.change_pct_1d) }}%</span>{% else %}<span class="aistack-chg flat">—</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Today's Catalysts ──────────────────────────────── -->
   {% set earnings_today = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
   {% set econ_today     = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
   {% if sections.catalysts and (earnings_today or econ_today) %}
@@ -912,8 +982,8 @@
     <button class="sec-head" onclick="toggleSection('catalysts', this)">
       <div class="sec-icon-wrap">⚡</div>
       <div class="sec-text">
-        <div class="sec-title">Catalyst Prep</div>
-        <div class="sec-preview">{{ (earnings_today | length) + (econ_today | length) }} events today</div>
+        <div class="sec-title">Today's Catalysts</div>
+        <div class="sec-preview">{{ earnings_today | length }} earnings · {{ econ_today | length }} macro print(s)</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -959,48 +1029,7 @@
   </div>
   {% endif %}
 
-  <!-- ── Game Plan ──────────────────────────────────────── -->
-  {% if sections.game_plan %}
-  {% set _gp_count = (briefing.game_plan.what_matters | length if briefing.game_plan.what_matters else 0) + (briefing.game_plan.trade_candidates | length if briefing.game_plan.trade_candidates else 0) + (briefing.game_plan.watch_at_open | length if briefing.game_plan.watch_at_open else 0) %}
-  <div class="sec" data-tone="green" id="sec-gameplan">
-    <div class="sec-accent"></div>
-    <button class="sec-head" onclick="toggleSection('gameplan', this)">
-      <div class="sec-icon-wrap">🎯</div>
-      <div class="sec-text">
-        <div class="sec-title">Game Plan</div>
-        <div class="sec-preview">{{ _gp_count }} items across 3 sections</div>
-      </div>
-      <span class="sec-chev">›</span>
-    </button>
-    <div class="sec-body" id="b-gameplan">
-      {% for section_items, letter_cls, letter, title in [
-          (briefing.game_plan.what_matters,    'gp-letter-a', 'A', 'What Matters Today'),
-          (briefing.game_plan.trade_candidates,'gp-letter-b', 'B', 'Trade Candidates'),
-          (briefing.game_plan.watch_at_open,   'gp-letter-c', 'C', 'Watch at the Open')
-      ] %}
-      {% if section_items %}
-      <div class="gp-section open">
-        <div class="gp-section-header" onclick="this.parentElement.classList.toggle('open')">
-          <div class="gp-letter {{ letter_cls }}">{{ letter }}</div>
-          <div class="gp-title-text">{{ title }}</div>
-          <span class="gp-chevron">›</span>
-        </div>
-        <div class="gp-body">
-          {% for item in section_items %}
-          <div class="gp-item">
-            <div class="gp-rank">{{ item.rank }}</div>
-            <div class="gp-content">{{ item.content }}</div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── Ticker Deep Dive ───────────────────────────────── -->
+  <!-- ── Ticker Desk ────────────────────────────────────── -->
   {% if sections.tickers %}
   {% set _ticker_count = briefing.tickers | length %}
   {% set _signal_count = briefing.tickers.values() | selectattr('signal') | list | length %}
@@ -1009,8 +1038,8 @@
     <button class="sec-head" onclick="toggleSection('tickers', this)">
       <div class="sec-icon-wrap">🔍</div>
       <div class="sec-text">
-        <div class="sec-title">Ticker Deep Dive</div>
-        <div class="sec-preview">{{ _ticker_count }} tickers · {{ _signal_count }} active signals</div>
+        <div class="sec-title">Ticker Desk</div>
+        <div class="sec-preview">{{ _ticker_count }} names · {{ _signal_count }} active signals</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -1078,44 +1107,54 @@
   </div>
   {% endif %}
 
-  <!-- ── Signal Summary ─────────────────────────────────── -->
-  {% if sections.signals %}
-  {% set _sig_count = briefing.tickers.values() | selectattr('signal') | list | length %}
-  {% if _sig_count > 0 %}
-  <div class="sec" data-tone="blue" id="sec-signals">
+  <!-- ── Macro & Rates ──────────────────────────────────── -->
+  {% if sections.market %}
+  {% set _idx_count = briefing.market.indices | length if briefing.market.indices else 0 %}
+  {% set _macro_count = briefing.market.macro | length if briefing.market.macro else 0 %}
+  <div class="sec" data-tone="blue" id="sec-market">
     <div class="sec-accent"></div>
-    <button class="sec-head" onclick="toggleSection('signals', this)">
-      <div class="sec-icon-wrap">📡</div>
+    <button class="sec-head" onclick="toggleSection('market', this)">
+      <div class="sec-icon-wrap">📊</div>
       <div class="sec-text">
-        <div class="sec-title">Signal Summary</div>
-        <div class="sec-preview">{{ _sig_count }} signals · AI-generated</div>
+        <div class="sec-title">Macro & Rates</div>
+        <div class="sec-preview">Drives long-duration multiples · {{ _idx_count }} indices · {{ _macro_count }} prints</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
-    <div class="sec-body" id="b-signals">
-      <div class="filter-bar">
-        <button class="filter-btn active" onclick="filterSignals('all',this)">All</button>
-        <button class="filter-btn" onclick="filterSignals('Long',this)">🟢 Long</button>
-        <button class="filter-btn" onclick="filterSignals('Short',this)">🔴 Short</button>
-        <button class="filter-btn" onclick="filterSignals('Neutral',this)">⚪ Neutral</button>
-        <button class="filter-btn" onclick="filterSignals('Watchlist',this)">🟡 Watch</button>
-      </div>
-      <div class="sig-list" id="signal-list">
-        {% for ticker, td in briefing.tickers.items() %}{% if td.signal %}
-        <a class="sig-card" data-signal="{{ td.signal.direction }}" href="javascript:void(0)" onclick="openSection('tickers');switchTab('{{ ticker }}');">
-          <div class="sig-card-tk">{{ ticker }}</div>
-          <div class="sig-card-prc num">${{ "%.2f"|format(td.price) if td.price else '—' }}</div>
-          <div class="sig-card-pct num {{ 'pos' if td.change_pct_24h and td.change_pct_24h > 0 else 'neg' if td.change_pct_24h and td.change_pct_24h < 0 else '' }}">{% if td.change_pct_24h is not none %}{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%{% else %}—{% endif %}</div>
-          <div class="sig-card-bd">
-            <span class="badge sig-{{ td.signal.direction }}">{{ td.signal.direction }}</span>
-            <span class="badge conv-{{ td.signal.conviction }}">{{ td.signal.conviction }}</span>
+    <div class="sec-body" id="b-market">
+      {% if briefing.market.macro %}
+      <div class="divider">Rates · USD · Vol</div>
+      <div class="grid-auto" style="margin-bottom:10px;">
+        {% for m in briefing.market.macro %}
+        <div class="macro-card">
+          <div class="macro-label">{{ m.indicator }}</div>
+          <div class="macro-row">
+            <div class="macro-value num">{% if m.unit == '%' %}{{ "%.2f"|format(m.value) }}%{% elif m.unit == 'index' %}{{ "{:,.1f}".format(m.value) }}{% else %}{{ "{:,.2f}".format(m.value) }}{% endif %}</div>
+            {% if m.change_pct is not none %}<div class="macro-chg num {{ 'pos' if m.change_pct > 0 else 'neg' if m.change_pct < 0 else 'flat' }}">{{ "+" if m.change_pct > 0 }}{{ "%.2f"|format(m.change_pct) }}%</div>{% endif %}
           </div>
-        </a>
-        {% endif %}{% endfor %}
+          {% if m.note %}<div class="macro-note">{{ m.note | truncate(70,True,'…') }}</div>{% endif %}
+        </div>
+        {% endfor %}
       </div>
+      {% endif %}
+      {% for region in ['US','Asia','Europe'] %}
+      {% set ridx = briefing.market.indices | selectattr('region','equalto',region) | list %}
+      {% if ridx %}
+      <div class="divider">{{ region }} Indices</div>
+      <div class="grid-auto" style="margin-bottom:10px;">
+        {% for idx in ridx %}
+        <div class="idx-card">
+          <div class="idx-name">{{ idx.index_name }}</div>
+          {% if idx.close_level %}<div class="idx-level num">{{ "{:,.0f}".format(idx.close_level) }}</div>{% endif %}
+          <div class="idx-chg num {{ 'pos' if idx.change_pct > 0 else 'neg' if idx.change_pct < 0 else 'flat' }}">{{ "+" if idx.change_pct > 0 }}{{ "%.2f"|format(idx.change_pct) }}%</div>
+          {% if idx.driver_note %}<div class="idx-note">{{ idx.driver_note }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
     </div>
   </div>
-  {% endif %}
   {% endif %}
 
   <!-- ── Earnings ───────────────────────────────────────── -->
@@ -1145,44 +1184,6 @@
         </div>
         {% endfor %}
       </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── AI Stack ───────────────────────────────────────── -->
-  {% if sections.ai_stack and ai_stack_layers %}
-  <div class="sec" data-tone="purple" id="sec-aistack">
-    <div class="sec-accent"></div>
-    <button class="sec-head" onclick="toggleSection('aistack', this)">
-      <div class="sec-icon-wrap">🤖</div>
-      <div class="sec-text">
-        <div class="sec-title">AI Stack Monitor</div>
-        <div class="sec-preview">{{ ai_stack_layers | length }} infrastructure layers tracked</div>
-      </div>
-      <span class="sec-chev">›</span>
-    </button>
-    <div class="sec-body" id="b-aistack">
-      {% for layer in ai_stack_layers %}
-      {% set avg = layer.avg_change_1d %}
-      <div class="aistack-card" style="border-top:3px solid {{ 'var(--green)' if avg is not none and avg > 0 else 'var(--red)' if avg is not none and avg < 0 else 'var(--border)' }};">
-        <div class="aistack-card-head">
-          <div class="aistack-row1">
-            <div>
-              <div class="aistack-layer-name">{{ layer.name }}</div>
-              <div class="aistack-layer-desc">{{ layer.description }}</div>
-            </div>
-            {% if avg is not none %}<div class="aistack-avg num {{ 'pos' if avg > 0 else 'neg' if avg < 0 else 'flat' }}">{{ "+" if avg > 0 }}{{ "%.2f"|format(avg) }}%</div>{% endif %}
-          </div>
-        </div>
-        {% for t in layer.tickers %}
-        <div class="aistack-ticker-row">
-          <span class="aistack-sym">{{ t.ticker }}</span>
-          <span class="aistack-co">{{ t.name }}</span>
-          {% if t.change_pct_1d is not none %}<span class="aistack-chg num {{ 'pos' if t.change_pct_1d > 0 else 'neg' if t.change_pct_1d < 0 else 'flat' }}">{{ "+" if t.change_pct_1d > 0 }}{{ "%.2f"|format(t.change_pct_1d) }}%</span>{% else %}<span class="aistack-chg flat">—</span>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
     </div>
   </div>
   {% endif %}
