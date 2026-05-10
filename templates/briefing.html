@@ -255,6 +255,8 @@
       gap: 10px;
       margin: 4px 0 14px;
     }
+    .sec.sec-wide { grid-column: 1 / -1; }
+    .sec.sec-wide .sec-preview { -webkit-line-clamp: 3; }
     .sec {
       background: var(--bg2);
       border: 1px solid var(--border);
@@ -879,16 +881,26 @@
   </div>
   {% endif %}
 
-  <!-- ── Narrative (always-visible insight card) ──────── -->
+  <!-- ── Section cards grid ─────────────────────────────── -->
+  <div class="cards-grid">
+
+  <!-- ── Morning Narrative (wide card) ──────────────────── -->
   {% if sections.narrative and narrative_paras %}
-  <div class="narrative-card" id="sec-narrative">
-    <div class="narrative-card-header">
-      <span class="narrative-card-title">📝 Morning Narrative</span>
-      <span class="narrative-card-sub">{{ date_str }}</span>
-    </div>
-    <div class="narrative-body">
+  {% set _nar_first = narrative_paras[0] %}
+  <div class="sec sec-wide" data-tone="purple" id="sec-narrative">
+    <div class="sec-accent"></div>
+    <button class="sec-head" onclick="toggleSection('narrative', this)">
+      <div class="sec-icon-wrap">📝</div>
+      <div class="sec-text">
+        <div class="sec-title">Morning Narrative</div>
+        <div class="sec-stat-sub">{{ narrative_paras | length }} paragraph{{ '' if narrative_paras | length == 1 else 's' }} · {{ date_str }}</div>
+        <div class="sec-preview">{% if _nar_first.heading %}<strong style="color:var(--text)">{{ _nar_first.heading }}</strong> — {% endif %}{{ _nar_first.body | truncate(220,True,'…') }}</div>
+      </div>
+      <span class="sec-chev">›</span>
+    </button>
+    <div class="sec-body">
       {% for para in narrative_paras %}
-      <div>
+      <div style="margin-bottom:18px;">
         <div class="narrative-para-heading">{{ para.heading }}</div>
         <div class="narrative-para-text">{{ para.body }}</div>
       </div>
@@ -896,9 +908,6 @@
     </div>
   </div>
   {% endif %}
-
-  <!-- ── Section cards grid ─────────────────────────────── -->
-  <div class="cards-grid">
 
   <!-- ── Game Plan ──────────────────────────────────────── -->
   {% if sections.game_plan %}
