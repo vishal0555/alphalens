@@ -115,21 +115,21 @@
     /* ── Hero card (compact, side-by-side) ─────────── */
     .hero {
       position: relative;
-      margin: 12px 0 12px;
-      border-radius: 18px;
+      margin: 10px 0 10px;
+      border-radius: 16px;
       overflow: hidden;
       background:
         radial-gradient(circle at 100% 0%, rgba(94,163,255,.16), transparent 55%),
         radial-gradient(circle at 0% 100%, rgba(168,120,255,.10), transparent 55%),
         linear-gradient(160deg, #161e2a 0%, #0e141d 100%);
       border: 1px solid rgba(255,255,255,.07);
-      padding: 14px 16px 12px;
+      padding: 10px 14px 10px;
     }
     .hero-eyebrow {
       display: flex; align-items: center; gap: 6px;
-      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      font-size: 9px; font-weight: 700; letter-spacing: 1.6px;
       text-transform: uppercase; color: var(--accent);
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
     .live-dot {
       width: 7px; height: 7px; border-radius: 50%;
@@ -151,21 +151,21 @@
     }
     .hero-left { min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
     .hero-day {
-      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      font-size: 9px; font-weight: 700; letter-spacing: 1.6px;
       text-transform: uppercase; color: var(--muted);
     }
     .hero-date {
-      font-size: 30px; font-weight: 800; line-height: 1.05;
+      font-size: 24px; font-weight: 800; line-height: 1;
       letter-spacing: -.02em; margin-top: 2px;
     }
     .hero-year {
-      font-size: 12px; font-weight: 600; color: var(--muted);
+      font-size: 11px; font-weight: 600; color: var(--muted);
       margin-top: 2px;
     }
     .hero-meta {
       display: flex; align-items: center; gap: 6px;
       flex-wrap: wrap;
-      margin-top: 10px;
+      margin-top: 6px;
     }
     .hero-meta-item {
       font-size: 10px; color: var(--muted); font-weight: 600;
@@ -192,8 +192,8 @@
     .hmt {
       background: rgba(255,255,255,.04);
       border: 1px solid rgba(255,255,255,.07);
-      border-radius: 10px;
-      padding: 7px 9px 9px;
+      border-radius: 9px;
+      padding: 6px 8px 7px;
       text-align: left;
       cursor: pointer;
       position: relative;
@@ -224,14 +224,14 @@
     .hero-more {
       display: block;
       width: 100%;
-      margin-top: 8px;
+      margin-top: 6px;
       background: none; border: none;
       color: var(--accent);
-      font-size: 11px; font-weight: 700;
+      font-size: 10px; font-weight: 700;
       text-align: right;
       cursor: pointer;
       font-family: inherit;
-      padding: 2px 0;
+      padding: 0;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -327,7 +327,7 @@
     .sec-head {
       width: 100%; height: 100%;
       background: none; border: none;
-      padding: 11px 12px 11px;
+      padding: 12px 12px 12px;
       display: flex;
       flex-direction: row;
       align-items: flex-start;
@@ -337,7 +337,7 @@
       -webkit-tap-highlight-color: transparent;
       transition: background .15s ease;
       position: relative;
-      min-height: 96px;
+      min-height: 122px;
     }
     .sec-head:active { background: var(--bg3); }
     .sec-icon-wrap {
@@ -1021,7 +1021,6 @@
   <div class="sec sec-wide" data-tone="purple" id="sec-narrative">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('narrative', this)">
-      <div class="sec-icon-wrap">📝</div>
       <div class="sec-text">
         <div class="sec-title">Morning Narrative</div>
         <div class="sec-stat-sub">{{ narrative_paras | length }} paragraph{{ '' if narrative_paras | length == 1 else 's' }} · {{ date_str }}</div>
@@ -1047,7 +1046,6 @@
   <div class="sec" data-tone="green" id="sec-gameplan">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('gameplan', this)">
-      <div class="sec-icon-wrap">🎯</div>
       <div class="sec-text">
         <div class="sec-title">Game Plan</div>
         <div class="sec-stat num">{{ _gp_count }}</div>
@@ -1093,7 +1091,6 @@
   <div class="sec" data-tone="blue" id="sec-signals">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('signals', this)">
-      <div class="sec-icon-wrap">⚡</div>
       <div class="sec-text">
         <div class="sec-title">Today's Trades</div>
         <div class="sec-stat num">{{ _sig_count }}</div>
@@ -1184,7 +1181,6 @@
   <div class="sec" data-tone="amber" id="sec-catalysts">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('catalysts', this)">
-      <div class="sec-icon-wrap">⚡</div>
       <div class="sec-text">
         <div class="sec-title">Today's Catalysts</div>
         <div class="sec-stat num">{{ _cat_total }}</div>
@@ -1388,7 +1384,6 @@
   <div class="sec" data-tone="green" id="sec-earnings">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('earnings', this)">
-      <div class="sec-icon-wrap">📅</div>
       <div class="sec-text">
         <div class="sec-title">Upcoming Earnings</div>
         <div class="sec-stat num">{{ briefing.earnings_calendar | length }}</div>
