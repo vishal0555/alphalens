@@ -35,7 +35,6 @@
       --purple:   #a878ff;
       --purple-bg:rgba(168,120,255,.12);
       --purple-bd:rgba(168,120,255,.28);
-      --top-h:    52px;
       --ease-spring: cubic-bezier(.32,.72,.32,1);
       --ease-soft:   cubic-bezier(.4,0,.2,1);
     }
@@ -47,7 +46,7 @@
       color: var(--text);
       font-size: 17px;
       line-height: 1.55;
-      padding-top: calc(var(--top-h) + env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
       padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
       -webkit-font-smoothing: antialiased;
       font-feature-settings: 'cv11','ss01';
@@ -72,45 +71,30 @@
       box-shadow: 0 0 8px rgba(94,163,255,.6);
     }
 
-    /* ── Top bar (glass) ──────────────────────────── */
-    .top-bar {
+    /* ── Floating back pill (detail-mode only) ─────── */
+    .top-back {
       position: fixed;
-      top: 0; left: 0; right: 0;
-      height: calc(var(--top-h) + env(safe-area-inset-top, 0px));
-      padding-top: env(safe-area-inset-top, 0px);
-      background: rgba(10,14,20,.78);
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      left: 12px;
+      z-index: 250;
+      background: rgba(20,26,34,.85);
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,.06);
-      display: flex;
-      align-items: center;
-      padding-left: 14px;
-      padding-right: 14px;
-      gap: 8px;
-      z-index: 200;
-    }
-    .top-back {
-      background: rgba(255,255,255,.06); border: none;
+      border: 1px solid rgba(255,255,255,.07);
       color: var(--accent);
-      font-size: 16px; font-weight: 600; cursor: pointer;
-      padding: 8px 14px 8px 10px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      padding: 7px 13px 7px 9px;
       border-radius: 999px;
       -webkit-tap-highlight-color: transparent;
-      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 4px;
       opacity: 0; transform: scale(.85) translateX(-4px); pointer-events: none;
       transition: opacity .25s var(--ease-soft), transform .25s var(--ease-spring);
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
     }
     .top-back.show { opacity: 1; transform: scale(1) translateX(0); pointer-events: auto; }
     .top-back:active { background: rgba(255,255,255,.12); }
-    .top-back-arrow { font-size: 20px; line-height: 1; }
-    .top-title {
-      flex: 1; font-size: 16px; font-weight: 700; text-align: center;
-      letter-spacing: -.01em;
-    }
-    .top-date {
-      font-size: 13px; color: var(--muted); flex-shrink: 0; text-align: right;
-      font-weight: 500;
-    }
+    .top-back-arrow { font-size: 18px; line-height: 1; }
 
     /* ── Hero card (compact, side-by-side) ─────────── */
     .hero {
@@ -892,14 +876,10 @@
 <!-- Reading-progress bar -->
 <div class="progress-bar" id="progressBar"></div>
 
-<!-- ── Top bar ───────────────────────────────────────────── -->
-<div class="top-bar">
-  <button class="top-back" id="topBack" onclick="backToOverview()">
-    <span class="top-back-arrow">‹</span> <span class="top-back-label">Top</span>
-  </button>
-  <div class="top-title">Briefing</div>
-  <div class="top-date" id="topDate">{{ date_str }}</div>
-</div>
+<!-- Floating back pill (detail mode only) -->
+<button class="top-back" id="topBack" onclick="backToOverview()" aria-label="Back">
+  <span class="top-back-arrow">‹</span> <span class="top-back-label">Back</span>
+</button>
 
 <div class="page">
 
@@ -1465,7 +1445,6 @@
 (function formatHero() {
   const dStr = "{{ date_str }}";
   if (!dStr) return;
-  // Try to parse "YYYY-MM-DD" or fall back to as-is
   const m = dStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (m) {
     const d = new Date(+m[1], +m[2]-1, +m[3]);
@@ -1474,8 +1453,6 @@
     document.getElementById('heroDay').textContent = days[d.getDay()];
     document.getElementById('heroDate').textContent = months[d.getMonth()] + ' ' + d.getDate();
     document.getElementById('heroYear').textContent = d.getFullYear();
-    const short = months[d.getMonth()].slice(0,3) + ' ' + d.getDate();
-    document.getElementById('topDate').textContent = short;
   }
 })();
 
@@ -1501,8 +1478,6 @@ function openSection(id) {
   document.querySelectorAll('.sec.open').forEach(s => s.classList.remove('open'));
   sec.classList.add('open');
   document.body.classList.add('detail-mode');
-  const titleEl = sec.querySelector('.sec-title');
-  if (titleEl) document.querySelector('.top-title').textContent = titleEl.textContent;
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
   updateBackButton();
 }
@@ -1510,7 +1485,6 @@ function openSection(id) {
 function backToOverview() {
   document.querySelectorAll('.sec.open').forEach(s => s.classList.remove('open'));
   document.body.classList.remove('detail-mode');
-  document.querySelector('.top-title').textContent = 'Briefing';
   window.scrollTo({ top: _overviewScrollY || 0, behavior: 'smooth' });
   _overviewScrollY = 0;
   updateBackButton();
@@ -1526,20 +1500,14 @@ function updateBackButton() {
   const detail = document.body.classList.contains('detail-mode');
   const scrolled = window.scrollY > 240;
   const back = document.getElementById('topBack');
-  const backLabel = back.querySelector('.top-back-label');
   const float = document.getElementById('floatTop');
   if (detail) {
     back.classList.add('show');
-    if (backLabel) backLabel.textContent = 'Back';
     float.classList.remove('show');
-  } else if (scrolled) {
-    back.classList.remove('show');
-    if (backLabel) backLabel.textContent = 'Top';
-    float.classList.add('show');
   } else {
     back.classList.remove('show');
-    if (backLabel) backLabel.textContent = 'Top';
-    float.classList.remove('show');
+    if (scrolled) float.classList.add('show');
+    else float.classList.remove('show');
   }
 }
 
