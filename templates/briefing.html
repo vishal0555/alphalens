@@ -174,6 +174,56 @@
     .pill-live { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
     .pill-mock { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
 
+    /* ── Hero macro tiles (embedded macro snapshot) ── */
+    .hero-macro {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .hero-macro-tile {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .15s var(--ease-soft), background .15s ease;
+      font-family: inherit;
+      color: var(--text);
+    }
+    .hero-macro-tile:active { transform: scale(.96); background: rgba(255,255,255,.08); }
+    .hero-macro-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hero-macro-value {
+      font-size: 16px; font-weight: 800;
+      letter-spacing: -.01em;
+      margin-top: 4px;
+    }
+    .hero-macro-chg {
+      font-size: 11px; font-weight: 700;
+      margin-top: 2px;
+    }
+    .hero-macro-more {
+      grid-column: 1 / -1;
+      background: none; border: none;
+      color: var(--accent);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: .3px;
+      padding: 6px;
+      text-align: center;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     /* ── Market pulse strip ───────────────────────── */
     .mp-label {
       font-size: 11px; font-weight: 700; letter-spacing: 2px;
@@ -257,6 +307,8 @@
     }
     .sec.sec-wide { grid-column: 1 / -1; }
     .sec.sec-wide .sec-preview { -webkit-line-clamp: 3; }
+    /* Cards routed to detail-only (no tile in grid) */
+    body:not(.detail-mode) .sec.sec-hidden { display: none; }
     .sec {
       background: var(--bg2);
       border: 1px solid var(--border);
@@ -859,6 +911,32 @@
       <span class="hero-meta-item">{{ briefing.meta.model }}</span>
       {% endif %}
     </div>
+
+    {% set _hero_idx = briefing.market.indices[0] if briefing.market.indices else none %}
+    {% set _hero_macros = briefing.market.macro[:3] if briefing.market.macro else [] %}
+    {% if _hero_idx or _hero_macros %}
+    <div class="hero-macro">
+      {% if _hero_idx %}
+      <button class="hero-macro-tile" onclick="openSection('market')">
+        <div class="hero-macro-label">{{ _hero_idx.index_name }}</div>
+        <div class="hero-macro-value num">{% if _hero_idx.close_level %}{{ "{:,.0f}".format(_hero_idx.close_level) }}{% else %}—{% endif %}</div>
+        {% if _hero_idx.change_pct is not none %}
+        <div class="hero-macro-chg num {{ 'pos' if _hero_idx.change_pct > 0 else 'neg' if _hero_idx.change_pct < 0 else 'flat' }}">{{ "+" if _hero_idx.change_pct > 0 }}{{ "%.2f"|format(_hero_idx.change_pct) }}%</div>
+        {% endif %}
+      </button>
+      {% endif %}
+      {% for m in _hero_macros %}
+      <button class="hero-macro-tile" onclick="openSection('market')">
+        <div class="hero-macro-label">{{ m.indicator }}</div>
+        <div class="hero-macro-value num">{% if m.unit == '%' %}{{ "%.2f"|format(m.value) }}%{% elif m.unit == 'index' %}{{ "{:,.1f}".format(m.value) }}{% else %}{{ "{:,.2f}".format(m.value) }}{% endif %}</div>
+        {% if m.change_pct is not none %}
+        <div class="hero-macro-chg num {{ 'pos' if m.change_pct > 0 else 'neg' if m.change_pct < 0 else 'flat' }}">{{ "+" if m.change_pct > 0 }}{{ "%.2f"|format(m.change_pct) }}%</div>
+        {% endif %}
+      </button>
+      {% endfor %}
+      <button class="hero-macro-more" onclick="openSection('market')">View full macro &amp; rates ›</button>
+    </div>
+    {% endif %}
   </div>
 
   <!-- ── Market pulse strip ────────────────────────────── -->
@@ -1111,7 +1189,7 @@
   {% set _movers = briefing.tickers | dictsort %}
   {% set _ns_top = namespace(t=none, c=none, abs=-1) %}
   {% for tk, td in _movers %}{% if td.change_pct_24h is not none and (td.change_pct_24h | abs) > _ns_top.abs %}{% set _ns_top.t = tk %}{% set _ns_top.c = td.change_pct_24h %}{% set _ns_top.abs = td.change_pct_24h | abs %}{% endif %}{% endfor %}
-  <div class="sec" data-tone="purple" id="sec-tickers">
+  <div class="sec sec-hidden" data-tone="purple" id="sec-tickers">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('tickers', this)">
       <div class="sec-icon-wrap">🔍</div>
@@ -1198,7 +1276,7 @@
   {% set _macro_count = briefing.market.macro | length if briefing.market.macro else 0 %}
   {% set _spx = (briefing.market.indices | selectattr('index_name','equalto','S&P 500') | list)[0] if briefing.market.indices else none %}
   {% if not _spx and briefing.market.indices %}{% set _spx = (briefing.market.indices | selectattr('region','equalto','US') | list)[0] %}{% endif %}
-  <div class="sec" data-tone="blue" id="sec-market">
+  <div class="sec sec-hidden" data-tone="blue" id="sec-market">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('market', this)">
       <div class="sec-icon-wrap">📊</div>
