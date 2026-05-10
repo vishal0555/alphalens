@@ -243,27 +243,27 @@
 
     /* ── Market pulse strip ───────────────────────── */
     .mp-label {
-      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1.8px;
       text-transform: uppercase; color: var(--muted);
-      margin: 22px 4px 10px;
+      margin: 14px 4px 6px;
       display: flex; align-items: center; gap: 6px;
     }
     .mp-strip {
-      display: flex; gap: 8px;
+      display: flex; gap: 6px;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      padding: 2px 2px 12px;
-      margin: 0 -16px 8px;
+      padding: 2px 2px 8px;
+      margin: 0 -16px 6px;
       padding-left: 16px; padding-right: 16px;
       scroll-snap-type: x proximity;
     }
     .mp-strip::-webkit-scrollbar { display: none; }
     .mp-card {
-      flex-shrink: 0; min-width: 116px;
+      flex-shrink: 0; min-width: 92px;
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
+      border-radius: 12px;
+      padding: 7px 12px 8px;
       text-decoration: none; color: var(--text);
       cursor: pointer; -webkit-tap-highlight-color: transparent;
       transition: transform .15s var(--ease-soft), background .15s ease;
@@ -275,16 +275,16 @@
     .mp-card-neg { border-color: rgba(255,95,91,.22); }
     .mp-card-flat { border-color: var(--border); }
     .mp-tick {
-      font-size: 15px; font-weight: 800; letter-spacing: -.01em;
-      margin-bottom: 4px;
+      font-size: 13px; font-weight: 800; letter-spacing: -.01em;
+      margin-bottom: 2px;
     }
     .mp-chg {
-      font-size: 17px; font-weight: 700;
+      font-size: 14px; font-weight: 700;
       letter-spacing: -.02em;
     }
     .mp-glow {
-      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-      opacity: .8;
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      opacity: .85;
     }
     .mp-glow-pos  { background: var(--green); box-shadow: 0 0 8px rgba(63,212,126,.6); }
     .mp-glow-neg  { background: var(--red);   box-shadow: 0 0 8px rgba(255,95,91,.6); }
@@ -345,53 +345,55 @@
     .sec-head {
       width: 100%; height: 100%;
       background: none; border: none;
-      padding: 16px 14px 14px;
+      padding: 11px 12px 11px;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: flex-start;
-      gap: 10px;
+      gap: 9px;
       cursor: pointer; text-align: left;
       color: var(--text); font-family: inherit;
       -webkit-tap-highlight-color: transparent;
       transition: background .15s ease;
       position: relative;
-      min-height: 138px;
+      min-height: 96px;
     }
     .sec-head:active { background: var(--bg3); }
     .sec-icon-wrap {
-      width: 38px; height: 38px; flex-shrink: 0;
-      border-radius: 11px;
+      width: 26px; height: 26px; flex-shrink: 0;
+      border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
+      font-size: 14px;
       background: var(--bg3);
       transition: transform .25s var(--ease-spring);
+      margin-top: 1px;
     }
-    .sec-text { flex: 1; min-width: 0; width: 100%; }
+    .sec-text { flex: 1; min-width: 0; }
     .sec-title {
-      font-size: 15px; font-weight: 700;
+      font-size: 13px; font-weight: 700;
       letter-spacing: -.01em; line-height: 1.25;
+      padding-right: 18px; /* room for chev */
     }
     .sec-stat {
-      font-size: 22px; font-weight: 800;
-      letter-spacing: -.02em; line-height: 1.05;
-      margin-top: 6px; color: var(--text);
+      font-size: 17px; font-weight: 800;
+      letter-spacing: -.02em; line-height: 1;
+      margin-top: 5px; color: var(--text);
     }
     .sec-stat-sub {
-      font-size: 11px; font-weight: 600; color: var(--muted);
+      font-size: 10px; font-weight: 600; color: var(--muted);
       margin-top: 2px;
       letter-spacing: .2px;
     }
     .sec-preview {
-      font-size: 12px; color: var(--muted); font-weight: 500;
-      margin-top: 4px; line-height: 1.45;
+      font-size: 11px; color: var(--muted); font-weight: 500;
+      margin-top: 3px; line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
     .sec-chev {
-      position: absolute; top: 14px; right: 14px;
-      font-size: 18px; color: var(--muted2);
+      position: absolute; top: 10px; right: 12px;
+      font-size: 16px; color: var(--muted2);
       line-height: 1;
       transition: transform .3s var(--ease-spring), color .2s ease;
     }
@@ -433,8 +435,16 @@
       align-items: center;
       gap: 12px;
       min-height: auto;
-      padding: 16px 16px 16px 18px;
+      padding: 14px 16px 14px 18px;
       cursor: default;
+    }
+    body.detail-mode .sec.open .sec-icon-wrap {
+      width: 36px; height: 36px;
+      font-size: 18px; border-radius: 10px;
+      margin-top: 0;
+    }
+    body.detail-mode .sec.open .sec-title {
+      font-size: 17px; padding-right: 0;
     }
     body.detail-mode .sec.open .sec-head:active { background: none; }
     body.detail-mode .sec.open:active { transform: none; }
