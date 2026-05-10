@@ -108,7 +108,11 @@
         linear-gradient(160deg, #161e2a 0%, #0e141d 100%);
       border: 1px solid rgba(255,255,255,.07);
       padding: 10px 14px 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .15s var(--ease-soft);
     }
+    .hero:active { transform: scale(.99); }
     .hero-eyebrow {
       display: flex; align-items: center; gap: 6px;
       font-size: 9px; font-weight: 700; letter-spacing: 1.6px;
@@ -900,7 +904,7 @@
       {% if _ns.spy is none and ('s&p' in _name or 's & p' in _name or 'spx' in _name or 'spy' in _name or '500' in _name) %}{% set _ns.spy = idx %}{% endif %}
     {% endfor %}
   {% endif %}
-  <div class="hero">
+  <div class="hero" onclick="openSection('market')" role="button" tabindex="0" aria-label="Open macro and rates">
     <div class="hero-eyebrow">
       <span class="live-dot"></span>
       AlphaLens · Daily Briefing
@@ -974,7 +978,7 @@
 
   <!-- ── Market pulse strip ────────────────────────────── -->
   {% if briefing.tickers %}
-  <div class="mp-label">🛰 Tech Tape</div>
+  <div class="mp-label">Watchlist</div>
   <div class="mp-strip">
     {% for ticker, td in briefing.tickers.items() %}
     {% set chg = td.change_pct_24h %}
