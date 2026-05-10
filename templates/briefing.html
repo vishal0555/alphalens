@@ -191,7 +191,7 @@
     }
     .hmt {
       background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.07);
       border-radius: 10px;
       padding: 7px 9px 9px;
       text-align: left;
@@ -261,7 +261,7 @@
     .mp-card {
       flex-shrink: 0; min-width: 92px;
       background: var(--bg2);
-      border: 1px solid var(--border);
+      border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px;
       padding: 7px 12px 8px;
       text-decoration: none; color: var(--text);
@@ -271,9 +271,6 @@
       position: relative; overflow: hidden;
     }
     .mp-card:active { transform: scale(.96); background: var(--bg3); }
-    .mp-card-pos { border-color: rgba(63,212,126,.22); }
-    .mp-card-neg { border-color: rgba(255,95,91,.22); }
-    .mp-card-flat { border-color: var(--border); }
     .mp-tick {
       font-size: 13px; font-weight: 800; letter-spacing: -.01em;
       margin-bottom: 2px;
@@ -328,7 +325,7 @@
     body:not(.detail-mode) .sec.sec-hidden { display: none; }
     .sec {
       background: var(--bg2);
-      border: 1px solid var(--border);
+      border: 1px solid rgba(255,255,255,.07);
       border-radius: 18px;
       overflow: hidden;
       position: relative;
@@ -428,7 +425,6 @@
     body.detail-mode .sec:not(.open) { display: none; }
     body.detail-mode .sec.open {
       animation: detailEnter .3s var(--ease-spring);
-      border-color: rgba(94,163,255,.35);
     }
     body.detail-mode .sec.open .sec-head {
       flex-direction: row;
@@ -478,7 +474,7 @@
     /* ── Index/macro cards ───────────────────────── */
     .grid-auto { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .idx-card  {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; padding: 14px 16px;
       display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px;
     }
@@ -502,7 +498,7 @@
     }
 
     .macro-card {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; padding: 14px 16px;
     }
     .macro-label {
@@ -547,7 +543,7 @@
     /* ── Catalyst event cards (replaces table) ──── */
     .ev-list { display: flex; flex-direction: column; gap: 8px; }
     .ev-card {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; padding: 14px 16px;
     }
     .ev-row1 {
@@ -642,7 +638,7 @@
       margin-bottom: 14px;
     }
     .stat-box {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; padding: 12px 14px;
     }
     .stat-label {
@@ -700,7 +696,7 @@
     }
     .sig-list { display: flex; flex-direction: column; gap: 8px; }
     .sig-card {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; padding: 12px 14px;
       display: grid; grid-template-columns: auto 1fr auto; gap: 10px 14px;
       align-items: center;
@@ -725,7 +721,7 @@
 
     /* ── Game plan ────────────────────────────────── */
     .gp-section {
-      border: 1px solid var(--border2); border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.07); border-radius: 12px;
       margin-bottom: 8px; overflow: hidden;
     }
     .gp-section-header {
@@ -782,7 +778,7 @@
     /* ── Earnings cards ──────────────────────────── */
     .earnings-grid { display: flex; flex-direction: column; gap: 8px; }
     .earn-card {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; padding: 14px 16px;
     }
     .earn-top {
@@ -810,7 +806,7 @@
 
     /* ── AI stack ────────────────────────────────── */
     .aistack-card {
-      background: var(--bg3); border: 1px solid var(--border2);
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
       border-radius: 12px; overflow: hidden; margin-bottom: 8px;
     }
     .aistack-card-head {
