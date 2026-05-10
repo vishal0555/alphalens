@@ -1019,6 +1019,65 @@
   </div>
   {% endif %}
 
+  <!-- ── Today's Catalysts ──────────────────────────────── -->
+  {% set earnings_today = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
+  {% set econ_today     = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
+  {% set _cat_total = (earnings_today | length) + (econ_today | length) %}
+  {% set _cat_top = earnings_today[0] if earnings_today else (econ_today[0] if econ_today else none) %}
+  {% if sections.catalysts and (earnings_today or econ_today) %}
+  <div class="sec" data-tone="amber" id="sec-catalysts">
+    <div class="sec-accent"></div>
+    <button class="sec-head" onclick="toggleSection('catalysts', this)">
+      <div class="sec-text">
+        <div class="sec-title">Today's Catalysts</div>
+        <div class="sec-stat num">{{ _cat_total }}</div>
+        <div class="sec-stat-sub">{{ earnings_today | length }} earnings · {{ econ_today | length }} macro</div>
+        <div class="sec-preview">{% if _cat_top and _cat_top.event_name %}{{ _cat_top.event_name | truncate(60,True,'…') }}{% else %}Today's market-moving prints{% endif %}</div>
+      </div>
+      <span class="sec-chev">›</span>
+    </button>
+    <div class="sec-body" id="b-catalysts">
+      {% if earnings_today %}
+      <div class="divider">Earnings Today</div>
+      <div class="ev-list" style="margin-bottom:14px;">
+        {% for ev in earnings_today %}
+        <div class="ev-card">
+          <div class="ev-row1">
+            <div class="ev-name">{{ ev.event_name }}</div>
+            <div class="ev-time">{{ 'BMO' if ev.event_type=='earnings_bmo' else 'AMC' }}</div>
+          </div>
+          {% if ev.consensus %}
+          <div class="ev-meta">
+            <span class="ev-stat">EPS Est. <strong>{{ ev.consensus }}</strong></span>
+          </div>
+          {% endif %}
+          {% if ev.impact_note %}<div class="ev-note">{{ ev.impact_note }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if econ_today %}
+      <div class="divider">Economic Releases</div>
+      <div class="ev-list">
+        {% for ev in econ_today %}
+        <div class="ev-card">
+          <div class="ev-row1">
+            <div class="ev-name">{{ ev.event_name }}</div>
+            {% if ev.timing %}<div class="ev-time">{{ ev.timing }}</div>{% endif %}
+          </div>
+          <div class="ev-meta">
+            {% if ev.prior_value %}<span class="ev-stat">Prior <strong>{{ ev.prior_value }}</strong></span>{% endif %}
+            {% if ev.consensus %}<span class="ev-stat">Cons. <strong>{{ ev.consensus }}</strong></span>{% endif %}
+          </div>
+          {% if ev.impact_note %}<div class="ev-note">{{ ev.impact_note }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ── Game Plan ──────────────────────────────────────── -->
   {% if sections.game_plan %}
   {% set _gp_count = (briefing.game_plan.what_matters | length if briefing.game_plan.what_matters else 0) + (briefing.game_plan.trade_candidates | length if briefing.game_plan.trade_candidates else 0) + (briefing.game_plan.watch_at_open | length if briefing.game_plan.watch_at_open else 0) %}
@@ -1105,6 +1164,39 @@
   {% endif %}
   {% endif %}
 
+  <!-- ── Earnings ───────────────────────────────────────── -->
+  {% if sections.earnings and briefing.earnings_calendar %}
+  {% set _next_earn = (briefing.earnings_calendar | selectattr('date') | sort(attribute='date') | list)[0] if (briefing.earnings_calendar | selectattr('date') | list) else none %}
+  <div class="sec" data-tone="green" id="sec-earnings">
+    <div class="sec-accent"></div>
+    <button class="sec-head" onclick="toggleSection('earnings', this)">
+      <div class="sec-text">
+        <div class="sec-title">Upcoming Earnings</div>
+        <div class="sec-stat num">{{ briefing.earnings_calendar | length }}</div>
+        <div class="sec-stat-sub">{{ 'company' if briefing.earnings_calendar | length == 1 else 'companies' }} · next 14d</div>
+        <div class="sec-preview">{% if _next_earn %}Next: <strong style="color:var(--text)">{{ _next_earn.ticker }}</strong> on {{ _next_earn.date }}{% else %}Calendar across coverage{% endif %}</div>
+      </div>
+      <span class="sec-chev">›</span>
+    </button>
+    <div class="sec-body" id="b-earnings">
+      <div class="earnings-grid">
+        {% for entry in (briefing.earnings_calendar | selectattr('date') | sort(attribute='date')) + (briefing.earnings_calendar | rejectattr('date') | list) %}
+        <div class="earn-card">
+          <div class="earn-top">
+            <div class="earn-ticker">{{ entry.ticker }}</div>
+            <div class="earn-date">{{ entry.date or 'TBD' }}</div>
+          </div>
+          <div class="earn-quarter">{{ entry.quarter or '—' }}</div>
+          <div class="earn-row"><span class="earn-key">EPS Est.</span><span class="earn-val num">{{ "$%.2f"|format(entry.eps_est) if entry.eps_est else '—' }}</span></div>
+          <div class="earn-row"><span class="earn-key">Rev Est.</span><span class="earn-val num">{{ "$%.1fB"|format(entry.revenue_est_bn) if entry.revenue_est_bn else '—' }}</span></div>
+          {% if entry.key_metric %}<div class="earn-metric">{{ entry.key_metric }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ── AI Compute Stack ───────────────────────────────── -->
   {% if sections.ai_stack and ai_stack_layers %}
   {% set _ai_with_chg = ai_stack_layers | selectattr('avg_change_1d') | list %}
@@ -1148,65 +1240,6 @@
         {% endfor %}
       </div>
       {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── Today's Catalysts ──────────────────────────────── -->
-  {% set earnings_today = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
-  {% set econ_today     = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
-  {% set _cat_total = (earnings_today | length) + (econ_today | length) %}
-  {% set _cat_top = earnings_today[0] if earnings_today else (econ_today[0] if econ_today else none) %}
-  {% if sections.catalysts and (earnings_today or econ_today) %}
-  <div class="sec" data-tone="amber" id="sec-catalysts">
-    <div class="sec-accent"></div>
-    <button class="sec-head" onclick="toggleSection('catalysts', this)">
-      <div class="sec-text">
-        <div class="sec-title">Today's Catalysts</div>
-        <div class="sec-stat num">{{ _cat_total }}</div>
-        <div class="sec-stat-sub">{{ earnings_today | length }} earnings · {{ econ_today | length }} macro</div>
-        <div class="sec-preview">{% if _cat_top and _cat_top.event_name %}{{ _cat_top.event_name | truncate(60,True,'…') }}{% else %}Today's market-moving prints{% endif %}</div>
-      </div>
-      <span class="sec-chev">›</span>
-    </button>
-    <div class="sec-body" id="b-catalysts">
-      {% if earnings_today %}
-      <div class="divider">Earnings Today</div>
-      <div class="ev-list" style="margin-bottom:14px;">
-        {% for ev in earnings_today %}
-        <div class="ev-card">
-          <div class="ev-row1">
-            <div class="ev-name">{{ ev.event_name }}</div>
-            <div class="ev-time">{{ 'BMO' if ev.event_type=='earnings_bmo' else 'AMC' }}</div>
-          </div>
-          {% if ev.consensus %}
-          <div class="ev-meta">
-            <span class="ev-stat">EPS Est. <strong>{{ ev.consensus }}</strong></span>
-          </div>
-          {% endif %}
-          {% if ev.impact_note %}<div class="ev-note">{{ ev.impact_note }}</div>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if econ_today %}
-      <div class="divider">Economic Releases</div>
-      <div class="ev-list">
-        {% for ev in econ_today %}
-        <div class="ev-card">
-          <div class="ev-row1">
-            <div class="ev-name">{{ ev.event_name }}</div>
-            {% if ev.timing %}<div class="ev-time">{{ ev.timing }}</div>{% endif %}
-          </div>
-          <div class="ev-meta">
-            {% if ev.prior_value %}<span class="ev-stat">Prior <strong>{{ ev.prior_value }}</strong></span>{% endif %}
-            {% if ev.consensus %}<span class="ev-stat">Cons. <strong>{{ ev.consensus }}</strong></span>{% endif %}
-          </div>
-          {% if ev.impact_note %}<div class="ev-note">{{ ev.impact_note }}</div>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -1354,39 +1387,6 @@
       </div>
       {% endif %}
       {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── Earnings ───────────────────────────────────────── -->
-  {% if sections.earnings and briefing.earnings_calendar %}
-  {% set _next_earn = (briefing.earnings_calendar | selectattr('date') | sort(attribute='date') | list)[0] if (briefing.earnings_calendar | selectattr('date') | list) else none %}
-  <div class="sec" data-tone="green" id="sec-earnings">
-    <div class="sec-accent"></div>
-    <button class="sec-head" onclick="toggleSection('earnings', this)">
-      <div class="sec-text">
-        <div class="sec-title">Upcoming Earnings</div>
-        <div class="sec-stat num">{{ briefing.earnings_calendar | length }}</div>
-        <div class="sec-stat-sub">{{ 'company' if briefing.earnings_calendar | length == 1 else 'companies' }} · next 14d</div>
-        <div class="sec-preview">{% if _next_earn %}Next: <strong style="color:var(--text)">{{ _next_earn.ticker }}</strong> on {{ _next_earn.date }}{% else %}Calendar across coverage{% endif %}</div>
-      </div>
-      <span class="sec-chev">›</span>
-    </button>
-    <div class="sec-body" id="b-earnings">
-      <div class="earnings-grid">
-        {% for entry in (briefing.earnings_calendar | selectattr('date') | sort(attribute='date')) + (briefing.earnings_calendar | rejectattr('date') | list) %}
-        <div class="earn-card">
-          <div class="earn-top">
-            <div class="earn-ticker">{{ entry.ticker }}</div>
-            <div class="earn-date">{{ entry.date or 'TBD' }}</div>
-          </div>
-          <div class="earn-quarter">{{ entry.quarter or '—' }}</div>
-          <div class="earn-row"><span class="earn-key">EPS Est.</span><span class="earn-val num">{{ "$%.2f"|format(entry.eps_est) if entry.eps_est else '—' }}</span></div>
-          <div class="earn-row"><span class="earn-key">Rev Est.</span><span class="earn-val num">{{ "$%.1fB"|format(entry.revenue_est_bn) if entry.revenue_est_bn else '—' }}</span></div>
-          {% if entry.key_metric %}<div class="earn-metric">{{ entry.key_metric }}</div>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
     </div>
   </div>
   {% endif %}
