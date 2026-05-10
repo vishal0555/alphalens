@@ -248,83 +248,140 @@
       color: #0a0e14; box-shadow: 0 4px 14px rgba(94,163,255,.3);
     }
 
-    /* ── Section cards ────────────────────────────── */
+    /* ── Section cards (grid + detail) ─────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 4px 0 14px;
+    }
     .sec {
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 18px;
-      margin-bottom: 10px;
       overflow: hidden;
       position: relative;
-      transition: border-color .25s var(--ease-soft);
+      transition: transform .15s var(--ease-soft),
+                  border-color .25s var(--ease-soft),
+                  box-shadow .25s var(--ease-soft);
     }
-    .sec.open { border-color: rgba(94,163,255,.35); }
+    .sec:active { transform: scale(.98); }
     .sec-accent {
-      position: absolute; top: 0; bottom: 0; left: 0; width: 3px;
-      opacity: 0; transition: opacity .25s var(--ease-soft);
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      opacity: .9;
     }
-    .sec.open .sec-accent { opacity: 1; }
 
     .sec-head {
-      width: 100%; background: none; border: none;
-      padding: 16px 16px 16px 18px;
-      display: flex; align-items: center; gap: 12px;
+      width: 100%; height: 100%;
+      background: none; border: none;
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
       cursor: pointer; text-align: left;
       color: var(--text); font-family: inherit;
       -webkit-tap-highlight-color: transparent;
       transition: background .15s ease;
+      position: relative;
+      min-height: 138px;
     }
     .sec-head:active { background: var(--bg3); }
     .sec-icon-wrap {
-      width: 40px; height: 40px; flex-shrink: 0;
+      width: 38px; height: 38px; flex-shrink: 0;
       border-radius: 11px;
       display: flex; align-items: center; justify-content: center;
       font-size: 20px;
       background: var(--bg3);
       transition: transform .25s var(--ease-spring);
     }
-    .sec.open .sec-icon-wrap { transform: scale(1.05); }
-    .sec-text { flex: 1; min-width: 0; }
-    .sec-title { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
-    .sec-preview {
-      font-size: 13px; color: var(--muted); font-weight: 500;
+    .sec-text { flex: 1; min-width: 0; width: 100%; }
+    .sec-title {
+      font-size: 15px; font-weight: 700;
+      letter-spacing: -.01em; line-height: 1.25;
+    }
+    .sec-stat {
+      font-size: 22px; font-weight: 800;
+      letter-spacing: -.02em; line-height: 1.05;
+      margin-top: 6px; color: var(--text);
+    }
+    .sec-stat-sub {
+      font-size: 11px; font-weight: 600; color: var(--muted);
       margin-top: 2px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      letter-spacing: .2px;
+    }
+    .sec-preview {
+      font-size: 12px; color: var(--muted); font-weight: 500;
+      margin-top: 4px; line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .sec-chev {
+      position: absolute; top: 14px; right: 14px;
       font-size: 18px; color: var(--muted2);
-      flex-shrink: 0; line-height: 1;
+      line-height: 1;
       transition: transform .3s var(--ease-spring), color .2s ease;
     }
-    .sec.open .sec-chev { transform: rotate(90deg); color: var(--accent); }
-
-    .sec-body {
-      max-height: 0; opacity: 0; overflow: hidden;
-      transition: max-height .4s var(--ease-spring),
-                  opacity   .25s ease,
-                  padding   .35s var(--ease-spring);
-      padding: 0 18px;
-    }
-    .sec.open .sec-body {
-      max-height: 8000px; opacity: 1;
-      padding: 4px 18px 22px;
-    }
+    .sec-body { display: none; padding: 0 18px; }
     .sec-divider {
       height: 1px; background: var(--border2);
       margin: 0 -2px 14px;
     }
 
-    /* Per-section accent colors */
+    /* Per-section accent colors (always visible on tile) */
     .sec[data-tone="blue"]   .sec-accent { background: var(--blue); }
     .sec[data-tone="amber"]  .sec-accent { background: var(--amber); }
     .sec[data-tone="green"]  .sec-accent { background: var(--green); }
     .sec[data-tone="purple"] .sec-accent { background: var(--purple); }
     .sec[data-tone="red"]    .sec-accent { background: var(--red); }
-    .sec[data-tone="blue"].open   .sec-icon-wrap { background: var(--blue-bg); }
-    .sec[data-tone="amber"].open  .sec-icon-wrap { background: var(--amber-bg); }
-    .sec[data-tone="green"].open  .sec-icon-wrap { background: var(--green-bg); }
-    .sec[data-tone="purple"].open .sec-icon-wrap { background: var(--purple-bg); }
-    .sec[data-tone="red"].open    .sec-icon-wrap { background: var(--red-bg); }
+    .sec[data-tone="blue"]   .sec-icon-wrap { background: var(--blue-bg);   color: var(--blue); }
+    .sec[data-tone="amber"]  .sec-icon-wrap { background: var(--amber-bg);  color: var(--amber); }
+    .sec[data-tone="green"]  .sec-icon-wrap { background: var(--green-bg);  color: var(--green); }
+    .sec[data-tone="purple"] .sec-icon-wrap { background: var(--purple-bg); color: var(--purple); }
+    .sec[data-tone="red"]    .sec-icon-wrap { background: var(--red-bg);    color: var(--red); }
+
+    /* ── Detail mode (full-screen single section) ──── */
+    body.detail-mode .hero,
+    body.detail-mode .mp-label,
+    body.detail-mode .mp-strip,
+    body.detail-mode .narrative-card,
+    body.detail-mode .footer { display: none; }
+    body.detail-mode .cards-grid {
+      display: block;
+      margin: 0;
+    }
+    body.detail-mode .sec:not(.open) { display: none; }
+    body.detail-mode .sec.open {
+      animation: detailEnter .3s var(--ease-spring);
+      border-color: rgba(94,163,255,.35);
+    }
+    body.detail-mode .sec.open .sec-head {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      min-height: auto;
+      padding: 16px 16px 16px 18px;
+      cursor: default;
+    }
+    body.detail-mode .sec.open .sec-head:active { background: none; }
+    body.detail-mode .sec.open:active { transform: none; }
+    body.detail-mode .sec.open .sec-stat,
+    body.detail-mode .sec.open .sec-stat-sub { display: none; }
+    body.detail-mode .sec.open .sec-preview {
+      -webkit-line-clamp: 1;
+      margin-top: 2px;
+    }
+    body.detail-mode .sec.open .sec-chev { display: none; }
+    body.detail-mode .sec.open .sec-body {
+      display: block;
+      padding: 4px 18px 22px;
+    }
+    @keyframes detailEnter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
 
     /* ── Inside-section helpers ──────────────────── */
     .divider {
@@ -775,7 +832,7 @@
 <!-- ── Top bar ───────────────────────────────────────────── -->
 <div class="top-bar">
   <button class="top-back" id="topBack" onclick="backToOverview()">
-    <span class="top-back-arrow">‹</span> Top
+    <span class="top-back-arrow">‹</span> <span class="top-back-label">Top</span>
   </button>
   <div class="top-title">Briefing</div>
   <div class="top-date" id="topDate">{{ date_str }}</div>
@@ -822,20 +879,6 @@
   </div>
   {% endif %}
 
-  <!-- ── Section nav chips ─────────────────────────────── -->
-  <div class="secnav" id="secnav">
-    {% set _earn = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
-    {% set _econ = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
-    {% set _sig_count_nav = briefing.tickers.values() | selectattr('signal') | list | length %}
-    {% if sections.game_plan %}<button class="secnav-chip" data-target="gameplan" onclick="openSection('gameplan')">Plan</button>{% endif %}
-    {% if sections.signals and _sig_count_nav > 0 %}<button class="secnav-chip" data-target="signals" onclick="openSection('signals')">Trades</button>{% endif %}
-    {% if sections.ai_stack and ai_stack_layers %}<button class="secnav-chip" data-target="aistack" onclick="openSection('aistack')">AI Stack</button>{% endif %}
-    {% if sections.catalysts and (_earn or _econ) %}<button class="secnav-chip" data-target="catalysts" onclick="openSection('catalysts')">Catalysts</button>{% endif %}
-    {% if sections.tickers %}<button class="secnav-chip" data-target="tickers" onclick="openSection('tickers')">Tickers</button>{% endif %}
-    {% if sections.market %}<button class="secnav-chip" data-target="market" onclick="openSection('market')">Macro</button>{% endif %}
-    {% if sections.earnings and briefing.earnings_calendar %}<button class="secnav-chip" data-target="earnings" onclick="openSection('earnings')">Earnings</button>{% endif %}
-  </div>
-
   <!-- ── Narrative (always-visible insight card) ──────── -->
   {% if sections.narrative and narrative_paras %}
   <div class="narrative-card" id="sec-narrative">
@@ -854,16 +897,22 @@
   </div>
   {% endif %}
 
+  <!-- ── Section cards grid ─────────────────────────────── -->
+  <div class="cards-grid">
+
   <!-- ── Game Plan ──────────────────────────────────────── -->
   {% if sections.game_plan %}
   {% set _gp_count = (briefing.game_plan.what_matters | length if briefing.game_plan.what_matters else 0) + (briefing.game_plan.trade_candidates | length if briefing.game_plan.trade_candidates else 0) + (briefing.game_plan.watch_at_open | length if briefing.game_plan.watch_at_open else 0) %}
+  {% set _gp_top = (briefing.game_plan.what_matters or briefing.game_plan.trade_candidates or briefing.game_plan.watch_at_open or [])[0] if (briefing.game_plan.what_matters or briefing.game_plan.trade_candidates or briefing.game_plan.watch_at_open) else none %}
   <div class="sec" data-tone="green" id="sec-gameplan">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('gameplan', this)">
       <div class="sec-icon-wrap">🎯</div>
       <div class="sec-text">
         <div class="sec-title">Game Plan</div>
-        <div class="sec-preview">Today's playbook · {{ _gp_count }} items</div>
+        <div class="sec-stat num">{{ _gp_count }}</div>
+        <div class="sec-stat-sub">{{ 'item' if _gp_count == 1 else 'items' }} today</div>
+        <div class="sec-preview">{% if _gp_top and _gp_top.content %}{{ _gp_top.content | truncate(70,True,'…') }}{% else %}Today's playbook{% endif %}</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -898,6 +947,8 @@
   <!-- ── Today's Trades (Signals) ──────────────────────── -->
   {% if sections.signals %}
   {% set _sig_count = briefing.tickers.values() | selectattr('signal') | list | length %}
+  {% set _longs  = briefing.tickers.values() | selectattr('signal') | selectattr('signal.direction','equalto','Long')  | list | length %}
+  {% set _shorts = briefing.tickers.values() | selectattr('signal') | selectattr('signal.direction','equalto','Short') | list | length %}
   {% if _sig_count > 0 %}
   <div class="sec" data-tone="blue" id="sec-signals">
     <div class="sec-accent"></div>
@@ -905,7 +956,9 @@
       <div class="sec-icon-wrap">⚡</div>
       <div class="sec-text">
         <div class="sec-title">Today's Trades</div>
-        <div class="sec-preview">{{ _sig_count }} active signals · tap to filter</div>
+        <div class="sec-stat num">{{ _sig_count }}</div>
+        <div class="sec-stat-sub"><span class="pos">{{ _longs }} long</span> · <span class="neg">{{ _shorts }} short</span></div>
+        <div class="sec-preview">Active signals across coverage list</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -937,13 +990,22 @@
 
   <!-- ── AI Compute Stack ───────────────────────────────── -->
   {% if sections.ai_stack and ai_stack_layers %}
+  {% set _ai_with_chg = ai_stack_layers | selectattr('avg_change_1d') | list %}
+  {% set _ai_best = (_ai_with_chg | sort(attribute='avg_change_1d') | reverse | list)[0] if _ai_with_chg else none %}
   <div class="sec" data-tone="purple" id="sec-aistack">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('aistack', this)">
       <div class="sec-icon-wrap">🤖</div>
       <div class="sec-text">
         <div class="sec-title">AI Compute Stack</div>
-        <div class="sec-preview">{{ ai_stack_layers | length }} layers · foundries → hyperscalers</div>
+        {% if _ai_best %}
+        <div class="sec-stat num {{ 'pos' if _ai_best.avg_change_1d > 0 else 'neg' if _ai_best.avg_change_1d < 0 else 'flat' }}">{{ "+" if _ai_best.avg_change_1d > 0 }}{{ "%.2f"|format(_ai_best.avg_change_1d) }}%</div>
+        <div class="sec-stat-sub">{{ _ai_best.name }} leads</div>
+        {% else %}
+        <div class="sec-stat num">{{ ai_stack_layers | length }}</div>
+        <div class="sec-stat-sub">layers tracked</div>
+        {% endif %}
+        <div class="sec-preview">Foundries → hyperscalers · {{ ai_stack_layers | length }} layers</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -976,6 +1038,8 @@
   <!-- ── Today's Catalysts ──────────────────────────────── -->
   {% set earnings_today = briefing.catalysts | selectattr('event_type','in',['earnings_bmo','earnings_amc']) | list %}
   {% set econ_today     = briefing.catalysts | selectattr('event_type','equalto','econ_release') | list %}
+  {% set _cat_total = (earnings_today | length) + (econ_today | length) %}
+  {% set _cat_top = earnings_today[0] if earnings_today else (econ_today[0] if econ_today else none) %}
   {% if sections.catalysts and (earnings_today or econ_today) %}
   <div class="sec" data-tone="amber" id="sec-catalysts">
     <div class="sec-accent"></div>
@@ -983,7 +1047,9 @@
       <div class="sec-icon-wrap">⚡</div>
       <div class="sec-text">
         <div class="sec-title">Today's Catalysts</div>
-        <div class="sec-preview">{{ earnings_today | length }} earnings · {{ econ_today | length }} macro print(s)</div>
+        <div class="sec-stat num">{{ _cat_total }}</div>
+        <div class="sec-stat-sub">{{ earnings_today | length }} earnings · {{ econ_today | length }} macro</div>
+        <div class="sec-preview">{% if _cat_top and _cat_top.event_name %}{{ _cat_top.event_name | truncate(60,True,'…') }}{% else %}Today's market-moving prints{% endif %}</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -1033,13 +1099,23 @@
   {% if sections.tickers %}
   {% set _ticker_count = briefing.tickers | length %}
   {% set _signal_count = briefing.tickers.values() | selectattr('signal') | list | length %}
+  {% set _movers = briefing.tickers | dictsort %}
+  {% set _ns_top = namespace(t=none, c=none, abs=-1) %}
+  {% for tk, td in _movers %}{% if td.change_pct_24h is not none and (td.change_pct_24h | abs) > _ns_top.abs %}{% set _ns_top.t = tk %}{% set _ns_top.c = td.change_pct_24h %}{% set _ns_top.abs = td.change_pct_24h | abs %}{% endif %}{% endfor %}
   <div class="sec" data-tone="purple" id="sec-tickers">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('tickers', this)">
       <div class="sec-icon-wrap">🔍</div>
       <div class="sec-text">
         <div class="sec-title">Ticker Desk</div>
-        <div class="sec-preview">{{ _ticker_count }} names · {{ _signal_count }} active signals</div>
+        {% if _ns_top.t %}
+        <div class="sec-stat num {{ 'pos' if _ns_top.c > 0 else 'neg' if _ns_top.c < 0 else 'flat' }}">{{ "+" if _ns_top.c > 0 }}{{ "%.2f"|format(_ns_top.c) }}%</div>
+        <div class="sec-stat-sub">{{ _ns_top.t }} leads moves</div>
+        {% else %}
+        <div class="sec-stat num">{{ _ticker_count }}</div>
+        <div class="sec-stat-sub">names tracked</div>
+        {% endif %}
+        <div class="sec-preview">{{ _ticker_count }} names · {{ _signal_count }} signals · prices &amp; technicals</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -1111,13 +1187,22 @@
   {% if sections.market %}
   {% set _idx_count = briefing.market.indices | length if briefing.market.indices else 0 %}
   {% set _macro_count = briefing.market.macro | length if briefing.market.macro else 0 %}
+  {% set _spx = (briefing.market.indices | selectattr('index_name','equalto','S&P 500') | list)[0] if briefing.market.indices else none %}
+  {% if not _spx and briefing.market.indices %}{% set _spx = (briefing.market.indices | selectattr('region','equalto','US') | list)[0] %}{% endif %}
   <div class="sec" data-tone="blue" id="sec-market">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('market', this)">
       <div class="sec-icon-wrap">📊</div>
       <div class="sec-text">
-        <div class="sec-title">Macro & Rates</div>
-        <div class="sec-preview">Drives long-duration multiples · {{ _idx_count }} indices · {{ _macro_count }} prints</div>
+        <div class="sec-title">Macro &amp; Rates</div>
+        {% if _spx and _spx.change_pct is not none %}
+        <div class="sec-stat num {{ 'pos' if _spx.change_pct > 0 else 'neg' if _spx.change_pct < 0 else 'flat' }}">{{ "+" if _spx.change_pct > 0 }}{{ "%.2f"|format(_spx.change_pct) }}%</div>
+        <div class="sec-stat-sub">{{ _spx.index_name }}</div>
+        {% else %}
+        <div class="sec-stat num">{{ _idx_count + _macro_count }}</div>
+        <div class="sec-stat-sub">data points</div>
+        {% endif %}
+        <div class="sec-preview">{{ _idx_count }} indices · {{ _macro_count }} rates &amp; vol prints</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -1159,13 +1244,16 @@
 
   <!-- ── Earnings ───────────────────────────────────────── -->
   {% if sections.earnings and briefing.earnings_calendar %}
+  {% set _next_earn = (briefing.earnings_calendar | selectattr('date') | sort(attribute='date') | list)[0] if (briefing.earnings_calendar | selectattr('date') | list) else none %}
   <div class="sec" data-tone="green" id="sec-earnings">
     <div class="sec-accent"></div>
     <button class="sec-head" onclick="toggleSection('earnings', this)">
       <div class="sec-icon-wrap">📅</div>
       <div class="sec-text">
         <div class="sec-title">Upcoming Earnings</div>
-        <div class="sec-preview">{{ briefing.earnings_calendar | length }} companies · next 14 days</div>
+        <div class="sec-stat num">{{ briefing.earnings_calendar | length }}</div>
+        <div class="sec-stat-sub">{{ 'company' if briefing.earnings_calendar | length == 1 else 'companies' }} · next 14d</div>
+        <div class="sec-preview">{% if _next_earn %}Next: <strong style="color:var(--text)">{{ _next_earn.ticker }}</strong> on {{ _next_earn.date }}{% else %}Calendar across coverage{% endif %}</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -1196,7 +1284,14 @@
       <div class="sec-icon-wrap">⚙️</div>
       <div class="sec-text">
         <div class="sec-title">Run Info</div>
-        <div class="sec-preview">{{ briefing.meta.model if briefing.meta else '—' }}{% if briefing.tokens and briefing.tokens.cost_usd %} · ${{ "%.4f"|format(briefing.tokens.cost_usd) }}{% endif %}</div>
+        {% if briefing.tokens and briefing.tokens.cost_usd %}
+        <div class="sec-stat num">${{ "%.4f"|format(briefing.tokens.cost_usd) }}</div>
+        <div class="sec-stat-sub">est. cost</div>
+        {% elif briefing.tokens and briefing.tokens.total_tokens %}
+        <div class="sec-stat num">{{ "{:,}".format(briefing.tokens.total_tokens) }}</div>
+        <div class="sec-stat-sub">tokens</div>
+        {% endif %}
+        <div class="sec-preview">{{ briefing.meta.model if briefing.meta else '—' }}{% if briefing.meta and briefing.meta.mode %} · {{ briefing.meta.mode | upper }}{% endif %}</div>
       </div>
       <span class="sec-chev">›</span>
     </button>
@@ -1214,6 +1309,8 @@
     </div>
   </div>
   {% endif %}
+
+  </div><!-- /cards-grid -->
 
   <div class="footer">
     AI-generated for informational purposes only. Not investment advice.<br>
@@ -1244,61 +1341,66 @@
   }
 })();
 
-// ── Section open/close (single-open behavior) ─────────
+// ── Card → detail navigation ──────────────────────────
+let _overviewScrollY = 0;
+
 function toggleSection(id, headEl) {
   const sec = document.getElementById('sec-' + id);
   if (!sec) return;
-  const isOpen = sec.classList.contains('open');
-  // close all
-  document.querySelectorAll('.sec.open').forEach(s => s.classList.remove('open'));
-  document.querySelectorAll('.secnav-chip.active').forEach(c => c.classList.remove('active'));
-  if (!isOpen) {
-    sec.classList.add('open');
-    const chip = document.querySelector('.secnav-chip[data-target="' + id + '"]');
-    if (chip) chip.classList.add('active');
-    // Smooth scroll the section header into view (offset for top bar)
-    setTimeout(() => {
-      const r = sec.getBoundingClientRect();
-      const top = window.scrollY + r.top - 64;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }, 50);
+  if (sec.classList.contains('open')) {
+    backToOverview();
+  } else {
+    openSection(id);
   }
-  updateBackButton();
 }
 
 function openSection(id) {
   const sec = document.getElementById('sec-' + id);
   if (!sec) return;
+  if (!document.body.classList.contains('detail-mode')) {
+    _overviewScrollY = window.scrollY;
+  }
   document.querySelectorAll('.sec.open').forEach(s => s.classList.remove('open'));
-  document.querySelectorAll('.secnav-chip.active').forEach(c => c.classList.remove('active'));
   sec.classList.add('open');
-  const chip = document.querySelector('.secnav-chip[data-target="' + id + '"]');
-  if (chip) chip.classList.add('active');
-  setTimeout(() => {
-    const r = sec.getBoundingClientRect();
-    const top = window.scrollY + r.top - 64;
-    window.scrollTo({ top, behavior: 'smooth' });
-  }, 50);
+  document.body.classList.add('detail-mode');
+  const titleEl = sec.querySelector('.sec-title');
+  if (titleEl) document.querySelector('.top-title').textContent = titleEl.textContent;
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
   updateBackButton();
 }
 
 function backToOverview() {
   document.querySelectorAll('.sec.open').forEach(s => s.classList.remove('open'));
-  document.querySelectorAll('.secnav-chip.active').forEach(c => c.classList.remove('active'));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.body.classList.remove('detail-mode');
+  document.querySelector('.top-title').textContent = 'Briefing';
+  window.scrollTo({ top: _overviewScrollY || 0, behavior: 'smooth' });
+  _overviewScrollY = 0;
   updateBackButton();
 }
 
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('detail-mode')) {
+    backToOverview();
+  }
+});
+
 function updateBackButton() {
-  const anyOpen = document.querySelector('.sec.open');
+  const detail = document.body.classList.contains('detail-mode');
   const scrolled = window.scrollY > 240;
   const back = document.getElementById('topBack');
+  const backLabel = back.querySelector('.top-back-label');
   const float = document.getElementById('floatTop');
-  if (anyOpen || scrolled) {
+  if (detail) {
     back.classList.add('show');
+    if (backLabel) backLabel.textContent = 'Back';
+    float.classList.remove('show');
+  } else if (scrolled) {
+    back.classList.remove('show');
+    if (backLabel) backLabel.textContent = 'Top';
     float.classList.add('show');
   } else {
     back.classList.remove('show');
+    if (backLabel) backLabel.textContent = 'Top';
     float.classList.remove('show');
   }
 }
