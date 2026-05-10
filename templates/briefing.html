@@ -220,13 +220,7 @@
       font-size: 10px; font-weight: 700;
       margin-top: 1px; line-height: 1;
     }
-    .hmt::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-      height: 2px;
-    }
-    .hmt.pos::after  { background: var(--green); }
-    .hmt.neg::after  { background: var(--red); }
-    .hmt.flat::after { background: var(--border); }
+    /* hero macro tile direction stripe removed */
     .hero-more {
       display: block;
       width: 100%;
@@ -279,13 +273,7 @@
       font-size: 14px; font-weight: 700;
       letter-spacing: -.02em;
     }
-    .mp-glow {
-      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-      opacity: .85;
-    }
-    .mp-glow-pos  { background: var(--green); }
-    .mp-glow-neg  { background: var(--red); }
-    .mp-glow-flat { background: var(--border); }
+    .mp-glow { display: none; }
 
     /* ── Section nav (sticky chip strip) ──────────── */
     .secnav {
@@ -334,10 +322,7 @@
                   box-shadow .25s var(--ease-soft);
     }
     .sec:active { transform: scale(.98); }
-    .sec-accent {
-      position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      opacity: .9;
-    }
+    .sec-accent { display: none; }
 
     .sec-head {
       width: 100%; height: 100%;
@@ -400,12 +385,7 @@
       margin: 0 -2px 14px;
     }
 
-    /* Per-section accent colors (always visible on tile) */
-    .sec[data-tone="blue"]   .sec-accent { background: var(--blue); }
-    .sec[data-tone="amber"]  .sec-accent { background: var(--amber); }
-    .sec[data-tone="green"]  .sec-accent { background: var(--green); }
-    .sec[data-tone="purple"] .sec-accent { background: var(--purple); }
-    .sec[data-tone="red"]    .sec-accent { background: var(--red); }
+    /* Per-section icon tints (boundary stripes removed) */
     .sec[data-tone="blue"]   .sec-icon-wrap { background: var(--blue-bg);   color: var(--blue); }
     .sec[data-tone="amber"]  .sec-icon-wrap { background: var(--amber-bg);  color: var(--amber); }
     .sec[data-tone="green"]  .sec-icon-wrap { background: var(--green-bg);  color: var(--green); }
