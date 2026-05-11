@@ -195,6 +195,7 @@
       min-width: 0;
     }
     .hmt:active { transform: scale(.96); background: rgba(255,255,255,.09); }
+    .hmt-wide { grid-column: 1 / -1; }
     .hmt-label {
       font-size: 10px; font-weight: 800; letter-spacing: 1px;
       text-transform: uppercase; color: var(--muted);
@@ -896,13 +897,14 @@
   <!-- ── Hero (compact: date left, macro quadrant right) ─ -->
   {% set _macros  = briefing.market.macro or [] %}
   {% set _indices = briefing.market.indices or [] %}
-  {% set _ns = namespace(treasury=none, gold=none, oil=none, spy=none) %}
+  {% set _ns = namespace(treasury=none, gold=none, oil=none, spy=none, vix=none) %}
   {% for m in _macros %}
     {% set _ind = (m.indicator or '') | lower %}
     {% if _ns.treasury is none and ('10y' in _ind or '10-year' in _ind or '10 year' in _ind or 'treasury' in _ind or 'us10' in _ind) %}{% set _ns.treasury = m %}{% endif %}
     {% if _ns.gold is none and 'gold' in _ind %}{% set _ns.gold = m %}{% endif %}
     {% if _ns.oil is none and ('oil' in _ind or 'wti' in _ind or 'crude' in _ind or 'brent' in _ind) %}{% set _ns.oil = m %}{% endif %}
     {% if _ns.spy is none and ('s&p' in _ind or 'spx' in _ind or 'spy' in _ind or 's & p' in _ind) %}{% set _ns.spy = m %}{% endif %}
+    {% if _ns.vix is none and ('vix' in _ind or 'volatility' in _ind) %}{% set _ns.vix = m %}{% endif %}
   {% endfor %}
   {% if _ns.spy is none %}
     {% for idx in _indices %}
@@ -976,6 +978,18 @@
           {% endif %}
         {% else %}
           <button class="hmt flat" onclick="openSection('market')"><div class="hmt-label">SPY</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
+        {% endif %}
+
+        {% if _ns.vix %}
+          {% set m = _ns.vix %}
+          {% set tone = 'pos' if m.change_pct is not none and m.change_pct > 0 else 'neg' if m.change_pct is not none and m.change_pct < 0 else 'flat' %}
+          <button class="hmt hmt-wide {{ tone }}" onclick="openSection('market')">
+            <div class="hmt-label">VIX</div>
+            <div class="hmt-value num">{{ "%.2f"|format(m.value) }}</div>
+            {% if m.change_pct is not none %}<div class="hmt-chg num {{ tone }}">{{ "+" if m.change_pct > 0 }}{{ "%.2f"|format(m.change_pct) }}%</div>{% else %}<div class="hmt-chg flat">—</div>{% endif %}
+          </button>
+        {% else %}
+          <button class="hmt hmt-wide flat" onclick="openSection('market')"><div class="hmt-label">VIX</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
         {% endif %}
       </div>
     </div>
