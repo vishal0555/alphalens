@@ -170,10 +170,10 @@
     .pill-live { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
     .pill-mock { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
 
-    /* Hero macro: 2x2 quadrant on the right side */
+    /* Hero macro: 3x2 quadrant on the right side */
     .hero-right {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       grid-auto-rows: 1fr;
       gap: 6px;
       min-width: 0;
@@ -181,8 +181,8 @@
     .hmt {
       background: rgba(255,255,255,.06);
       border: none;
-      border-radius: 13px;
-      padding: 11px 12px 12px;
+      border-radius: 11px;
+      padding: 9px 10px 10px;
       text-align: left;
       cursor: pointer;
       position: relative;
@@ -195,20 +195,19 @@
       min-width: 0;
     }
     .hmt:active { transform: scale(.96); background: rgba(255,255,255,.09); }
-    .hmt-wide { grid-column: 1 / -1; }
     .hmt-label {
-      font-size: 10px; font-weight: 800; letter-spacing: 1px;
+      font-size: 9px; font-weight: 800; letter-spacing: .8px;
       text-transform: uppercase; color: var(--muted);
       white-space: nowrap;
     }
     .hmt-value {
-      font-size: 17px; font-weight: 800;
+      font-size: 15px; font-weight: 800;
       letter-spacing: -.01em;
       margin-top: 3px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .hmt-chg {
-      font-size: 12px; font-weight: 700;
+      font-size: 11px; font-weight: 700;
       margin-top: 2px; line-height: 1;
     }
     /* hero macro tile direction stripe removed */
@@ -916,6 +915,9 @@
     <div class="hero-eyebrow">
       <span class="live-dot"></span>
       AlphaLens · Daily Briefing
+      {% if briefing.meta and briefing.meta.mode %}
+      <span class="hero-meta-pill {{ 'pill-live' if briefing.meta.mode == 'live' else 'pill-mock' }}">{{ briefing.meta.mode | upper }}</span>
+      {% endif %}
     </div>
     <div class="hero-body">
       <div class="hero-left">
@@ -924,14 +926,11 @@
           <div class="hero-date num" id="heroDate">{{ date_str }}</div>
           <div class="hero-year num" id="heroYear">—</div>
         </div>
+        {% if briefing.meta and briefing.meta.model %}
         <div class="hero-meta">
-          {% if briefing.meta and briefing.meta.mode %}
-          <span class="hero-meta-pill {{ 'pill-live' if briefing.meta.mode == 'live' else 'pill-mock' }}">{{ briefing.meta.mode | upper }}</span>
-          {% endif %}
-          {% if briefing.meta and briefing.meta.model %}
           <span class="hero-meta-item">{{ briefing.meta.model }}</span>
-          {% endif %}
         </div>
+        {% endif %}
       </div>
 
       <div class="hero-right">
@@ -960,14 +959,6 @@
           <button class="hmt flat" onclick="openSection('market')"><div class="hmt-label">Gold</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
         {% endif %}
 
-        {% if _ns.oil %}
-          {% set m = _ns.oil %}
-          {% set _val = ('$' if m.unit != '%' else '') ~ ("%.2f"|format(m.value)) ~ ('%' if m.unit == '%' else '') %}
-          {{ hmt('Oil', _val, m.change_pct) }}
-        {% else %}
-          <button class="hmt flat" onclick="openSection('market')"><div class="hmt-label">Oil</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
-        {% endif %}
-
         {% if _ns.spy %}
           {% if _ns.spy.close_level %}
             {{ hmt('SPY', "{:,.0f}".format(_ns.spy.close_level), _ns.spy.change_pct) }}
@@ -982,14 +973,18 @@
 
         {% if _ns.vix %}
           {% set m = _ns.vix %}
-          {% set tone = 'pos' if m.change_pct is not none and m.change_pct > 0 else 'neg' if m.change_pct is not none and m.change_pct < 0 else 'flat' %}
-          <button class="hmt hmt-wide {{ tone }}" onclick="openSection('market')">
-            <div class="hmt-label">VIX</div>
-            <div class="hmt-value num">{{ "%.2f"|format(m.value) }}</div>
-            {% if m.change_pct is not none %}<div class="hmt-chg num {{ tone }}">{{ "+" if m.change_pct > 0 }}{{ "%.2f"|format(m.change_pct) }}%</div>{% else %}<div class="hmt-chg flat">—</div>{% endif %}
-          </button>
+          {% set _val = ("%.2f"|format(m.value)) %}
+          {{ hmt('VIX', _val, m.change_pct) }}
         {% else %}
-          <button class="hmt hmt-wide flat" onclick="openSection('market')"><div class="hmt-label">VIX</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
+          <button class="hmt flat" onclick="openSection('market')"><div class="hmt-label">VIX</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
+        {% endif %}
+
+        {% if _ns.oil %}
+          {% set m = _ns.oil %}
+          {% set _val = ('$' if m.unit != '%' else '') ~ ("%.2f"|format(m.value)) ~ ('%' if m.unit == '%' else '') %}
+          {{ hmt('Oil', _val, m.change_pct) }}
+        {% else %}
+          <button class="hmt flat" onclick="openSection('market')"><div class="hmt-label">Oil</div><div class="hmt-value">—</div><div class="hmt-chg flat">—</div></button>
         {% endif %}
       </div>
     </div>
