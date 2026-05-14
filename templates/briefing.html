@@ -692,6 +692,84 @@
       display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
     }
 
+    /* ── Fill entry (manual trade keying) ───────────── */
+    .sig-card-wrap { display: flex; flex-direction: column; }
+    .fill-toggle {
+      align-self: flex-end;
+      margin: 4px 4px 0 0;
+      font-size: 11px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .fill-toggle:hover { color: var(--accent); border-color: var(--accent); }
+    .fill-form {
+      display: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 10px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .fill-form.open { display: flex; }
+    .fill-form select,
+    .fill-form input[type="number"],
+    .fill-form input[type="text"] {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .fill-form input[type="number"] { width: 88px; }
+    .fill-form input[type="text"] { flex: 1; min-width: 140px; }
+    .fill-form select { padding-right: 22px; }
+    .fill-form .fill-save {
+      background: var(--accent); color: #0a0e14;
+      border: none; border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer;
+    }
+    .fill-form .fill-save:hover { filter: brightness(1.1); }
+
+    /* ── Today's fills recap table ──────────────────── */
+    .trades-recap { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .trades-recap-head {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .trades-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .trades-table th {
+      text-align: left; padding: 6px 8px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .8px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .trades-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .trades-table .num { font-variant-numeric: tabular-nums; }
+    .side-long  { color: var(--green); font-weight: 700; }
+    .side-short { color: var(--red);   font-weight: 700; }
+    .side-close { color: var(--muted); font-weight: 700; }
+    .trade-del {
+      background: transparent; border: none;
+      color: var(--muted); cursor: pointer;
+      font-size: 14px; padding: 0 4px;
+    }
+    .trade-del:hover { color: var(--red); }
+
     /* ── Game plan ────────────────────────────────── */
     .gp-section {
       border: 1px solid rgba(255,255,255,.07); border-radius: 12px;
@@ -1152,17 +1230,64 @@
       </div>
       <div class="sig-list" id="signal-list">
         {% for ticker, td in briefing.tickers.items() %}{% if td.signal %}
-        <a class="sig-card" data-signal="{{ td.signal.direction }}" href="javascript:void(0)" onclick="openSection('tickers');switchTab('{{ ticker }}');">
-          <div class="sig-card-tk">{{ ticker }}</div>
-          <div class="sig-card-prc num">${{ "%.2f"|format(td.price) if td.price else '—' }}</div>
-          <div class="sig-card-pct num {{ 'pos' if td.change_pct_24h and td.change_pct_24h > 0 else 'neg' if td.change_pct_24h and td.change_pct_24h < 0 else '' }}">{% if td.change_pct_24h is not none %}{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%{% else %}—{% endif %}</div>
-          <div class="sig-card-bd">
-            <span class="badge sig-{{ td.signal.direction }}">{{ td.signal.direction }}</span>
-            <span class="badge conv-{{ td.signal.conviction }}">{{ td.signal.conviction }}</span>
-          </div>
-        </a>
+        {% set _default_side = 'long' if td.signal.direction == 'Long' else ('short' if td.signal.direction == 'Short' else 'long') %}
+        <div class="sig-card-wrap" data-signal="{{ td.signal.direction }}">
+          <a class="sig-card" href="javascript:void(0)" onclick="openSection('tickers');switchTab('{{ ticker }}');">
+            <div class="sig-card-tk">{{ ticker }}</div>
+            <div class="sig-card-prc num">${{ "%.2f"|format(td.price) if td.price else '—' }}</div>
+            <div class="sig-card-pct num {{ 'pos' if td.change_pct_24h and td.change_pct_24h > 0 else 'neg' if td.change_pct_24h and td.change_pct_24h < 0 else '' }}">{% if td.change_pct_24h is not none %}{{ "+" if td.change_pct_24h > 0 }}{{ "%.2f"|format(td.change_pct_24h) }}%{% else %}—{% endif %}</div>
+            <div class="sig-card-bd">
+              <span class="badge sig-{{ td.signal.direction }}">{{ td.signal.direction }}</span>
+              <span class="badge conv-{{ td.signal.conviction }}">{{ td.signal.conviction }}</span>
+            </div>
+          </a>
+          <button type="button" class="fill-toggle" onclick="toggleFillForm('{{ ticker }}')">+ Log fill</button>
+          <form id="fill-form-{{ ticker }}" class="fill-form" method="POST" action="{{ url_for('log_trade', row_id=briefing_id) }}">
+            <input type="hidden" name="ticker" value="{{ ticker }}"/>
+            <select name="side" aria-label="Side">
+              <option value="long"  {% if _default_side == 'long'  %}selected{% endif %}>Long</option>
+              <option value="short" {% if _default_side == 'short' %}selected{% endif %}>Short</option>
+              <option value="close">Close</option>
+            </select>
+            <input name="qty" type="number" step="any" min="0" required placeholder="Qty"/>
+            <input name="fill_price" type="number" step="any" min="0" required placeholder="Price"
+                   value="{{ '%.2f' | format(td.price) if td.price else '' }}"/>
+            <input name="notes" type="text" maxlength="200" placeholder="Notes (optional)"/>
+            <button type="submit" class="fill-save">Save</button>
+          </form>
+        </div>
         {% endif %}{% endfor %}
       </div>
+
+      {# ── Today's fills recap ─────────────────────────── #}
+      {% if manual_trades %}
+      <div class="trades-recap">
+        <div class="trades-recap-head">Today's fills · {{ manual_trades | length }}</div>
+        <table class="trades-table">
+          <thead>
+            <tr><th>Time</th><th>Ticker</th><th>Side</th><th>Qty</th><th>Price</th><th>Notes</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for t in manual_trades %}
+            <tr>
+              <td class="num" style="color:var(--muted);">{{ t.filled_at.strftime('%H:%M') if t.filled_at else '—' }}</td>
+              <td style="font-weight:700;">{{ t.ticker }}</td>
+              <td><span class="side-{{ t.side }}">{{ t.side | upper }}</span></td>
+              <td class="num">{{ "%g"|format(t.qty) }}</td>
+              <td class="num">${{ "%.2f"|format(t.fill_price) }}</td>
+              <td style="color:var(--muted);">{{ t.notes or '' }}</td>
+              <td style="text-align:right;">
+                <form method="POST" action="{{ url_for('delete_trade', row_id=briefing_id, trade_id=t.id) }}" style="display:inline;"
+                      onsubmit="return confirm('Delete this fill?');">
+                  <button type="submit" class="trade-del" title="Delete">×</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -1314,8 +1439,6 @@
           {% if td.technicals and td.technicals.rsi is not none %}<div class="stat-box"><div class="stat-label">RSI-14</div><div class="stat-value num">{{ td.technicals.rsi }}</div></div>{% endif %}
           {% if td.technicals and td.technicals.above_50ma is not none %}<div class="stat-box"><div class="stat-label">50-day MA</div><div class="stat-value {{ 'ma-above' if td.technicals.above_50ma else 'ma-below' }}" style="font-size:15px;">{{ '▲ Above' if td.technicals.above_50ma else '▼ Below' }}</div></div>{% endif %}
           {% if td.technicals and td.technicals.above_200ma is not none %}<div class="stat-box"><div class="stat-label">200-day MA</div><div class="stat-value {{ 'ma-above' if td.technicals.above_200ma else 'ma-below' }}" style="font-size:15px;">{{ '▲ Above' if td.technicals.above_200ma else '▼ Below' }}</div></div>{% endif %}
-          {% if td.analyst and td.analyst.rating %}<div class="stat-box"><div class="stat-label">Consensus</div><div class="stat-value" style="font-size:14px;">{{ td.analyst.rating }}</div></div>{% endif %}
-          {% if td.analyst and td.analyst.target %}<div class="stat-box"><div class="stat-label">Price Target</div><div class="stat-value num">${{ "%.0f"|format(td.analyst.target) }}</div>{% if td.analyst.upside_pct is not none %}<div class="stat-sub num {{ 'pos' if td.analyst.upside_pct > 0 else 'neg' }}">{{ "+" if td.analyst.upside_pct > 0 }}{{ "%.0f"|format(td.analyst.upside_pct) }}% upside</div>{% endif %}</div>{% endif %}
           {% if td.signal and td.signal.entry_low %}<div class="stat-box"><div class="stat-label">Entry Zone</div><div class="stat-value num" style="font-size:15px;">${{ "%.0f"|format(td.signal.entry_low) }}–{{ "%.0f"|format(td.signal.entry_high) }}</div></div>{% endif %}
         </div>
 
@@ -1329,7 +1452,10 @@
           {% endfor %}
         </div>
         {% endif %}
-        {% if td.narrative %}<div class="narrative">{{ td.narrative }}</div>{% endif %}
+
+        {% if td.signal and td.signal.direction in ['Neutral','Watchlist'] %}
+        <div class="news-summary" style="font-style:italic;margin-top:6px;">{{ td.signal.rationale }}</div>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
@@ -1541,9 +1667,23 @@ function switchTab(ticker) {
 function filterSignals(sig, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.querySelectorAll('#signal-list .sig-card').forEach(card => {
+  document.querySelectorAll('#signal-list .sig-card-wrap').forEach(card => {
     card.style.display = (sig === 'all' || card.dataset.signal === sig) ? '' : 'none';
   });
+}
+
+// ── Manual trade entry ──────────────────────────────
+function toggleFillForm(ticker) {
+  const form = document.getElementById('fill-form-' + ticker);
+  if (!form) return;
+  const wasOpen = form.classList.contains('open');
+  // Collapse any other open forms to keep the list tidy.
+  document.querySelectorAll('.fill-form.open').forEach(f => f.classList.remove('open'));
+  if (!wasOpen) {
+    form.classList.add('open');
+    const qtyInput = form.querySelector('input[name="qty"]');
+    if (qtyInput) qtyInput.focus();
+  }
 }
 </script>
 </body>

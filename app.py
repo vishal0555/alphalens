@@ -341,14 +341,58 @@ def briefing_view(row_id: int):
     ]
     date_str = (briefing.meta.date or "") if briefing.meta else ""
 
+    manual_trades = _db.list_manual_trades(row_id) or []
+
     return render_template(
         "briefing.html",
         briefing=briefing,
+        briefing_id=row_id,
         date_str=date_str,
         sections=sections,
         ai_stack_layers=ai_stack_layers,
         narrative_paras=narrative_paras,
+        manual_trades=manual_trades,
     )
+
+
+# ── Manual trade entry ─────────────────────────────────────────────────────────
+
+_VALID_SIDES = {"long", "short", "close"}
+
+
+@app.route("/briefing/<int:row_id>/trade", methods=["POST"])
+@_login_required
+def log_trade(row_id: int):
+    """Record a manually-keyed fill against this briefing."""
+    # Verify the briefing exists (and DB is up) before writing.
+    if _db.get_briefing(row_id) in (None, False):
+        abort(404)
+
+    ticker = (request.form.get("ticker") or "").strip().upper()
+    side   = (request.form.get("side") or "").strip().lower()
+    qty_raw   = (request.form.get("qty") or "").strip()
+    price_raw = (request.form.get("fill_price") or "").strip()
+    notes  = (request.form.get("notes") or "").strip() or None
+
+    if not ticker or side not in _VALID_SIDES:
+        abort(400)
+    try:
+        qty = float(qty_raw)
+        fill_price = float(price_raw)
+    except ValueError:
+        abort(400)
+    if qty <= 0 or fill_price <= 0:
+        abort(400)
+
+    _db.insert_manual_trade(row_id, ticker, side, qty, fill_price, notes)
+    return redirect(url_for("briefing_view", row_id=row_id) + "#sec-signals")
+
+
+@app.route("/briefing/<int:row_id>/trade/<int:trade_id>/delete", methods=["POST"])
+@_login_required
+def delete_trade(row_id: int, trade_id: int):
+    _db.delete_manual_trade(trade_id, row_id)
+    return redirect(url_for("briefing_view", row_id=row_id) + "#sec-signals")
 
 
 @app.route("/signal/latest")
