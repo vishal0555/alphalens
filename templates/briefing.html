@@ -304,6 +304,51 @@
     .sec.sec-wide .sec-preview { -webkit-line-clamp: 3; }
     /* Cards routed to detail-only (no tile in grid) */
     body:not(.detail-mode) .sec.sec-hidden { display: none; }
+
+    /* ── PM-first ordering: lead with playbook + actionable ── */
+    /* The cards-grid renders Narrative→Catalysts→Game Plan→Signals→Earnings→Stack
+       in source order. Reorder visually so the morning read starts with the
+       decision-relevant sections; deeper context drops below the fold. */
+    #sec-gameplan  { order: 1; }
+    #sec-signals   { order: 2; }
+    #sec-catalysts { order: 3; }
+    #sec-narrative { order: 4; }
+    #sec-earnings  { order: 5; }
+    #sec-aistack   { order: 6; }
+
+    /* Top-priority cards span both columns on desktop so the preview line
+       has room to breathe (Morning Narrative is already sec-wide). */
+    #sec-gameplan,
+    #sec-signals { grid-column: 1 / -1; }
+    #sec-gameplan .sec-head,
+    #sec-signals .sec-head { min-height: 140px; }
+    #sec-gameplan .sec-preview,
+    #sec-signals .sec-preview { -webkit-line-clamp: 3; }
+
+    /* ── Phone (≤600px): single column, tighter card heads, hero stacks ── */
+    @media (max-width: 600px) {
+      .hero { padding: 14px 16px; margin: 8px 0 12px; }
+      .hero-body { grid-template-columns: 1fr; gap: 12px; }
+      .hero-date { font-size: 26px; }
+      .hero-right { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .hmt { padding: 8px 9px 9px; min-width: 0; }
+      .hmt-label { font-size: 9px; letter-spacing: .8px; }
+      .hmt-value { font-size: 13px; }
+      .hmt-chg   { font-size: 10px; }
+
+      .mp-card { min-width: 96px; padding: 10px 14px 11px; }
+      .mp-tick { font-size: 13px; }
+      .mp-chg  { font-size: 15px; }
+
+      .cards-grid { grid-template-columns: 1fr; gap: 12px; margin: 12px 0 20px; }
+      .sec-head { min-height: 118px; padding: 14px 14px 14px; gap: 11px; }
+      #sec-gameplan .sec-head,
+      #sec-signals  .sec-head,
+      .sec.sec-wide .sec-head { min-height: 126px; }
+      .sec-stat     { font-size: 26px; margin-top: 8px; }
+      .sec-stat-sub { font-size: 12px; }
+      .sec-preview  { font-size: 13px; margin-top: 9px; -webkit-line-clamp: 3; }
+    }
     .sec {
       background: rgba(255,255,255,.045);
       border: none;
