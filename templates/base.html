@@ -169,28 +169,16 @@
     .layer-pill.device      { background: rgba(255,159,10,.20);  color: var(--orange); }
     .layer-pill.sovereign   { background: rgba(255,255,255,.10); color: var(--text); }
 
-    /* Layer-tinted big cards (full background + accent stripe) */
-    .layer-card { padding: 22px 22px; position: relative; }
-    .layer-card::before {
-      content: "";
-      position: absolute; top: 0; bottom: 0; left: 0; width: 4px;
-    }
+    /* Layer-tinted big cards (full background, no accent stripe) */
+    .layer-card { padding: 22px 22px; }
     .layer-card.silicon     { background: linear-gradient(135deg, rgba(255,214,10,.10) 0%, transparent 70%); }
-    .layer-card.silicon::before     { background: var(--yellow); }
     .layer-card.hyperscaler { background: linear-gradient(135deg, rgba(10,132,255,.12) 0%, transparent 70%); }
-    .layer-card.hyperscaler::before { background: var(--accent); }
     .layer-card.power       { background: linear-gradient(135deg, rgba(191,90,242,.12) 0%, transparent 70%); }
-    .layer-card.power::before       { background: var(--purple); }
     .layer-card.infra       { background: linear-gradient(135deg, rgba(48,209,88,.10) 0%, transparent 70%); }
-    .layer-card.infra::before       { background: var(--green); }
     .layer-card.model_lab   { background: linear-gradient(135deg, rgba(255,55,95,.12) 0%, transparent 70%); }
-    .layer-card.model_lab::before   { background: var(--pink); }
     .layer-card.application { background: linear-gradient(135deg, rgba(90,200,250,.12) 0%, transparent 70%); }
-    .layer-card.application::before { background: var(--teal); }
     .layer-card.device      { background: linear-gradient(135deg, rgba(255,159,10,.12) 0%, transparent 70%); }
-    .layer-card.device::before      { background: var(--orange); }
     .layer-card.sovereign   { background: linear-gradient(135deg, rgba(255,255,255,.06) 0%, transparent 70%); }
-    .layer-card.sovereign::before   { background: var(--muted); }
 
     /* ── Bottom nav (4 tabs after dropping /morning) ───── */
     .bottom-nav {

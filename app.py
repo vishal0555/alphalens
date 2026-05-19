@@ -136,10 +136,12 @@ def _short_dt(s):
 
 # ── Routes ──────────────────────────────────────────────────────────────────
 
-# Display order for AI-stack layers (most compute-heavy first → most peripheral).
+# Display order for the AI stack — from the user-facing top down to the
+# foundational compute / power layers. Sovereign (non-US exposure) is an
+# orthogonal axis so it tails the list.
 _LAYER_ORDER = [
-    "silicon", "hyperscaler", "model_lab", "infra",
-    "power", "application", "device", "sovereign",
+    "application", "device", "model_lab", "hyperscaler",
+    "infra", "power", "silicon", "sovereign",
 ]
 
 
