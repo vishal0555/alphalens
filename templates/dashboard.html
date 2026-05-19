@@ -4,40 +4,45 @@
 {% block head %}
 <style>
   .nav-block {
-    background: var(--bg2);
+    background: linear-gradient(180deg, var(--bg2) 0%, var(--bg3) 100%);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 18px 16px;
-    margin-bottom: 12px;
+    border-radius: 18px;
+    padding: 28px 24px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.30);
   }
-  .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
-  .nav-value { font-size: 34px; font-weight: 800; margin-top: 4px; line-height: 1.1; }
-  .nav-pnl   { font-size: 14px; font-weight: 700; margin-top: 6px; }
-  .nav-meta  { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .nav-label { font-size: 12px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
+  .nav-value { font-size: 56px; font-weight: 800; margin-top: 6px; line-height: 1.05; letter-spacing: -.025em; }
+  .nav-pnl   { font-size: 20px; font-weight: 800; margin-top: 12px; letter-spacing: -.01em; }
+  .nav-pnl .ago { color: var(--muted); font-size: 13px; font-weight: 600; margin-left: 8px; letter-spacing: 0; }
+  .nav-meta  { font-size: 13px; color: var(--muted); margin-top: 8px; }
 
-  .thesis { padding: 12px 16px; font-size: 13px; line-height: 1.6; }
-  .regime-line { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .thesis { padding: 18px 20px; font-size: 16px; line-height: 1.6; }
+  .regime-line { font-size: 14px; color: var(--muted); padding: 0 20px 16px; line-height: 1.55; }
+  .regime-line strong { color: var(--text); }
 
   .uni-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    padding: 12px;
+    gap: 12px;
+    padding: 16px;
   }
   .uni-tile {
     background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 12px;
-    display: flex; flex-direction: column; gap: 4px;
+    border-radius: 12px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+    transition: border-color .15s;
   }
   .uni-tile .top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-  .uni-tile .weight { font-size: 13px; font-weight: 800; }
+  .uni-tile .ticker { font-size: 18px; }
+  .uni-tile .weight { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
 
-  .risk { padding: 8px 12px; background: var(--amber-bg); border: 1px solid var(--amber-bd); border-left: 3px solid var(--amber); border-radius: 6px; font-size: 12px; margin: 6px 16px; }
+  .risk { padding: 12px 16px; background: var(--amber-bg); border: 1px solid var(--amber-bd); border-left: 4px solid var(--amber); border-radius: 8px; font-size: 14px; line-height: 1.5; margin: 8px 20px; }
 
-  .lesson { padding: 8px 16px; border-bottom: 1px solid var(--border2); font-size: 12px; line-height: 1.5; }
+  .lesson { padding: 14px 20px; border-bottom: 1px solid var(--border2); font-size: 14px; line-height: 1.55; }
   .lesson:last-child { border-bottom: none; }
   .lesson .when { color: var(--muted); font-style: italic; }
-  .lesson .scope-tag { display: inline-block; padding: 1px 6px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-right: 6px; }
+  .lesson .scope-tag { display: inline-block; padding: 3px 9px; border-radius: 9px; background: var(--bg3); border: 1px solid var(--border); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-right: 8px; }
 </style>
 {% endblock %}
 
@@ -64,7 +69,7 @@
     {% set pct = (pnl / nav.starting_nav * 100) if nav.starting_nav else None %}
     <div class="nav-pnl num {{ pnl | pnl_class }}">
       {{ pnl | signed_money }}{% if pct is not none %} · {{ pct | signed_pct }}{% endif %}
-      <span class="muted" style="font-size:11px; font-weight:500; margin-left:6px;">last session</span>
+      <span class="ago">last session</span>
     </div>
     <div class="nav-meta">
       {% if nav.seed %}
@@ -139,7 +144,7 @@
     {% for it in items %}
     <div class="row">
       <div class="row-main">
-        <span><span class="ticker">{{ it.ticker }}</span> <span class="muted num" style="font-size:11px;">×{{ it.size_shares }}</span></span>
+        <span><span class="ticker" style="font-size:17px;">{{ it.ticker }}</span> <span class="muted num" style="font-size:14px;">×{{ it.size_shares }}</span></span>
         <span class="row-meta">
           <span class="item-status {{ it.status }}">{{ it.status }}</span>
         </span>
@@ -147,9 +152,9 @@
       <div class="row-right">
         {% if it.entry_fill_price and it.exit_fill_price %}
           {% set pnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
-          <span class="num {{ pnl | pnl_class }}">{{ pnl | signed_money }}</span>
+          <span class="num {{ pnl | pnl_class }}" style="font-size:18px; font-weight:800;">{{ pnl | signed_money }}</span>
         {% elif it.entry_fill_price %}
-          <span class="num muted">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
+          <span class="num muted" style="font-size:15px;">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
         {% else %}
           <span class="muted num">—</span>
         {% endif %}
@@ -157,9 +162,9 @@
     </div>
     {% endfor %}
     {% if realised is not none %}
-    <div class="row" style="background: var(--bg3); padding: 11px 16px; border-top: 1px solid var(--border);">
-      <div class="row-main"><strong>Realised PnL</strong></div>
-      <div class="row-right"><span class="num {{ realised | pnl_class }}" style="font-weight: 700;">{{ realised | signed_money }}</span></div>
+    <div class="row" style="background: var(--bg3); padding: 16px 20px; border-top: 1px solid var(--border);">
+      <div class="row-main"><strong style="font-size:15px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:800;">Realised P&amp;L</strong></div>
+      <div class="row-right"><span class="num {{ realised | pnl_class }}" style="font-weight: 800; font-size:22px; letter-spacing:-.01em;">{{ realised | signed_money }}</span></div>
     </div>
     {% endif %}
   </div>
