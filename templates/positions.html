@@ -3,22 +3,54 @@
 
 {% block head %}
 <style>
-  .item { padding: 12px 16px; border-bottom: 1px solid var(--border2); }
-  .item:last-child { border-bottom: none; }
-  .item-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .item-name { font-size: 14px; }
-  .item-meta { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
-  .item-rat  { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-  .pnl-pill { font-size: 13px; font-weight: 700; }
-
-  .summary-strip {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
-    background: var(--border); border-radius: 12px; overflow: hidden;
-    margin-bottom: 12px;
+  /* Card-per-position with iOS news vibe */
+  .item-card { padding: 18px 20px; }
+  .item-card + .item-card { border-top: 1px solid var(--border); }
+  .item-top {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 8px; margin-bottom: 10px;
   }
-  .summary-cell { background: var(--bg2); padding: 12px 8px; text-align: center; }
-  .summary-cell .label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .summary-cell .val { font-size: 18px; font-weight: 800; margin-top: 4px; }
+  .item-ticker { font-size: 28px; color: var(--text); }
+
+  .levels {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+    background: rgba(255,255,255,.08);
+    border-radius: 14px; overflow: hidden;
+    margin-top: 12px;
+  }
+  .level { background: rgba(255,255,255,.04); padding: 12px 10px; text-align: center; }
+  .level .l { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+  .level .v { font-size: 17px; font-weight: 800; margin-top: 4px; letter-spacing: -.02em; }
+  .level.stop .v   { color: var(--red); }
+  .level.target .v { color: var(--green); }
+
+  .fills {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+    font-size: 14px; line-height: 1.5;
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+  .fills .l { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+
+  .ctx {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    font-size: 14px; color: var(--text-2); line-height: 1.55;
+  }
+  .ctx .l { display: block; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+  .ctx .l:first-child { margin-top: 0; }
+
+  .pnl-badge {
+    display: inline-flex; align-items: baseline; gap: 8px;
+    padding: 8px 14px; border-radius: 100px;
+    font-size: 20px; font-weight: 800; letter-spacing: -.01em;
+  }
+  .pnl-badge.pos { background: rgba(48,209,88,.18);  color: var(--green); }
+  .pnl-badge.neg { background: rgba(255,69,58,.18);  color: var(--red); }
+  .pnl-badge.flat { background: rgba(255,255,255,.08); color: var(--muted); }
+  .pnl-badge .pct { font-size: 13px; font-weight: 700; }
 </style>
 {% endblock %}
 
@@ -30,9 +62,9 @@
 </div>
 
 {% if not session_hdr %}
-<div class="card"><div class="card-body empty-state">
+<div class="card"><div class="card-pad empty-state">
   <div class="empty-icon">◈</div>
-  No trading session.
+  No trading session yet.
 </div></div>
 {% else %}
 
@@ -41,71 +73,97 @@
 {% set lost    = items | selectattr('status', 'equalto', 'exited_stop')   | list %}
 {% set nofill  = items | selectattr('status', 'equalto', 'expired')       | list %}
 
-<div class="summary-strip">
-  <div class="summary-cell">
-    <div class="label">Realised</div>
-    <div class="num val {{ realised | pnl_class }}">
+<div class="stat-strip">
+  <div class="stat-cell">
+    <div class="lbl">Realised</div>
+    <div class="num v {{ realised | pnl_class }}">
       {% if realised is not none %}{{ realised | signed_money }}{% else %}—{% endif %}
     </div>
   </div>
-  <div class="summary-cell">
-    <div class="label">Wins / Losses</div>
-    <div class="num val"><span class="pos">{{ won|length }}</span> / <span class="neg">{{ lost|length }}</span></div>
+  <div class="stat-cell">
+    <div class="lbl">Win / Loss</div>
+    <div class="num v"><span class="pos">{{ won|length }}</span> / <span class="neg">{{ lost|length }}</span></div>
   </div>
-  <div class="summary-cell">
-    <div class="label">Open / No-fill</div>
-    <div class="num val">{{ filled|length }} / {{ nofill|length }}</div>
+  <div class="stat-cell">
+    <div class="lbl">Open / Unfilled</div>
+    <div class="num v">{{ filled|length }} / {{ nofill|length }}</div>
   </div>
 </div>
 
+{# Optional posture chip (from briefing) #}
+{% if briefing %}
+<div style="display: flex; gap: 8px; align-items: center; margin: 4px 4px 18px; font-size: 13px; color: var(--muted);">
+  <span class="badge {{ briefing.plan.posture }}">{{ briefing.plan.posture }}</span>
+  <span>{{ briefing.plan.session_thesis[:120] }}{% if briefing.plan.session_thesis|length > 120 %}…{% endif %}</span>
+</div>
+{% endif %}
+
+{% for it in items %}
+  {% set pb = playbooks.get(it.ticker) %}
 <div class="card">
-  <div class="card-header">
-    <span class="card-label">Items</span>
-    <span class="card-sub">{{ items|length }} total ·
-      {% if session_hdr.status == 'completed' %}<span class="badge" style="background: var(--green-bg); color: var(--green); border-color: var(--green-bd);">complete</span>
-      {% elif session_hdr.status == 'cancelled' %}<span class="badge" style="background: var(--bg3); color: var(--muted); border-color: var(--border);">cancelled</span>
-      {% else %}<span class="badge" style="background: rgba(88,166,255,.10); color: var(--accent); border-color: rgba(88,166,255,.30);">active</span>{% endif %}
-    </span>
-  </div>
-  <div class="card-body tight">
-    {% for it in items %}
-    <div class="item">
-      <div class="item-top">
-        <span class="item-name">
-          <span class="ticker">{{ it.ticker }}</span>
-          <span class="muted num" style="font-size: 11px;">×{{ it.size_shares }}</span>
-          <span class="item-status {{ it.status }}" style="margin-left: 4px;">{{ it.status }}</span>
-        </span>
-        {% if it.entry_fill_price and it.exit_fill_price %}
-          {% set pnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
-          {% set pnl_pct = ((it.exit_fill_price - it.entry_fill_price) / it.entry_fill_price * 100) if it.entry_fill_price else None %}
-          <span class="num pnl-pill {{ pnl | pnl_class }}">
-            {{ pnl | signed_money }}{% if pnl_pct is not none %} <span style="font-weight: 500; font-size: 11px;">({{ pnl_pct | signed_pct }})</span>{% endif %}
-          </span>
-        {% endif %}
+  <div class="item-card">
+    <div class="item-top">
+      <div>
+        <span class="ticker ticker-blue item-ticker">{{ it.ticker }}</span>
+        <span class="muted num" style="font-size: 14px; margin-left: 4px;">×{{ it.size_shares }}</span>
       </div>
-      <div class="item-meta">
-        <span class="num">entry {{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</span>
-        <span class="num neg">stop {{ '%.2f'|format(it.stop) }}</span>
-        <span class="num pos">tgt {{ '%.2f'|format(it.target) }}</span>
-      </div>
-      {% if it.entry_fill_price %}
-      <div class="item-meta">
-        <span>entry fill <span class="num">${{ '%.2f'|format(it.entry_fill_price) }}</span></span>
-        {% if it.exit_fill_price %}
-          <span>exit <span class="num">${{ '%.2f'|format(it.exit_fill_price) }}</span>
-            {% if it.exit_reason %}<span class="muted">({{ it.exit_reason }})</span>{% endif %}
-          </span>
-        {% endif %}
-      </div>
-      {% endif %}
-      {% if it.rationale %}
-      <div class="item-rat">{{ it.rationale }}</div>
+      {% if it.entry_fill_price and it.exit_fill_price %}
+        {% set pnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
+        {% set pnl_pct = ((it.exit_fill_price - it.entry_fill_price) / it.entry_fill_price * 100) if it.entry_fill_price else None %}
+        <div class="num pnl-badge {{ pnl | pnl_class }}">
+          {{ pnl | signed_money }}
+          {% if pnl_pct is not none %}<span class="pct">{{ pnl_pct | signed_pct }}</span>{% endif %}
+        </div>
+      {% else %}
+        <span class="item-status {{ it.status }}">{{ it.status }}</span>
       {% endif %}
     </div>
-    {% endfor %}
+
+    {# status + action row #}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <span class="item-status {{ it.status }}">{{ it.status }}</span>
+      {% if pb %}<span class="action {{ pb.recommended_action }}">{{ pb.recommended_action }}</span>{% endif %}
+      {% if pb %}<span class="layer-pill {{ pb.layer }}">{{ pb.layer }} · {{ '%.0f'|format(pb.weight_pct) }}%</span>{% endif %}
+    </div>
+
+    <div class="levels">
+      <div class="level">
+        <div class="l">Entry</div>
+        <div class="num v">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</div>
+      </div>
+      <div class="level stop">
+        <div class="l">Stop</div>
+        <div class="num v">{{ '%.2f'|format(it.stop) }}</div>
+      </div>
+      <div class="level target">
+        <div class="l">Target</div>
+        <div class="num v">{{ '%.2f'|format(it.target) }}</div>
+      </div>
+    </div>
+
+    {% if it.entry_fill_price %}
+    <div class="fills">
+      <span><span class="l">Entry</span><span class="num">${{ '%.2f'|format(it.entry_fill_price) }}</span></span>
+      {% if it.exit_fill_price %}
+      <span><span class="l">Exit</span><span class="num">${{ '%.2f'|format(it.exit_fill_price) }}</span>
+        {% if it.exit_reason %}<span class="muted">({{ it.exit_reason }})</span>{% endif %}
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if pb and (pb.catalyst or pb.technicals or pb.action_rationale) %}
+    <div class="ctx">
+      {% if pb.catalyst %}<span class="l">Catalyst</span>{{ pb.catalyst }}{% endif %}
+      {% if pb.technicals %}<span class="l">Technicals</span>{{ pb.technicals }}{% endif %}
+      {% if pb.action_rationale %}<span class="l">Action</span>{{ pb.action_rationale }}{% endif %}
+    </div>
+    {% elif it.rationale %}
+    <div class="ctx">{{ it.rationale }}</div>
+    {% endif %}
   </div>
 </div>
+{% endfor %}
 
 {% endif %}
 

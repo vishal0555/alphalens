@@ -3,60 +3,141 @@
 
 {% block head %}
 <style>
-  .nav-block {
-    background: linear-gradient(180deg, var(--bg2) 0%, var(--bg3) 100%);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 32px 28px 28px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.32);
+  /* ── NAV hero ──────────────────────────────────────── */
+  .nav-hero {
+    position: relative;
+    padding: 28px 26px 24px;
+    overflow: hidden;
   }
-  .nav-label { font-size: 14px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
-  .nav-value { font-size: 72px; font-weight: 800; margin-top: 8px; line-height: 1; letter-spacing: -.035em; }
-  .nav-pnl   { font-size: 24px; font-weight: 800; margin-top: 14px; letter-spacing: -.01em; }
-  .nav-pnl .ago { color: var(--muted); font-size: 15px; font-weight: 600; margin-left: 10px; letter-spacing: 0; }
-  .nav-meta  { font-size: 14px; color: var(--muted); margin-top: 10px; }
-
-  .thesis { padding: 22px 22px; font-size: 19px; line-height: 1.55; }
-  .regime-line { font-size: 16px; color: var(--muted); padding: 0 22px 18px; line-height: 1.55; }
-  .regime-line strong { color: var(--text); }
-
-  /* ── Grouped universe sections ───────────────────────── */
-  .uni-section { padding: 0; border-top: 1px solid var(--border2); }
-  .uni-section:first-child { border-top: none; }
-  .uni-section-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px 8px;
+  .nav-hero .label {
+    font-size: 13px; font-weight: 800; letter-spacing: 1.4px;
+    text-transform: uppercase; color: rgba(255,255,255,.55);
   }
-  .uni-section-head .lhs { display: flex; align-items: center; gap: 10px; }
-  .uni-section-head .layer { font-size: 16px; padding: 6px 14px; border-radius: 14px; }
-  .uni-section-head .total {
-    font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-variant-numeric: tabular-nums;
-    font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: var(--text);
+  .nav-hero .big {
+    font-size: 76px; font-weight: 800; line-height: 1;
+    letter-spacing: -.04em; margin-top: 8px;
   }
-  .uni-section-head .count { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .nav-hero .pnl {
+    font-size: 22px; font-weight: 800; letter-spacing: -.01em;
+    margin-top: 14px;
+  }
+  .nav-hero .pnl .ago {
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,.55);
+    margin-left: 10px; letter-spacing: 0; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .nav-hero .meta { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 6px; }
 
-  .uni-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 4px 14px 16px;
+  /* Subtle decorative sparkline behind the number */
+  .nav-hero svg.bg {
+    position: absolute; right: -10px; bottom: -10px;
+    width: 70%; height: 70%;
+    opacity: .25;
+  }
+
+  /* ── Posture / thesis tinted card ──────────────────── */
+  .posture-card .head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .posture-card .thesis {
+    font-size: 19px; font-weight: 500; line-height: 1.5;
+    color: rgba(255,255,255,.92); letter-spacing: -.01em;
+  }
+  .posture-card .regime {
+    font-size: 14px; line-height: 1.55;
+    color: rgba(255,255,255,.55); margin-top: 14px;
+    padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08);
+  }
+  .posture-card .regime strong { color: rgba(255,255,255,.85); font-weight: 700; }
+
+  /* Risks pill row inside posture */
+  .risks-strip { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .risk-pill {
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255,159,10,.12);
+    border: 1px solid rgba(255,159,10,.25);
+    font-size: 14px; line-height: 1.45; color: rgba(255,255,255,.92);
+  }
+
+  /* ── Universe section (one card per layer) ────────── */
+  .uni-card {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .uni-card .head {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .uni-card .head .lhs { display: flex; align-items: center; gap: 12px; }
+  .uni-card .head .lhs .total {
+    font-size: 15px; font-weight: 700;
+    color: rgba(255,255,255,.7);
+  }
+  .uni-card .head .count {
+    font-size: 13px; color: var(--muted); font-weight: 600;
+  }
+  .uni-card .tiles {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
   }
   .uni-tile {
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 14px; padding: 16px 18px;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
   }
-  .uni-tile .ticker { font-size: 22px; }
-  .uni-tile .weight { font-size: 22px; font-weight: 800; letter-spacing: -.015em; }
+  .uni-tile .ticker { font-size: 20px; color: var(--text); }
+  .uni-tile .weight {
+    font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    color: var(--text);
+  }
 
-  .risk { padding: 14px 18px; background: var(--amber-bg); border: 1px solid var(--amber-bd); border-left: 5px solid var(--amber); border-radius: 10px; font-size: 16px; line-height: 1.5; margin: 8px 22px; }
+  /* ── Position card (news-card style) ───────────────── */
+  .pos-card {
+    padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+  }
+  .pos-card + .pos-card { border-top: 1px solid var(--border); }
+  .pos-card .lhs { min-width: 0; flex: 1; }
+  .pos-card .ticker { font-size: 22px; color: var(--text); }
+  .pos-card .meta { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pos-card .pnl { font-size: 22px; font-weight: 800; letter-spacing: -.02em; text-align: right; }
+  .pos-card .pnl .pct { display: block; font-size: 12px; font-weight: 600; margin-top: 2px; color: var(--muted); }
+  .pos-card .ph { font-size: 14px; color: var(--muted); }
 
-  .lesson { padding: 16px 22px; border-bottom: 1px solid var(--border2); font-size: 16px; line-height: 1.55; }
-  .lesson:last-child { border-bottom: none; }
-  .lesson .when { color: var(--muted); font-style: italic; }
-  .lesson .scope-tag { display: inline-block; padding: 4px 11px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-right: 8px; }
+  .book-footer {
+    padding: 18px 22px;
+    background: rgba(255,255,255,.04);
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .book-footer .label {
+    font-size: 12px; font-weight: 800; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .book-footer .val {
+    font-size: 26px; font-weight: 800; letter-spacing: -.02em;
+  }
+
+  /* ── Lesson quote bubble ─────────────────────────── */
+  .lesson-card {
+    padding: 16px 20px;
+    position: relative;
+  }
+  .lesson-card + .lesson-card { border-top: 1px solid var(--border); }
+  .lesson-card .top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .lesson-card .scope {
+    font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 3px 9px; border-radius: 100px;
+    background: rgba(255,255,255,.10); color: var(--muted);
+  }
+  .lesson-card .when { font-size: 13px; color: var(--muted); font-style: italic; }
+  .lesson-card .guidance { font-size: 16px; color: var(--text); line-height: 1.5; }
+
+  /* Tap-affordance link */
+  .row-link { display: block; color: inherit; text-decoration: none; }
+  .row-link:active { background: rgba(255,255,255,.04); }
 </style>
 {% endblock %}
 
@@ -68,155 +149,159 @@
 </div>
 
 {% if not db_ok %}
-<div class="card"><div class="card-body empty-state">
+<div class="card"><div class="card-pad empty-state">
   <div class="empty-icon">⚠</div>
-  Database unreachable. Check NEON_DATABASE_URL.
+  Database unreachable.
 </div></div>
 {% endif %}
 
-{# ─── NAV block ─────────────────────────────────────── #}
-<div class="nav-block">
-  <div class="nav-label">Fund NAV</div>
-  <div class="num nav-value">{{ (nav.ending_nav if nav else None) | money2 }}</div>
-  {% if nav %}
-    {% set pnl = nav.realised_pnl %}
-    {% set pct = (pnl / nav.starting_nav * 100) if nav.starting_nav else None %}
-    <div class="nav-pnl num {{ pnl | pnl_class }}">
-      {{ pnl | signed_money }}{% if pct is not none %} · {{ pct | signed_pct }}{% endif %}
+{# ─── NAV hero (color-tinted by today's PnL) ─────────── #}
+{% if nav %}
+  {% set pnl = nav.realised_pnl %}
+  {% set tint = 'tint-green' if pnl > 0 else ('tint-red' if pnl < 0 else 'tint-slate') %}
+<div class="card {{ tint }}">
+  <div class="nav-hero">
+    {# decorative sparkline-ish wave behind #}
+    <svg class="bg" viewBox="0 0 200 80" preserveAspectRatio="none">
+      <path d="M0,60 Q40,20 80,40 T160,30 T200,50 L200,80 L0,80 Z"
+            fill="{% if pnl > 0 %}rgba(48,209,88,.5){% elif pnl < 0 %}rgba(255,69,58,.5){% else %}rgba(255,255,255,.15){% endif %}"/>
+    </svg>
+    <div class="label">Fund NAV</div>
+    <div class="num big">{{ nav.ending_nav | money2 }}</div>
+    <div class="num pnl {{ pnl | pnl_class }}">
+      {{ pnl | signed_money }}{% set pct = (pnl / nav.starting_nav * 100) if nav.starting_nav else None %}{% if pct is not none %} · {{ pct | signed_pct }}{% endif %}
       <span class="ago">last session</span>
     </div>
-    <div class="nav-meta">
-      {% if nav.seed %}
-        Seed value — no session marks yet.
-      {% else %}
-        Marked at close of {{ nav.as_of_date }} · started at {{ nav.starting_nav | money }}
-      {% endif %}
+    <div class="meta">
+      {% if nav.seed %}Seed value — no session marks yet.
+      {% else %}marked at close · {{ nav.as_of_date }} · started {{ nav.starting_nav | money }}{% endif %}
     </div>
-  {% endif %}
-</div>
-
-{# ─── Posture + thesis ────────────────────────────────── #}
-{% if briefing %}
-<div class="card">
-  <div class="card-header">
-    <span class="card-label">Today's posture</span>
-    <span><span class="badge {{ briefing.plan.posture }}">{{ briefing.plan.posture }}</span></span>
   </div>
-  <div class="card-body">
+</div>
+{% endif %}
+
+{# ─── Posture card (tinted by posture) ─────────────────── #}
+{% if briefing %}
+  {% set posture = briefing.plan.posture %}
+  {% set p_tint = 'tint-green' if posture == 'aggressive' else ('tint-red' if posture == 'defensive' else 'tint-blue') %}
+<div class="card {{ p_tint }}">
+  <div class="card-pad posture-card">
+    <div class="head">
+      <div class="eyebrow on-tint">Today's Posture</div>
+      <span class="badge {{ posture }}">{{ posture }}</span>
+    </div>
     <div class="thesis">{{ briefing.plan.session_thesis }}</div>
     {% if briefing.plan.regime_summary %}
-    <div class="regime-line" style="padding: 0 16px 12px;">
-      <strong style="color: var(--text);">Regime:</strong> {{ briefing.plan.regime_summary }}
-    </div>
+    <div class="regime"><strong>Regime:</strong> {{ briefing.plan.regime_summary }}</div>
     {% endif %}
     {% if briefing.plan.risks_today %}
-    <div style="padding-top: 4px; padding-bottom: 6px;">
-    {% for r in briefing.plan.risks_today %}
-      <div class="risk">{{ r }}</div>
-    {% endfor %}
+    <div class="risks-strip">
+      {% for r in briefing.plan.risks_today[:3] %}
+      <div class="risk-pill">⚠ {{ r }}</div>
+      {% endfor %}
     </div>
     {% endif %}
   </div>
 </div>
 {% endif %}
 
-{# ─── Universe — grouped by AI-stack layer ─────────────── #}
+{# ─── Universe — one tinted card PER LAYER ─────────────── #}
 {% if universe_groups %}
+<div class="topbar" style="margin-top: 28px;">
+  <h1 style="font-size: 26px;">Universe</h1>
+  <a href="/universe" class="sub" style="color: var(--accent); text-decoration: none;">{{ universe.picks|length }} picks · detail →</a>
+</div>
+
+{% for g in universe_groups %}
 <div class="card">
-  <div class="card-header">
-    <span class="card-label">Universe · {{ universe.picks|length }} picks</span>
-    <span class="card-sub">{{ universe_groups|length }} layers · <a href="/universe" style="color: var(--accent); text-decoration: none;">detail →</a></span>
-  </div>
-  <div class="card-body tight">
-    {% for g in universe_groups %}
-    <div class="uni-section">
-      <div class="uni-section-head">
-        <div class="lhs">
-          <span class="layer {{ g.layer }}">{{ g.layer }}</span>
-          <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
-        </div>
-        <span class="total">{{ '%.0f'|format(g.total_weight) }}%</span>
+  <div class="layer-card {{ g.layer }} uni-card">
+    <div class="head">
+      <div class="lhs">
+        <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
+        <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
       </div>
-      <div class="uni-grid">
-        {% for p in g.picks %}
-        <div class="uni-tile">
-          <span class="ticker">{{ p.ticker }}</span>
-          <span class="num weight">{{ '%.0f'|format(p.weight_pct) }}%</span>
-        </div>
-        {% endfor %}
-      </div>
+      <span class="num total">{{ '%.0f'|format(g.total_weight) }}% of book</span>
     </div>
-    {% endfor %}
+    <div class="tiles">
+      {% for p in g.picks %}
+      <div class="uni-tile">
+        <span class="ticker">{{ p.ticker }}</span>
+        <span class="num weight">{{ '%.0f'|format(p.weight_pct) }}%</span>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
+{% endfor %}
 {% endif %}
 
-{# ─── Today's book (positions summary) ───────────────────── #}
+{# ─── Today's book ──────────────────────────────────── #}
 {% if items %}
+<div class="topbar" style="margin-top: 28px;">
+  <h1 style="font-size: 26px;">Book</h1>
+  <a href="/positions" class="sub" style="color: var(--accent); text-decoration: none;">{{ items|length }} items · detail →</a>
+</div>
+
 <div class="card">
-  <div class="card-header">
-    <span class="card-label">Today's book</span>
-    <span class="card-sub">
-      session
-      {% if session_hdr.status == 'completed' %}<span class="badge" style="background: var(--green-bg); color: var(--green); border-color: var(--green-bd);">complete</span>
-      {% elif session_hdr.status == 'cancelled' %}<span class="badge" style="background: var(--bg3); color: var(--muted); border-color: var(--border);">cancelled</span>
-      {% else %}<span class="badge" style="background: rgba(88,166,255,.10); color: var(--accent); border-color: rgba(88,166,255,.30);">active</span>{% endif %}
-      · <a href="/positions" style="color: var(--accent); text-decoration: none;">detail →</a>
-    </span>
-  </div>
-  <div class="card-body tight">
-    {% for it in items %}
-    <div class="row">
-      <div class="row-main">
-        <span><span class="ticker" style="font-size:17px;">{{ it.ticker }}</span> <span class="muted num" style="font-size:14px;">×{{ it.size_shares }}</span></span>
-        <span class="row-meta">
+  {% for it in items %}
+  <a href="/positions" class="row-link">
+    <div class="pos-card">
+      <div class="lhs">
+        <div><span class="ticker ticker-blue">{{ it.ticker }}</span> <span class="muted num" style="font-size:13px;">×{{ it.size_shares }}</span></div>
+        <div class="meta">
           <span class="item-status {{ it.status }}">{{ it.status }}</span>
-        </span>
+        </div>
       </div>
-      <div class="row-right">
-        {% if it.entry_fill_price and it.exit_fill_price %}
-          {% set pnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
-          <span class="num {{ pnl | pnl_class }}" style="font-size:18px; font-weight:800;">{{ pnl | signed_money }}</span>
-        {% elif it.entry_fill_price %}
-          <span class="num muted" style="font-size:15px;">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
-        {% else %}
-          <span class="muted num">—</span>
-        {% endif %}
-      </div>
+      {% if it.entry_fill_price and it.exit_fill_price %}
+        {% set pnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
+        {% set pnl_pct = ((it.exit_fill_price - it.entry_fill_price) / it.entry_fill_price * 100) if it.entry_fill_price else None %}
+        <div class="pnl num {{ pnl | pnl_class }}">
+          {{ pnl | signed_money }}
+          {% if pnl_pct is not none %}<span class="pct">{{ pnl_pct | signed_pct }}</span>{% endif %}
+        </div>
+      {% elif it.entry_fill_price %}
+        <div class="ph num">@ {{ '%.2f'|format(it.entry_fill_price) }}</div>
+      {% else %}
+        <div class="ph">—</div>
+      {% endif %}
     </div>
-    {% endfor %}
-    {% if realised is not none %}
-    <div class="row" style="background: var(--bg3); padding: 16px 20px; border-top: 1px solid var(--border);">
-      <div class="row-main"><strong style="font-size:15px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:800;">Realised P&amp;L</strong></div>
-      <div class="row-right"><span class="num {{ realised | pnl_class }}" style="font-weight: 800; font-size:22px; letter-spacing:-.01em;">{{ realised | signed_money }}</span></div>
-    </div>
-    {% endif %}
+  </a>
+  {% endfor %}
+
+  {% if realised is not none %}
+  <div class="book-footer">
+    <div class="label">Realised today</div>
+    <div class="num val {{ realised | pnl_class }}">{{ realised | signed_money }}</div>
   </div>
+  {% endif %}
 </div>
 {% endif %}
 
-{# ─── Recent lessons ──────────────────────────────────── #}
+{# ─── Lessons ──────────────────────────────────────── #}
 {% if lessons %}
+<div class="topbar" style="margin-top: 28px;">
+  <h1 style="font-size: 26px;">Lessons</h1>
+  <a href="/debriefs" class="sub" style="color: var(--accent); text-decoration: none;">all →</a>
+</div>
+
 <div class="card">
-  <div class="card-header">
-    <span class="card-label">Recent lessons</span>
-    <span class="card-sub">fed to tomorrow's Scout</span>
-  </div>
-  <div class="card-body tight">
-    {% for l in lessons %}
-    <div class="lesson">
-      <span class="ticker">{{ l.ticker }}</span> <span class="scope-tag">{{ l.scope }}</span>
-      <span class="when">when {{ l.applies_when }}</span> <span class="muted">→</span> {{ l.guidance }}
+  {% for l in lessons %}
+  <div class="lesson-card">
+    <div class="top">
+      <span class="ticker ticker-blue" style="font-size:14px;">{{ l.ticker }}</span>
+      <span class="scope">{{ l.scope }}</span>
     </div>
-    {% endfor %}
+    <div class="when">when {{ l.applies_when }}</div>
+    <div class="guidance">→ {{ l.guidance }}</div>
   </div>
+  {% endfor %}
 </div>
 {% endif %}
 
 {% if db_ok and not briefing and not universe %}
-<div class="card"><div class="card-body empty-state">
+<div class="card"><div class="card-pad empty-state">
   <div class="empty-icon">◌</div>
-  No fund data yet. Run <code>./run.sh daily</code> on the alphalab host.
+  No fund data yet. Run <code>./run.sh daily</code>.
 </div></div>
 {% endif %}
 

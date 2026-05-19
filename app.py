@@ -219,17 +219,6 @@ def universe_page():
     )
 
 
-@app.route("/morning")
-@_login_required
-def morning_page():
-    briefing = _db.fetch_current_briefing()
-    return render_template(
-        "morning.html",
-        active="morning",
-        briefing=briefing,
-    )
-
-
 @app.route("/positions")
 @_login_required
 def positions_page():
@@ -240,13 +229,32 @@ def positions_page():
         items = _db.fetch_session_items(str(session_hdr["plan_id"]))
         pnl = _db.session_pnl_summary(str(session_hdr["plan_id"]))
         realised = pnl["realised_pnl"] if pnl else None
+
+    # Pair each plan item with its playbook (if the morning has been built).
+    # The playbook carries the catalyst / technicals / recommended_action that
+    # explain *why* this item was on the plan in the first place.
+    briefing = _db.fetch_current_briefing()
+    playbooks_by_ticker = {}
+    if briefing and isinstance(briefing, dict):
+        for pb in (briefing.get("plan", {}).get("playbooks") or []):
+            playbooks_by_ticker[pb["ticker"]] = pb
+
     return render_template(
         "positions.html",
         active="positions",
         session_hdr=session_hdr,
         items=items or [],
         realised=realised,
+        playbooks=playbooks_by_ticker,
+        briefing=briefing,
     )
+
+
+# /morning kept as a redirect so any bookmark or tab survives the merge.
+@app.route("/morning")
+@_login_required
+def morning_redirect():
+    return redirect(url_for("positions_page"))
 
 
 @app.route("/debriefs")

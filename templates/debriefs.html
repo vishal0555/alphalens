@@ -3,12 +3,17 @@
 
 {% block head %}
 <style>
-  .db-item { display: block; padding: 12px 16px; border-bottom: 1px solid var(--border2); color: var(--text); text-decoration: none; }
-  .db-item:last-child { border-bottom: none; }
-  .db-item:active { background: var(--bg3); }
-  .db-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .db-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .db-verdict { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .db-card { padding: 16px 20px; display: block; color: inherit; text-decoration: none; }
+  .db-card + .db-card { border-top: 1px solid var(--border); }
+  .db-card:active { background: rgba(255,255,255,.04); }
+  .db-top {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin-bottom: 6px;
+  }
+  .db-top .ticker { font-size: 22px; color: var(--text); }
+  .db-pnl { font-size: 22px; font-weight: 800; letter-spacing: -.02em; text-align: right; }
+  .db-meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .db-verdict { font-size: 15px; line-height: 1.55; color: var(--text-2); margin-top: 10px; }
 </style>
 {% endblock %}
 
@@ -20,36 +25,32 @@
 </div>
 
 {% if not debriefs %}
-<div class="card"><div class="card-body empty-state">
+<div class="card"><div class="card-pad empty-state">
   <div class="empty-icon">◐</div>
   No debriefs yet. They auto-fire when a session completes.
 </div></div>
 {% else %}
 <div class="card">
-  <div class="card-body tight">
-    {% for d in debriefs %}
-    <a href="/debrief/{{ d.debrief_id }}" class="db-item">
-      <div class="db-top">
-        <span>
-          <span class="ticker" style="font-size: 14px;">{{ d.ticker }}</span>
-          <span class="muted" style="font-size: 11px; margin-left: 4px;">{{ d.side }}</span>
-          <span class="outcome {{ d.outcome }}" style="margin-left: 6px;">{{ d.outcome }}</span>
-        </span>
-        <span class="num" style="font-size: 13px; font-weight: 700;" class="{{ d.pnl_pct | pnl_class }}">
-          {% if d.pnl_pct is not none %}
-            <span class="{{ d.pnl_pct | pnl_class }}">{{ d.pnl_pct | signed_pct }}</span>
-          {% else %}<span class="muted">—</span>{% endif %}
-        </span>
+  {% for d in debriefs %}
+  <a href="/debrief/{{ d.debrief_id }}" class="db-card">
+    <div class="db-top">
+      <div>
+        <span class="ticker ticker-blue">{{ d.ticker }}</span>
+        <span class="muted" style="font-size: 12px; margin-left: 6px;">{{ d.side }}</span>
       </div>
-      <div class="db-meta">
-        {{ d.created_at | short_dt }}
-        {% if d.hold_time_minutes %}· held {{ d.hold_time_minutes }}m{% endif %}
-        {% if d.pnl_abs is not none %}· <span class="num {{ d.pnl_abs | pnl_class }}">{{ d.pnl_abs | signed_money }}</span>{% endif %}
+      <div class="db-pnl num {{ d.pnl_pct | pnl_class }}">
+        {% if d.pnl_pct is not none %}{{ d.pnl_pct | signed_pct }}{% else %}<span class="muted">—</span>{% endif %}
       </div>
-      {% if d.verdict %}<div class="db-verdict">{{ d.verdict }}</div>{% endif %}
-    </a>
-    {% endfor %}
-  </div>
+    </div>
+    <div class="db-meta">
+      <span class="outcome {{ d.outcome }}">{{ d.outcome }}</span>
+      <span>{{ d.created_at | short_dt }}</span>
+      {% if d.hold_time_minutes %}<span>· held {{ d.hold_time_minutes }}m</span>{% endif %}
+      {% if d.pnl_abs is not none %}<span class="num {{ d.pnl_abs | pnl_class }}">· {{ d.pnl_abs | signed_money }}</span>{% endif %}
+    </div>
+    {% if d.verdict %}<div class="db-verdict">{{ d.verdict }}</div>{% endif %}
+  </a>
+  {% endfor %}
 </div>
 {% endif %}
 
