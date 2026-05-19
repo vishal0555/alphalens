@@ -3,14 +3,30 @@
 
 {% block head %}
 <style>
-  .pick { padding: 12px 16px; border-bottom: 1px solid var(--border2); }
-  .pick:last-child { border-bottom: none; }
-  .pick-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .pick-rat { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-  .pick-meta { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; align-items: center; }
-  .pick-weight { font-size: 16px; font-weight: 800; }
+  .group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px 6px;
+    border-top: 1px solid var(--border2);
+  }
+  .group-head:first-of-type { border-top: none; }
+  .group-head .lhs { display: flex; align-items: center; gap: 12px; }
+  .group-head .layer { font-size: 16px; padding: 6px 14px; border-radius: 14px; }
+  .group-head .total {
+    font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 20px; font-weight: 800; letter-spacing: -.01em;
+  }
+  .group-head .count { font-size: 14px; color: var(--muted); font-weight: 600; }
 
-  .diff { font-size: 9px; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; font-weight: 700; }
+  .pick { padding: 14px 22px; border-bottom: 1px solid var(--border2); }
+  .pick:last-child { border-bottom: none; }
+  .pick-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .pick-head .ticker { font-size: 22px; }
+  .pick-rat { font-size: 15px; color: var(--muted); margin-top: 8px; line-height: 1.55; }
+  .pick-meta { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; gap: 10px; align-items: center; }
+  .pick-weight { font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+
+  .diff { font-size: 11px; padding: 3px 9px; border-radius: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
   .diff.new   { color: var(--green); background: var(--green-bg); border: 1px solid var(--green-bd); }
   .diff.held  { color: var(--muted); background: var(--bg3);     border: 1px solid var(--border); }
   .diff.gone  { color: var(--red);   background: var(--red-bg);  border: 1px solid var(--red-bd); }
@@ -37,29 +53,29 @@
     <span class="card-sub">{{ universe.layer_coverage|length }} layers</span>
   </div>
   <div class="card-body">
-    <div style="font-size: 13px; line-height: 1.65;">{{ universe.rationale }}</div>
-    <div style="margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap;">
-      {% for layer in universe.layer_coverage %}
-      <span class="layer {{ layer }}">{{ layer }}</span>
-      {% endfor %}
-    </div>
+    <div style="font-size: 17px; line-height: 1.6;">{{ universe.rationale }}</div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <span class="card-label">Picks</span>
+    <span class="card-label">Picks by layer</span>
     <span class="card-sub">{{ universe.picks|length }} tickers · weights → 100%</span>
   </div>
   <div class="card-body tight">
-    {% for p in universe.picks %}
+    {% for g in groups %}
+    <div class="group-head">
+      <div class="lhs">
+        <span class="layer {{ g.layer }}">{{ g.layer }}</span>
+        <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
+      </div>
+      <span class="num total">{{ '%.0f'|format(g.total_weight) }}%</span>
+    </div>
+    {% for p in g.picks %}
     {% set y = yesterday.picks_by_ticker.get(p.ticker) if yesterday else None %}
     <div class="pick">
       <div class="pick-head">
-        <span>
-          <span class="ticker" style="font-size: 15px;">{{ p.ticker }}</span>
-          <span class="layer {{ p.layer }}" style="margin-left: 6px;">{{ p.layer }}</span>
-        </span>
+        <span class="ticker">{{ p.ticker }}</span>
         <span class="num pick-weight">{{ '%.1f'|format(p.weight_pct) }}%</span>
       </div>
       <div class="pick-meta">
@@ -67,37 +83,48 @@
           <span class="diff held">held</span>
           {% set delta = p.weight_pct - y.weight_pct %}
           {% if delta|abs > 0.5 %}
-          <span class="num {{ delta | pnl_class }}" style="font-weight: 600;">{{ '%+.1f'|format(delta) }}pp</span>
+          <span class="num {{ delta | pnl_class }}" style="font-weight: 700;">{{ '%+.1f'|format(delta) }}pp</span>
           {% endif %}
         {% elif yesterday %}
           <span class="diff new">new</span>
         {% endif %}
-        <span style="color: var(--muted);">rank {{ p.rank }}</span>
+        <span class="muted">rank {{ p.rank }}</span>
       </div>
       <div class="pick-rat">{{ p.rationale }}</div>
     </div>
     {% endfor %}
+    {% endfor %}
 
-    {# Dropped tickers from yesterday #}
+    {# Dropped tickers — bundled at the bottom under their own pseudo-layer #}
     {% if yesterday %}
       {% set today_tickers = universe.picks | map(attribute='ticker') | list %}
+      {% set dropped = [] %}
       {% for ticker, y in yesterday.picks_by_ticker.items() %}
         {% if ticker not in today_tickers %}
-        <div class="pick" style="opacity: 0.55;">
-          <div class="pick-head">
-            <span>
-              <span class="ticker" style="font-size: 15px;">{{ ticker }}</span>
-              <span class="layer {{ y.layer }}" style="margin-left: 6px;">{{ y.layer }}</span>
-            </span>
-            <span class="num muted">—</span>
-          </div>
-          <div class="pick-meta">
-            <span class="diff gone">dropped</span>
-            <span class="muted">was {{ '%.1f'|format(y.weight_pct) }}% yesterday</span>
-          </div>
-        </div>
+          {% set _ = dropped.append((ticker, y)) %}
         {% endif %}
       {% endfor %}
+      {% if dropped %}
+      <div class="group-head">
+        <div class="lhs">
+          <span class="diff gone">dropped</span>
+          <span class="count">{{ dropped|length }} from yesterday</span>
+        </div>
+        <span class="muted">—</span>
+      </div>
+      {% for ticker, y in dropped %}
+      <div class="pick" style="opacity: 0.55;">
+        <div class="pick-head">
+          <span class="ticker">{{ ticker }}</span>
+          <span class="num muted">—</span>
+        </div>
+        <div class="pick-meta">
+          <span class="layer {{ y.layer }}">{{ y.layer }}</span>
+          <span class="muted">was {{ '%.1f'|format(y.weight_pct) }}% yesterday</span>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
     {% endif %}
   </div>
 </div>

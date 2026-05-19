@@ -136,6 +136,36 @@ def _short_dt(s):
 
 # ── Routes ──────────────────────────────────────────────────────────────────
 
+# Display order for AI-stack layers (most compute-heavy first → most peripheral).
+_LAYER_ORDER = [
+    "silicon", "hyperscaler", "model_lab", "infra",
+    "power", "application", "device", "sovereign",
+]
+
+
+def _group_picks_by_layer(picks: list[dict]) -> list[dict]:
+    """[(layer, [pick, pick, ...], total_weight), ...] sorted by total weight desc.
+
+    Picks within a layer are sorted by weight desc. Empty layers are dropped.
+    """
+    by_layer: dict[str, list[dict]] = {}
+    for p in picks or []:
+        by_layer.setdefault(p["layer"], []).append(p)
+    for layer in by_layer:
+        by_layer[layer].sort(key=lambda x: -x["weight_pct"])
+
+    groups = [
+        {"layer": layer, "picks": ps, "total_weight": sum(p["weight_pct"] for p in ps)}
+        for layer, ps in by_layer.items()
+    ]
+    # Sort: known layers in canonical order first, then anything else by total weight.
+    groups.sort(key=lambda g: (
+        _LAYER_ORDER.index(g["layer"]) if g["layer"] in _LAYER_ORDER else 99,
+        -g["total_weight"],
+    ))
+    return groups
+
+
 @app.route("/")
 @_login_required
 def index():
@@ -152,6 +182,7 @@ def index():
         realised = pnl["realised_pnl"] if pnl else None
 
     lessons  = _db.fetch_recent_lessons(limit=5)
+    universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
 
     db_ok = not (universe is None and briefing is None and nav is None)
 
@@ -160,6 +191,7 @@ def index():
         active="dashboard",
         db_ok=db_ok,
         universe=universe,
+        universe_groups=universe_groups,
         briefing=briefing,
         nav=nav,
         session_hdr=session_hdr,
@@ -174,13 +206,16 @@ def index():
 def universe_page():
     u = _db.fetch_current_universe()
     yesterday = None
+    groups = []
     if u and u is not False:
         yesterday = _db.fetch_previous_universe(u["as_of_date"])
+        groups = _group_picks_by_layer(u.get("picks", []))
     return render_template(
         "universe.html",
         active="universe",
         universe=u,
         yesterday=yesterday,
+        groups=groups,
     )
 
 

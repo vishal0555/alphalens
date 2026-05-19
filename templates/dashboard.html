@@ -6,43 +6,57 @@
   .nav-block {
     background: linear-gradient(180deg, var(--bg2) 0%, var(--bg3) 100%);
     border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 28px 24px 24px;
-    margin-bottom: 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,.30);
+    border-radius: 20px;
+    padding: 32px 28px 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.32);
   }
-  .nav-label { font-size: 12px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); }
-  .nav-value { font-size: 56px; font-weight: 800; margin-top: 6px; line-height: 1.05; letter-spacing: -.025em; }
-  .nav-pnl   { font-size: 20px; font-weight: 800; margin-top: 12px; letter-spacing: -.01em; }
-  .nav-pnl .ago { color: var(--muted); font-size: 13px; font-weight: 600; margin-left: 8px; letter-spacing: 0; }
-  .nav-meta  { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .nav-label { font-size: 14px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+  .nav-value { font-size: 72px; font-weight: 800; margin-top: 8px; line-height: 1; letter-spacing: -.035em; }
+  .nav-pnl   { font-size: 24px; font-weight: 800; margin-top: 14px; letter-spacing: -.01em; }
+  .nav-pnl .ago { color: var(--muted); font-size: 15px; font-weight: 600; margin-left: 10px; letter-spacing: 0; }
+  .nav-meta  { font-size: 14px; color: var(--muted); margin-top: 10px; }
 
-  .thesis { padding: 18px 20px; font-size: 16px; line-height: 1.6; }
-  .regime-line { font-size: 14px; color: var(--muted); padding: 0 20px 16px; line-height: 1.55; }
+  .thesis { padding: 22px 22px; font-size: 19px; line-height: 1.55; }
+  .regime-line { font-size: 16px; color: var(--muted); padding: 0 22px 18px; line-height: 1.55; }
   .regime-line strong { color: var(--text); }
+
+  /* ── Grouped universe sections ───────────────────────── */
+  .uni-section { padding: 0; border-top: 1px solid var(--border2); }
+  .uni-section:first-child { border-top: none; }
+  .uni-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 8px;
+  }
+  .uni-section-head .lhs { display: flex; align-items: center; gap: 10px; }
+  .uni-section-head .layer { font-size: 16px; padding: 6px 14px; border-radius: 14px; }
+  .uni-section-head .total {
+    font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: var(--text);
+  }
+  .uni-section-head .count { font-size: 13px; color: var(--muted); font-weight: 600; }
 
   .uni-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-    padding: 16px;
+    padding: 4px 14px 16px;
   }
   .uni-tile {
     background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px 16px;
-    display: flex; flex-direction: column; gap: 8px;
-    transition: border-color .15s;
+    border-radius: 14px; padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
   }
-  .uni-tile .top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-  .uni-tile .ticker { font-size: 18px; }
-  .uni-tile .weight { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .uni-tile .ticker { font-size: 22px; }
+  .uni-tile .weight { font-size: 22px; font-weight: 800; letter-spacing: -.015em; }
 
-  .risk { padding: 12px 16px; background: var(--amber-bg); border: 1px solid var(--amber-bd); border-left: 4px solid var(--amber); border-radius: 8px; font-size: 14px; line-height: 1.5; margin: 8px 20px; }
+  .risk { padding: 14px 18px; background: var(--amber-bg); border: 1px solid var(--amber-bd); border-left: 5px solid var(--amber); border-radius: 10px; font-size: 16px; line-height: 1.5; margin: 8px 22px; }
 
-  .lesson { padding: 14px 20px; border-bottom: 1px solid var(--border2); font-size: 14px; line-height: 1.55; }
+  .lesson { padding: 16px 22px; border-bottom: 1px solid var(--border2); font-size: 16px; line-height: 1.55; }
   .lesson:last-child { border-bottom: none; }
   .lesson .when { color: var(--muted); font-style: italic; }
-  .lesson .scope-tag { display: inline-block; padding: 3px 9px; border-radius: 9px; background: var(--bg3); border: 1px solid var(--border); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-right: 8px; }
+  .lesson .scope-tag { display: inline-block; padding: 4px 11px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-right: 8px; }
 </style>
 {% endblock %}
 
@@ -106,21 +120,31 @@
 </div>
 {% endif %}
 
-{# ─── Universe tiles ──────────────────────────────────── #}
-{% if universe and universe.picks %}
+{# ─── Universe — grouped by AI-stack layer ─────────────── #}
+{% if universe_groups %}
 <div class="card">
   <div class="card-header">
     <span class="card-label">Universe · {{ universe.picks|length }} picks</span>
-    <span class="card-sub">{{ universe.layer_coverage|length }} layers · <a href="/universe" style="color: var(--accent); text-decoration: none;">detail →</a></span>
+    <span class="card-sub">{{ universe_groups|length }} layers · <a href="/universe" style="color: var(--accent); text-decoration: none;">detail →</a></span>
   </div>
-  <div class="uni-grid">
-    {% for p in universe.picks %}
-    <div class="uni-tile">
-      <div class="top">
-        <span class="ticker">{{ p.ticker }}</span>
-        <span class="num weight">{{ '%.0f'|format(p.weight_pct) }}%</span>
+  <div class="card-body tight">
+    {% for g in universe_groups %}
+    <div class="uni-section">
+      <div class="uni-section-head">
+        <div class="lhs">
+          <span class="layer {{ g.layer }}">{{ g.layer }}</span>
+          <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
+        </div>
+        <span class="total">{{ '%.0f'|format(g.total_weight) }}%</span>
       </div>
-      <span class="layer {{ p.layer }}">{{ p.layer }}</span>
+      <div class="uni-grid">
+        {% for p in g.picks %}
+        <div class="uni-tile">
+          <span class="ticker">{{ p.ticker }}</span>
+          <span class="num weight">{{ '%.0f'|format(p.weight_pct) }}%</span>
+        </div>
+        {% endfor %}
+      </div>
     </div>
     {% endfor %}
   </div>

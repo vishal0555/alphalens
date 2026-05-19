@@ -31,44 +31,44 @@
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
-      font-size: 17px;
+      font-size: 19px;
       line-height: 1.5;
       overflow-x: hidden;
-      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 18px);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    .page { max-width: 640px; margin: 0 auto; padding: 22px 18px 0; }
+    .page { max-width: 680px; margin: 0 auto; padding: 26px 20px 0; }
 
     /* ── Top header (page title + small subtitle) ─────────── */
     .topbar {
       display: flex; align-items: baseline; justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
-    .topbar h1 { font-size: 32px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
-    .topbar .sub { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px; font-weight: 700; }
+    .topbar h1 { font-size: 40px; font-weight: 800; letter-spacing: -.025em; line-height: 1.05; }
+    .topbar .sub { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.6px; font-weight: 800; }
 
     /* ── Cards ──────────────────────────────────────────── */
     .card {
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      margin-bottom: 16px;
+      border-radius: 18px;
+      margin-bottom: 18px;
       overflow: hidden;
       box-shadow: 0 1px 2px rgba(0,0,0,.25);
     }
     .card-header {
       background: var(--bg3);
       border-bottom: 1px solid var(--border);
-      padding: 14px 20px;
+      padding: 16px 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
     }
-    .card-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text); }
-    .card-sub   { font-size: 13px; color: var(--muted); font-weight: 500; }
-    .card-body  { padding: 18px 20px; }
+    .card-label { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.4px; color: var(--text); }
+    .card-sub   { font-size: 14px; color: var(--muted); font-weight: 600; }
+    .card-body  { padding: 22px 22px; }
     .card-body.tight { padding: 8px 0; }
 
     /* ── PnL / number colouring ─────────────────────────── */
@@ -78,7 +78,7 @@
     .num { font-variant-numeric: tabular-nums; font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-feature-settings: "tnum"; }
 
     /* ── Badges (sized up for visibility) ──────────────── */
-    .badge { display: inline-flex; align-items: center; border-radius: 22px; padding: 5px 14px; font-size: 13px; font-weight: 800; letter-spacing: .06em; border: 1px solid transparent; white-space: nowrap; text-transform: uppercase; }
+    .badge { display: inline-flex; align-items: center; border-radius: 24px; padding: 6px 16px; font-size: 15px; font-weight: 800; letter-spacing: .08em; border: 1px solid transparent; white-space: nowrap; text-transform: uppercase; }
     .badge.aggressive { color: var(--green); background: var(--green-bg); border-color: var(--green-bd); }
     .badge.neutral    { color: var(--muted); background: var(--bg3);      border-color: var(--border); }
     .badge.defensive  { color: var(--red);   background: var(--red-bg);   border-color: var(--red-bd); }
@@ -109,7 +109,7 @@
     .item-status.cancelled      { color: var(--muted); }
 
     /* Layer colour chips (8 AI-stack layers) — sized up */
-    .layer { display: inline-block; padding: 3px 10px; border-radius: 11px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); background: var(--bg3); color: var(--muted); text-transform: lowercase; letter-spacing: .04em; }
+    .layer { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; border: 1px solid var(--border); background: var(--bg3); color: var(--muted); text-transform: lowercase; letter-spacing: .04em; }
     .layer.silicon     { color: #e3b341; border-color: rgba(227,179,65,.30); background: rgba(227,179,65,.08); }
     .layer.hyperscaler { color: #58a6ff; border-color: rgba(88,166,255,.30); background: rgba(88,166,255,.08); }
     .layer.power       { color: #d2a8ff; border-color: rgba(210,168,255,.30); background: rgba(210,168,255,.08); }
