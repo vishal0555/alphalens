@@ -220,6 +220,304 @@
     .stat-cell .lbl { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
     .stat-cell .v { font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin-top: 6px; }
 
+    /* ════════════════════════════════════════════════════════════════
+       iOS Today View — widgets
+       ════════════════════════════════════════════════════════════════ */
+
+    :root {
+      --widget-radius: 26px;
+      --widget-radius-inner: 18px;
+      --ease-ios: cubic-bezier(.32, .72, 0, 1);
+      --shadow-widget:
+        0 1px 0 rgba(255,255,255,.04) inset,
+        0 1px 2px rgba(0,0,0,.4),
+        0 8px 24px rgba(0,0,0,.35);
+      --glass-bg: rgba(28, 28, 30, .72);
+      --glass-stroke: rgba(255,255,255,.08);
+    }
+
+    /* iOS Today header — big title with day-of-week + date */
+    .today-header {
+      padding: 8px 6px 18px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px;
+    }
+    .today-header .greet {
+      font-size: 13px; font-weight: 800; letter-spacing: 1.6px;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .today-header h1 {
+      font-size: 40px; font-weight: 800; letter-spacing: -.035em; line-height: 1;
+      margin-top: 6px;
+    }
+    .today-header .date-pill {
+      background: rgba(255,255,255,.10);
+      border: 1px solid var(--glass-stroke);
+      border-radius: 100px;
+      padding: 8px 14px;
+      font-size: 12px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-2);
+      white-space: nowrap;
+    }
+
+    /* Widget grid — 2 columns, widgets can span 1 or 2 cols */
+    .wgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .wgrid .w-full { grid-column: 1 / -1; }
+
+    /* Section heading inside Today View (like "Suggested · Photos") */
+    .w-section {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 6px 10px;
+    }
+    .w-section h2 {
+      font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    }
+    .w-section .more {
+      font-size: 14px; font-weight: 700; color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Widget — base */
+    .widget {
+      position: relative;
+      background: var(--bg-card);
+      border-radius: var(--widget-radius);
+      box-shadow: var(--shadow-widget);
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .25s var(--ease-ios), filter .25s var(--ease-ios);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .widget::before {
+      /* Top-edge highlight, like iOS glass */
+      content: ""; position: absolute; inset: 0;
+      border-radius: inherit;
+      border: 1px solid var(--glass-stroke);
+      pointer-events: none;
+    }
+    .widget.tap:active { transform: scale(.97); filter: brightness(1.08); }
+    a.widget { display: block; color: inherit; text-decoration: none; }
+
+    .widget-body { padding: 18px 18px; }
+    .widget-body-lg { padding: 22px 22px; }
+
+    /* Widget tints (vibrant gradients, weather-widget style) */
+    .widget.w-weather-sun  { background: linear-gradient(160deg, #f59e0b 0%, #d97706 45%, #7c2d12 100%); color: #fff; }
+    .widget.w-weather-mix  { background: linear-gradient(160deg, #3b82f6 0%, #1e3a8a 50%, #0c1e3a 100%); color: #fff; }
+    .widget.w-weather-cloud{ background: linear-gradient(160deg, #4b5563 0%, #1f2937 60%, #0f172a 100%); color: #fff; }
+    .widget.w-weather-storm{ background: linear-gradient(160deg, #ef4444 0%, #7f1d1d 55%, #1f0707 100%); color: #fff; }
+    .widget.w-news         { background: linear-gradient(170deg, #1c1c1e 0%, #141416 100%); }
+    .widget.w-reminders    { background: linear-gradient(170deg, #1c1c1e 0%, #2a1f08 100%); }
+    .widget.w-calendar     { background: linear-gradient(170deg, #1c1c1e 0%, #1a0b22 100%); }
+    .widget.w-battery      { background: linear-gradient(170deg, #1c1c1e 0%, #08231a 100%); }
+
+    /* Widget header (icon + title + accessory) */
+    .w-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .w-head .w-title {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 800; letter-spacing: .04em;
+      color: rgba(255,255,255,.85);
+    }
+    .w-head .w-icon {
+      width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .w-head .w-icon svg { width: 100%; height: 100%; display: block; }
+    .w-head .w-accessory { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .04em; }
+
+    /* Weather widget */
+    .w-weather .temp {
+      font-size: 62px; font-weight: 300; letter-spacing: -.04em; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .w-weather .cond {
+      font-size: 15px; font-weight: 600; margin-top: 6px;
+      color: rgba(255,255,255,.85); letter-spacing: -.005em;
+    }
+    .w-weather .row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-top: 18px; font-size: 12px;
+      color: rgba(255,255,255,.7); letter-spacing: .04em;
+    }
+    .w-weather .row strong { color: #fff; font-weight: 800; }
+
+    /* Battery widget */
+    .w-batt .val {
+      font-size: 32px; font-weight: 800; letter-spacing: -.025em;
+      font-variant-numeric: tabular-nums;
+    }
+    .w-batt .delta { font-size: 14px; font-weight: 700; margin-top: 4px; letter-spacing: -.01em; }
+    .w-batt .bar {
+      margin-top: 14px;
+      height: 14px; border-radius: 4px;
+      border: 1.5px solid rgba(255,255,255,.4);
+      padding: 1.5px;
+      position: relative;
+      display: flex; align-items: stretch;
+      background: rgba(255,255,255,.03);
+    }
+    .w-batt .bar::after {
+      /* Battery cap */
+      content: ""; position: absolute;
+      right: -4px; top: 50%; transform: translateY(-50%);
+      width: 2.5px; height: 7px; border-radius: 1px;
+      background: rgba(255,255,255,.4);
+    }
+    .w-batt .bar-fill {
+      border-radius: 2px;
+      background: var(--green);
+      transition: width .6s var(--ease-ios);
+    }
+    .w-batt .bar-fill.neg   { background: var(--red); }
+    .w-batt .bar-fill.flat  { background: var(--muted); }
+
+    /* Calendar widget */
+    .w-cal .day {
+      font-size: 13px; font-weight: 800; letter-spacing: .1em;
+      color: var(--red);  /* iOS calendar uses red for weekday */
+      text-transform: uppercase;
+    }
+    .w-cal .dom {
+      font-size: 36px; font-weight: 800; line-height: 1;
+      letter-spacing: -.03em; margin: 2px 0 12px;
+    }
+    .w-cal .event {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 4px 0; font-size: 13px;
+      border-left: 3px solid var(--accent); padding-left: 9px;
+    }
+    .w-cal .event + .event { margin-top: 6px; }
+    .w-cal .event.done { border-left-color: var(--green); opacity: .55; }
+    .w-cal .event.next { border-left-color: var(--orange); }
+    .w-cal .event .t {
+      font-size: 11px; font-weight: 800; color: var(--muted);
+      width: 46px; flex-shrink: 0; letter-spacing: .03em;
+    }
+    .w-cal .event .ttl { color: var(--text); font-weight: 600; }
+
+    /* Reminders widget — checkbox list */
+    .w-rem .rem-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; font-size: 14px;
+    }
+    .w-rem .rem-row + .rem-row { border-top: 1px solid rgba(255,255,255,.06); }
+    .w-rem .check {
+      flex-shrink: 0;
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.32);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent;
+      transition: all .2s var(--ease-ios);
+    }
+    .w-rem .check.done { background: var(--green); border-color: var(--green); }
+    .w-rem .check.done::after {
+      content: ""; width: 9px; height: 5px;
+      border-left: 2px solid #000; border-bottom: 2px solid #000;
+      transform: rotate(-45deg) translate(1px, -1px);
+    }
+    .w-rem .check.cancel { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.2); }
+    .w-rem .check.cancel::after {
+      content: "×"; color: var(--muted); font-size: 14px; line-height: 1; font-weight: 700;
+    }
+    .w-rem .rem-tx { flex: 1; min-width: 0; }
+    .w-rem .rem-tx .top {
+      display: flex; align-items: baseline; gap: 8px; justify-content: space-between;
+    }
+    .w-rem .rem-tx .tk { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+    .w-rem .rem-tx .px {
+      font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+    .w-rem .rem-tx .sub {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+      letter-spacing: .04em;
+    }
+    .w-rem .rem-tx .sub .strike { text-decoration: line-through; }
+
+    /* News widget — headline-style card */
+    .w-news .kicker {
+      font-size: 11px; font-weight: 800; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .w-news .headline {
+      font-size: 19px; font-weight: 700; line-height: 1.3;
+      letter-spacing: -.015em; color: var(--text);
+    }
+    .w-news .lede {
+      margin-top: 10px; font-size: 13px; line-height: 1.5;
+      color: var(--text-2);
+    }
+    .w-news .byline {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      font-size: 11px; color: var(--muted); letter-spacing: .04em;
+      display: flex; gap: 8px; align-items: center;
+    }
+
+    /* ── Widget Stack (swipeable, scroll-snap) ──────────── */
+    .w-stack { position: relative; }
+    .w-stack-track {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
+      /* hide scroll edge against page padding */
+      margin: 0 -18px;
+      padding-left: 18px; padding-right: 18px;
+    }
+    .w-stack-track::-webkit-scrollbar { display: none; }
+    .w-stack-track > .widget {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+    }
+    .w-stack-dots {
+      display: flex; justify-content: center; gap: 6px;
+      margin-top: 4px;
+    }
+    .w-stack-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,.20);
+      transition: background .2s var(--ease-ios), transform .2s var(--ease-ios);
+    }
+    .w-stack-dots span.on {
+      background: rgba(255,255,255,.75);
+      transform: scale(1.15);
+    }
+
+    /* Smooth widget entry animation */
+    @keyframes widget-rise {
+      from { opacity: 0; transform: translateY(12px) scale(.96); }
+      to   { opacity: 1; transform: none; }
+    }
+    .widget, .w-section { animation: widget-rise .5s var(--ease-ios) both; }
+    .wgrid > :nth-child(1), .w-section:nth-of-type(1) { animation-delay: .04s; }
+    .wgrid > :nth-child(2) { animation-delay: .08s; }
+    .wgrid > :nth-child(3) { animation-delay: .12s; }
+    .wgrid > :nth-child(4) { animation-delay: .16s; }
+    .wgrid > :nth-child(5) { animation-delay: .20s; }
+    @media (prefers-reduced-motion: reduce) {
+      .widget, .w-section { animation: none; }
+    }
+
+    /* Small-screen tuning */
+    @media (max-width: 380px) {
+      .today-header h1 { font-size: 34px; }
+      .w-weather .temp { font-size: 54px; }
+      .w-batt .val { font-size: 28px; }
+      .w-cal .dom { font-size: 32px; }
+    }
+
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -243,5 +541,36 @@
   </a>
 </nav>
 {% block scripts %}{% endblock %}
+
+<script>
+  // Widget-stack dot indicator (iOS-style swipe).
+  // Each .w-stack contains a .w-stack-track (scroll-snap-x) and .w-stack-dots.
+  document.querySelectorAll('.w-stack').forEach(function (stack) {
+    var track = stack.querySelector('.w-stack-track');
+    var dots  = stack.querySelector('.w-stack-dots');
+    if (!track || !dots) return;
+    var cards = Array.prototype.slice.call(track.children);
+    if (cards.length < 2) { dots.style.display = 'none'; return; }
+    dots.innerHTML = cards.map(function () { return '<span></span>'; }).join('');
+    var dotEls = dots.querySelectorAll('span');
+    dotEls[0].classList.add('on');
+
+    function setActive() {
+      var x = track.scrollLeft + track.clientWidth / 2;
+      var best = 0, bestD = Infinity;
+      cards.forEach(function (c, i) {
+        var mid = c.offsetLeft + c.clientWidth / 2;
+        var d = Math.abs(mid - x);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      dotEls.forEach(function (d, i) { d.classList.toggle('on', i === best); });
+    }
+    var raf = null;
+    track.addEventListener('scroll', function () {
+      if (raf) return;
+      raf = requestAnimationFrame(function () { setActive(); raf = null; });
+    }, { passive: true });
+  });
+</script>
 </body>
 </html>

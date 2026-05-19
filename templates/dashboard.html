@@ -3,303 +3,335 @@
 
 {% block head %}
 <style>
-  /* ── NAV hero ──────────────────────────────────────── */
-  .nav-hero {
-    position: relative;
-    padding: 28px 26px 24px;
-    overflow: hidden;
-  }
-  .nav-hero .label {
-    font-size: 13px; font-weight: 800; letter-spacing: 1.4px;
-    text-transform: uppercase; color: rgba(255,255,255,.55);
-  }
-  .nav-hero .big {
-    font-size: 48px; font-weight: 800; line-height: 1;
-    letter-spacing: -.03em; margin-top: 8px;
-  }
-  .nav-hero .pnl {
-    font-size: 19px; font-weight: 800; letter-spacing: -.01em;
-    margin-top: 12px;
-  }
-  .nav-hero .pnl .ago {
-    font-size: 13px; font-weight: 600; color: rgba(255,255,255,.55);
-    margin-left: 10px; letter-spacing: 0; text-transform: uppercase; letter-spacing: 1px;
-  }
-  .nav-hero .meta { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 6px; }
-
-  /* Subtle decorative sparkline behind the number */
-  .nav-hero svg.bg {
-    position: absolute; right: -10px; bottom: -10px;
-    width: 70%; height: 70%;
-    opacity: .25;
-  }
-
-  /* ── Posture / thesis tinted card ──────────────────── */
-  .posture-card .head {
+  /* Tinted accents for the Universe stack cards (per layer) */
+  .uni-stack-card { padding: 20px 20px; }
+  .uni-stack-card .head {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 14px;
   }
-  .posture-card .thesis {
-    font-size: 19px; font-weight: 500; line-height: 1.5;
-    color: rgba(255,255,255,.92); letter-spacing: -.01em;
+  .uni-stack-card .head .lhs { display: flex; align-items: center; gap: 10px; }
+  .uni-stack-card .head .count { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
+  .uni-stack-card .head .total { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+  .uni-stack-card .tiles {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
   }
-  .posture-card .regime {
-    font-size: 14px; line-height: 1.55;
-    color: rgba(255,255,255,.55); margin-top: 14px;
-    padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08);
-  }
-  .posture-card .regime strong { color: rgba(255,255,255,.85); font-weight: 700; }
-
-  /* Risks pill row inside posture */
-  .risks-strip { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-  .risk-pill {
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: rgba(255,159,10,.12);
-    border: 1px solid rgba(255,159,10,.25);
-    font-size: 14px; line-height: 1.45; color: rgba(255,255,255,.92);
-  }
-
-  /* ── Universe section (one card per layer) ────────── */
-  .uni-card {
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .uni-card .head {
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .uni-card .head .lhs { display: flex; align-items: center; gap: 12px; }
-  .uni-card .head .lhs .total {
-    font-size: 15px; font-weight: 700;
-    color: rgba(255,255,255,.7);
-  }
-  .uni-card .head .count {
-    font-size: 13px; color: var(--muted); font-weight: 600;
-  }
-  .uni-card .tiles {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-  }
-  .uni-tile {
+  .uni-stack-card .tile {
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     display: flex; align-items: center; justify-content: space-between;
   }
-  .uni-tile .ticker { font-size: 20px; color: var(--text); }
-  .uni-tile .weight {
-    font-size: 22px; font-weight: 800; letter-spacing: -.02em;
-    color: var(--text);
-  }
-
-  /* ── Position card (news-card style) ───────────────── */
-  .pos-card {
-    padding: 18px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 16px;
-  }
-  .pos-card + .pos-card { border-top: 1px solid var(--border); }
-  .pos-card .lhs { min-width: 0; flex: 1; }
-  .pos-card .ticker { font-size: 22px; color: var(--text); }
-  .pos-card .meta { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .pos-card .pnl { font-size: 22px; font-weight: 800; letter-spacing: -.02em; text-align: right; }
-  .pos-card .pnl .pct { display: block; font-size: 12px; font-weight: 600; margin-top: 2px; color: var(--muted); }
-  .pos-card .ph { font-size: 14px; color: var(--muted); }
-
-  .book-footer {
-    padding: 18px 22px;
-    background: rgba(255,255,255,.04);
-    border-top: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .book-footer .label {
-    font-size: 12px; font-weight: 800; letter-spacing: 1.2px;
-    text-transform: uppercase; color: var(--muted);
-  }
-  .book-footer .val {
-    font-size: 26px; font-weight: 800; letter-spacing: -.02em;
-  }
-
-  /* ── Lesson quote bubble ─────────────────────────── */
-  .lesson-card {
-    padding: 16px 20px;
-    position: relative;
-  }
-  .lesson-card + .lesson-card { border-top: 1px solid var(--border); }
-  .lesson-card .top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .lesson-card .scope {
-    font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
-    text-transform: uppercase;
-    padding: 3px 9px; border-radius: 100px;
-    background: rgba(255,255,255,.10); color: var(--muted);
-  }
-  .lesson-card .when { font-size: 13px; color: var(--muted); font-style: italic; }
-  .lesson-card .guidance { font-size: 16px; color: var(--text); line-height: 1.5; }
-
-  /* Tap-affordance link */
-  .row-link { display: block; color: inherit; text-decoration: none; }
-  .row-link:active { background: rgba(255,255,255,.04); }
+  .uni-stack-card .tile .ticker { font-size: 17px; }
+  .uni-stack-card .tile .w { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="topbar">
-  <h1>Today</h1>
-  <span class="sub">AlphaLab Fund</span>
+{# ─── iOS Today header ──────────────────────────────────────── #}
+<div class="today-header">
+  <div>
+    <div class="greet">{{ today.weekday }}</div>
+    <h1>{{ today.month_short|title }} {{ today.day }}</h1>
+  </div>
+  <span class="date-pill">AlphaLab&nbsp;·&nbsp;Fund</span>
 </div>
 
 {% if not db_ok %}
-<div class="card"><div class="card-pad empty-state">
+<div class="widget w-full"><div class="widget-body empty-state">
   <div class="empty-icon">⚠</div>
   Database unreachable.
 </div></div>
 {% endif %}
 
-{# ─── NAV hero (color-tinted by today's PnL) ─────────── #}
-{% if nav %}
-  {% set pnl = nav.realised_pnl %}
-  {% set tint = 'tint-green' if pnl > 0 else ('tint-red' if pnl < 0 else 'tint-slate') %}
-<div class="card {{ tint }}">
-  <div class="nav-hero">
-    {# decorative sparkline-ish wave behind #}
-    <svg class="bg" viewBox="0 0 200 80" preserveAspectRatio="none">
-      <path d="M0,60 Q40,20 80,40 T160,30 T200,50 L200,80 L0,80 Z"
-            fill="{% if pnl > 0 %}rgba(48,209,88,.5){% elif pnl < 0 %}rgba(255,69,58,.5){% else %}rgba(255,255,255,.15){% endif %}"/>
-    </svg>
-    <div class="label">Fund NAV</div>
-    <div class="num big">{{ nav.ending_nav | money2 }}</div>
-    <div class="num pnl {{ pnl | pnl_class }}">
-      {{ pnl | signed_money }}{% set pct = (pnl / nav.starting_nav * 100) if nav.starting_nav else None %}{% if pct is not none %} · {{ pct | signed_pct }}{% endif %}
-      <span class="ago">last session</span>
-    </div>
-    <div class="meta">
-      {% if nav.seed %}Seed value — no session marks yet.
-      {% else %}marked at close · {{ nav.as_of_date }} · started {{ nav.starting_nav | money }}{% endif %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{# ─── Posture card (tinted by posture) ─────────────────── #}
+{# ─── 1. WEATHER WIDGET ─ Posture as today's "forecast" ──────── #}
 {% if briefing %}
   {% set posture = briefing.plan.posture %}
-  {% set p_tint = 'tint-green' if posture == 'aggressive' else ('tint-red' if posture == 'defensive' else 'tint-blue') %}
-<div class="card {{ p_tint }}">
-  <div class="card-pad posture-card">
-    <div class="head">
-      <div class="eyebrow on-tint">Today's Posture</div>
-      <span class="badge {{ posture }}">{{ posture }}</span>
-    </div>
-    <div class="thesis">{{ briefing.plan.session_thesis }}</div>
-    {% if briefing.plan.regime_summary %}
-    <div class="regime"><strong>Regime:</strong> {{ briefing.plan.regime_summary }}</div>
-    {% endif %}
-    {% if briefing.plan.risks_today %}
-    <div class="risks-strip">
-      {% for r in briefing.plan.risks_today[:3] %}
-      <div class="risk-pill">⚠ {{ r }}</div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-</div>
-{% endif %}
-
-{# ─── Universe — one tinted card PER LAYER ─────────────── #}
-{% if universe_groups %}
-<div class="topbar" style="margin-top: 28px;">
-  <h1 style="font-size: 26px;">Universe</h1>
-  <a href="/universe" class="sub" style="color: var(--accent); text-decoration: none;">{{ universe.picks|length }} picks · detail →</a>
-</div>
-
-{% for g in universe_groups %}
-<div class="card">
-  <div class="layer-card {{ g.layer }} uni-card">
-    <div class="head">
-      <div class="lhs">
-        <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
-        <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
+  {% if posture == 'aggressive' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'AGGRESSIVE', 'Clear skies — full size', 'sun' %}
+  {% elif posture == 'defensive' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'DEFENSIVE', 'Storm warning — half size', 'storm' %}
+  {% else %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-mix', 'NEUTRAL', 'Mixed conditions — selective', 'cloudsun' %}
+  {% endif %}
+<div class="widget w-weather {{ w_class }}">
+  <div class="widget-body-lg">
+    <div class="w-head">
+      <div class="w-title">
+        <span class="w-icon">
+          {% if w_icon == 'sun' %}
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#fff"/>
+            <g stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+              <line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/>
+              <line x1="3" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/>
+              <line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/>
+              <line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>
+            </g></svg>
+          {% elif w_icon == 'storm' %}
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7 16c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H7z" fill="#fff" opacity=".95"/>
+            <path d="M11 14l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffd60a"/>
+          </svg>
+          {% else %}
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="8" cy="9" r="3" fill="#ffd60a"/>
+            <path d="M9 18c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H9z" fill="#fff" opacity=".95"/>
+          </svg>
+          {% endif %}
+        </span>
+        Posture
       </div>
-      <span class="num total">{{ '%.0f'|format(g.total_weight) }}% of book</span>
+      <span class="w-accessory">{{ today.month_short|title }} {{ today.day }}</span>
     </div>
-    <div class="tiles">
-      {% for p in g.picks %}
-      <div class="uni-tile">
-        <span class="ticker">{{ p.ticker }}</span>
-        <span class="num weight">{{ '%.0f'|format(p.weight_pct) }}%</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endfor %}
-{% endif %}
 
-{# ─── Today's book ──────────────────────────────────── #}
-{% if items %}
-<div class="topbar" style="margin-top: 28px;">
-  <h1 style="font-size: 26px;">Book</h1>
-  <a href="/positions" class="sub" style="color: var(--accent); text-decoration: none;">{{ items|length }} items · detail →</a>
-</div>
+    <div class="temp">{{ w_label }}</div>
+    <div class="cond">{{ briefing.plan.session_thesis }}</div>
 
-<div class="card">
-  {% for it in items %}
-  <a href="/positions" class="row-link">
-    <div class="pos-card">
-      <div class="lhs">
-        <div><span class="ticker ticker-blue">{{ it.ticker }}</span> <span class="muted num" style="font-size:13px;">×{{ it.size_shares }}</span></div>
-        <div class="meta">
-          <span class="item-status {{ it.status }}">{{ it.status }}</span>
-        </div>
-      </div>
-      {% if it.entry_fill_price and it.exit_fill_price %}
-        {% set pnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
-        {% set pnl_pct = ((it.exit_fill_price - it.entry_fill_price) / it.entry_fill_price * 100) if it.entry_fill_price else None %}
-        <div class="pnl num {{ pnl | pnl_class }}">
-          {{ pnl | signed_money }}
-          {% if pnl_pct is not none %}<span class="pct">{{ pnl_pct | signed_pct }}</span>{% endif %}
-        </div>
-      {% elif it.entry_fill_price %}
-        <div class="ph num">@ {{ '%.2f'|format(it.entry_fill_price) }}</div>
-      {% else %}
-        <div class="ph">—</div>
+    <div class="row">
+      <span>Conditions: <strong>{{ w_cond }}</strong></span>
+      {% if briefing.plan.regime_summary %}
+      <span style="text-align:right; max-width: 55%; opacity:.8;">{{ briefing.plan.regime_summary[:80] }}{% if briefing.plan.regime_summary|length > 80 %}…{% endif %}</span>
       {% endif %}
     </div>
-  </a>
-  {% endfor %}
-
-  {% if realised is not none %}
-  <div class="book-footer">
-    <div class="label">Realised today</div>
-    <div class="num val {{ realised | pnl_class }}">{{ realised | signed_money }}</div>
   </div>
-  {% endif %}
 </div>
 {% endif %}
 
-{# ─── Lessons ──────────────────────────────────────── #}
-{% if lessons %}
-<div class="topbar" style="margin-top: 28px;">
-  <h1 style="font-size: 26px;">Lessons</h1>
-  <a href="/debriefs" class="sub" style="color: var(--accent); text-decoration: none;">all →</a>
+{# ─── 2. BATTERY + CALENDAR row ──────────────────────────────── #}
+<div class="wgrid">
+  {# Battery — NAV. Bar fill scales with PnL% vs starting NAV (clamped 8–100). #}
+  {% if nav %}
+    {% set pnl = nav.realised_pnl %}
+    {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
+    {% set fill_w = 50 + pnl_pct * 5 %}
+    {% if fill_w < 8 %}{% set fill_w = 8 %}{% elif fill_w > 100 %}{% set fill_w = 100 %}{% endif %}
+    {% set fill_class = 'pos' if pnl > 0 else ('neg' if pnl < 0 else 'flat') %}
+  <a href="/nav" class="widget w-batt w-battery tap">
+    <div class="widget-body">
+      <div class="w-head">
+        <div class="w-title">
+          <span class="w-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="2.5" y="8" width="16" height="8" rx="2" stroke="#fff" stroke-width="1.4" opacity=".8"/>
+              <rect x="19" y="10.5" width="2" height="3" rx=".6" fill="#fff" opacity=".8"/>
+              <rect x="4.5" y="10" width="10" height="4" rx=".6" fill="{% if pnl > 0 %}#30d158{% elif pnl < 0 %}#ff453a{% else %}#8e8e93{% endif %}"/>
+            </svg>
+          </span>
+          NAV
+        </div>
+        <span class="w-accessory">{{ '%+.2f'|format(pnl_pct) }}%</span>
+      </div>
+
+      <div class="num val">{{ nav.ending_nav | money2 }}</div>
+      <div class="num delta {{ fill_class }}">{{ pnl | signed_money }}</div>
+
+      <div class="bar">
+        <div class="bar-fill {{ fill_class }}" style="width: {{ '%.0f'|format(fill_w) }}%;"></div>
+      </div>
+    </div>
+  </a>
+  {% endif %}
+
+  {# Calendar — today's session schedule #}
+  <a href="/positions" class="widget w-cal w-calendar tap">
+    <div class="widget-body">
+      <div class="w-head">
+        <div class="w-title">
+          <span class="w-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="#fff" stroke-width="1.4" opacity=".75"/>
+              <line x1="3" y1="9.5" x2="21" y2="9.5" stroke="#fff" stroke-width="1.4" opacity=".75"/>
+              <line x1="8" y1="3.5" x2="8" y2="6.5" stroke="#fff" stroke-width="1.4" opacity=".75" stroke-linecap="round"/>
+              <line x1="16" y1="3.5" x2="16" y2="6.5" stroke="#fff" stroke-width="1.4" opacity=".75" stroke-linecap="round"/>
+            </svg>
+          </span>
+          Today
+        </div>
+      </div>
+
+      <div class="day">{{ today.weekday_short }}</div>
+      <div class="num dom">{{ today.day }}</div>
+
+      {% for e in calendar_events[:3] %}
+      <div class="event {{ e.state }}">
+        <span class="t num">{{ e.time }}</span>
+        <span class="ttl">{{ e.title }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </a>
 </div>
 
-<div class="card">
-  {% for l in lessons %}
-  <div class="lesson-card">
-    <div class="top">
-      <span class="ticker ticker-blue" style="font-size:14px;">{{ l.ticker }}</span>
-      <span class="scope">{{ l.scope }}</span>
+{# ─── 3. REMINDERS WIDGET — today's plan items as checkmarks ── #}
+{% if items %}
+<div class="widget w-rem w-reminders w-full">
+  <div class="widget-body-lg">
+    <div class="w-head">
+      <div class="w-title">
+        <span class="w-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="6" cy="7" r="2.2"  stroke="#ff9f0a" stroke-width="1.4"/>
+            <circle cx="6" cy="13" r="2.2" stroke="#ff9f0a" stroke-width="1.4"/>
+            <circle cx="6" cy="19" r="2.2" stroke="#ff9f0a" stroke-width="1.4"/>
+            <line x1="11" y1="7"  x2="20" y2="7"  stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
+            <line x1="11" y1="13" x2="20" y2="13" stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
+            <line x1="11" y1="19" x2="20" y2="19" stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
+          </svg>
+        </span>
+        Today's plan
+      </div>
+      <a href="/positions" class="w-accessory" style="color: var(--accent); text-decoration: none;">{{ items|length }} items →</a>
     </div>
-    <div class="when">when {{ l.applies_when }}</div>
-    <div class="guidance">→ {{ l.guidance }}</div>
+
+    {% for it in items %}
+      {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
+      {% set is_cancel = it.status in ['expired','cancelled'] %}
+      {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
+    <a href="/positions" class="rem-row row-link" style="display:flex;color:inherit;text-decoration:none;align-items:center;gap:10px;padding:8px 0;">
+      <span class="check {{ check_cls }}"></span>
+      <span class="rem-tx">
+        <span class="top">
+          <span class="tk ticker">{{ it.ticker }}
+            <span class="muted num" style="font-weight:600;font-size:12px;">×{{ it.size_shares }}</span>
+          </span>
+          {% if it.entry_fill_price and it.exit_fill_price %}
+            {% set rpnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
+            <span class="px num {{ rpnl | pnl_class }}">{{ rpnl | signed_money }}</span>
+          {% elif it.entry_fill_price %}
+            <span class="px num">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
+          {% else %}
+            <span class="px num muted">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</span>
+          {% endif %}
+        </span>
+        <span class="sub">
+          <span class="item-status {{ it.status }}">{{ it.status }}</span>
+        </span>
+      </span>
+    </a>
+    {% endfor %}
+
+    {% if realised is not none %}
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);">
+      <span style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);">Realised today</span>
+      <span class="num {{ realised | pnl_class }}" style="font-size:22px;font-weight:800;letter-spacing:-.02em;">{{ realised | signed_money }}</span>
+    </div>
+    {% endif %}
   </div>
-  {% endfor %}
+</div>
+{% endif %}
+
+{# ─── 4. NEWS WIDGET — briefing as headline ──────────────────── #}
+{% if briefing %}
+<div class="widget w-news w-full">
+  <div class="widget-body-lg">
+    <div class="w-head">
+      <div class="w-title">
+        <span class="w-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="14" height="16" rx="1.5" stroke="#0a84ff" stroke-width="1.4"/>
+            <rect x="17" y="9" width="4" height="11" rx="1" stroke="#0a84ff" stroke-width="1.4"/>
+            <line x1="6"  y1="8"  x2="14" y2="8"  stroke="#fff" stroke-width="1.4" opacity=".75" stroke-linecap="round"/>
+            <line x1="6"  y1="12" x2="14" y2="12" stroke="#fff" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>
+            <line x1="6"  y1="15" x2="14" y2="15" stroke="#fff" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>
+          </svg>
+        </span>
+        Market briefing
+      </div>
+      <span class="w-accessory">{{ briefing.as_of_date if briefing.as_of_date is defined else today.iso }}</span>
+    </div>
+
+    <div class="kicker">Session thesis · {{ briefing.plan.posture }}</div>
+    <div class="headline">{{ briefing.plan.session_thesis }}</div>
+
+    {% if briefing.plan.regime_summary %}
+    <div class="lede">{{ briefing.plan.regime_summary }}</div>
+    {% endif %}
+
+    {% if briefing.plan.risks_today %}
+    <div class="byline">
+      <span style="color:var(--orange);font-weight:800;">⚠</span>
+      <span>{{ briefing.plan.risks_today[0] }}</span>
+      {% if briefing.plan.risks_today|length > 1 %}
+      <span style="margin-left:auto;color:var(--muted);">+{{ briefing.plan.risks_today|length - 1 }} more</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ─── 5. UNIVERSE STACK — swipeable layer cards ──────────────── #}
+{% if universe_groups %}
+<div class="w-section">
+  <h2>Universe</h2>
+  <a href="/universe" class="more">See all →</a>
+</div>
+
+<div class="w-stack">
+  <div class="w-stack-track">
+    {% for g in universe_groups %}
+    <div class="widget tap layer-card {{ g.layer }}">
+      <div class="uni-stack-card">
+        <div class="head">
+          <div class="lhs">
+            <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
+            <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
+          </div>
+          <span class="num total">{{ '%.0f'|format(g.total_weight) }}%</span>
+        </div>
+        <div class="tiles">
+          {% for p in g.picks %}
+          <div class="tile">
+            <span class="ticker ticker-blue">{{ p.ticker }}</span>
+            <span class="num w">{{ '%.0f'|format(p.weight_pct) }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="w-stack-dots"></div>
+</div>
+{% endif %}
+
+{# ─── 6. LESSONS STACK — swipeable news-style cards ──────────── #}
+{% if lessons %}
+<div class="w-section">
+  <h2>Lessons</h2>
+  <a href="/debriefs" class="more">All debriefs →</a>
+</div>
+
+<div class="w-stack">
+  <div class="w-stack-track">
+    {% for l in lessons %}
+    <div class="widget w-news">
+      <div class="widget-body-lg">
+        <div class="w-head">
+          <div class="w-title">
+            <span class="w-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.5 8 12 3z" stroke="#bf5af2" stroke-width="1.4" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            {{ l.ticker }} · {{ l.scope }}
+          </div>
+          <span class="w-accessory">{{ l.created_at | short_dt }}</span>
+        </div>
+        <div class="kicker">When</div>
+        <div class="headline" style="font-size: 16px;">{{ l.applies_when }}</div>
+        <div class="lede"><strong style="color:var(--text);">→ </strong>{{ l.guidance }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="w-stack-dots"></div>
 </div>
 {% endif %}
 
 {% if db_ok and not briefing and not universe %}
-<div class="card"><div class="card-pad empty-state">
+<div class="widget w-full"><div class="widget-body empty-state">
   <div class="empty-icon">◌</div>
   No fund data yet. Run <code>./run.sh daily</code>.
 </div></div>

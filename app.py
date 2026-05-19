@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
 
@@ -168,6 +168,57 @@ def _group_picks_by_layer(picks: list[dict]) -> list[dict]:
     return groups
 
 
+def _today_header() -> dict:
+    """Date pieces for the iOS Today View header + Calendar widget."""
+    today = date.today()
+    return {
+        "iso":     today.isoformat(),
+        "weekday": today.strftime("%A"),
+        "weekday_short": today.strftime("%a").upper(),
+        "month":   today.strftime("%B"),
+        "month_short": today.strftime("%b").upper(),
+        "day":     today.day,
+    }
+
+
+def _calendar_events(session_hdr, items) -> list[dict]:
+    """Today's session as a sequence of calendar events for the iOS-style
+    Calendar widget. Each event = {time, title, state} where state is one of
+    'done' | 'next' | 'later'."""
+    now = datetime.now().time()
+    open_t  = (9, 30)
+    close_t = (16, 0)
+
+    has_session = bool(session_hdr) and session_hdr is not False
+    session_done = (
+        has_session
+        and session_hdr.get("status") in ("completed", "settled")
+    )
+
+    def _state_for(hour: int, minute: int) -> str:
+        if (now.hour, now.minute) > (hour, minute):
+            return "done"
+        return "now"
+
+    events = [
+        {"time": "08:30", "title": "Morning brief",
+         "state": "done" if has_session else _state_for(8, 30)},
+        {"time": "09:30", "title": "Open · execute plan",
+         "state": _state_for(*open_t) if not session_done else "done"},
+        {"time": "16:00", "title": "Close · mark book",
+         "state": _state_for(*close_t) if not session_done else "done"},
+        {"time": "17:00", "title": "Debrief lessons",
+         "state": "done" if session_done else "later"},
+    ]
+    # Mark the next-upcoming event as 'next'
+    flipped_next = False
+    for e in events:
+        if e["state"] == "now":
+            e["state"] = "next" if not flipped_next else "later"
+            flipped_next = True
+    return events
+
+
 @app.route("/")
 @_login_required
 def index():
@@ -200,6 +251,8 @@ def index():
         items=items,
         realised=realised,
         lessons=lessons,
+        today=_today_header(),
+        calendar_events=_calendar_events(session_hdr, items),
     )
 
 
