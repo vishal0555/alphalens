@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %} · Universe{% endblock %}
+
+{% block head %}
+<style>
+  .pick { padding: 12px 16px; border-bottom: 1px solid var(--border2); }
+  .pick:last-child { border-bottom: none; }
+  .pick-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .pick-rat { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .pick-meta { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; align-items: center; }
+  .pick-weight { font-size: 16px; font-weight: 800; }
+
+  .diff { font-size: 9px; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; font-weight: 700; }
+  .diff.new   { color: var(--green); background: var(--green-bg); border: 1px solid var(--green-bd); }
+  .diff.held  { color: var(--muted); background: var(--bg3);     border: 1px solid var(--border); }
+  .diff.gone  { color: var(--red);   background: var(--red-bg);  border: 1px solid var(--red-bd); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="topbar">
+  <h1>Universe</h1>
+  {% if universe %}<span class="sub">{{ universe.as_of_date }}</span>{% endif %}
+</div>
+
+{% if not universe %}
+<div class="card"><div class="card-body empty-state">
+  <div class="empty-icon">⬢</div>
+  No active universe.
+</div></div>
+{% else %}
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Thesis</span>
+    <span class="card-sub">{{ universe.layer_coverage|length }} layers</span>
+  </div>
+  <div class="card-body">
+    <div style="font-size: 13px; line-height: 1.65;">{{ universe.rationale }}</div>
+    <div style="margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap;">
+      {% for layer in universe.layer_coverage %}
+      <span class="layer {{ layer }}">{{ layer }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Picks</span>
+    <span class="card-sub">{{ universe.picks|length }} tickers · weights → 100%</span>
+  </div>
+  <div class="card-body tight">
+    {% for p in universe.picks %}
+    {% set y = yesterday.picks_by_ticker.get(p.ticker) if yesterday else None %}
+    <div class="pick">
+      <div class="pick-head">
+        <span>
+          <span class="ticker" style="font-size: 15px;">{{ p.ticker }}</span>
+          <span class="layer {{ p.layer }}" style="margin-left: 6px;">{{ p.layer }}</span>
+        </span>
+        <span class="num pick-weight">{{ '%.1f'|format(p.weight_pct) }}%</span>
+      </div>
+      <div class="pick-meta">
+        {% if y %}
+          <span class="diff held">held</span>
+          {% set delta = p.weight_pct - y.weight_pct %}
+          {% if delta|abs > 0.5 %}
+          <span class="num {{ delta | pnl_class }}" style="font-weight: 600;">{{ '%+.1f'|format(delta) }}pp</span>
+          {% endif %}
+        {% elif yesterday %}
+          <span class="diff new">new</span>
+        {% endif %}
+        <span style="color: var(--muted);">rank {{ p.rank }}</span>
+      </div>
+      <div class="pick-rat">{{ p.rationale }}</div>
+    </div>
+    {% endfor %}
+
+    {# Dropped tickers from yesterday #}
+    {% if yesterday %}
+      {% set today_tickers = universe.picks | map(attribute='ticker') | list %}
+      {% for ticker, y in yesterday.picks_by_ticker.items() %}
+        {% if ticker not in today_tickers %}
+        <div class="pick" style="opacity: 0.55;">
+          <div class="pick-head">
+            <span>
+              <span class="ticker" style="font-size: 15px;">{{ ticker }}</span>
+              <span class="layer {{ y.layer }}" style="margin-left: 6px;">{{ y.layer }}</span>
+            </span>
+            <span class="num muted">—</span>
+          </div>
+          <div class="pick-meta">
+            <span class="diff gone">dropped</span>
+            <span class="muted">was {{ '%.1f'|format(y.weight_pct) }}% yesterday</span>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

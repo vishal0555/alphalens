@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %} · Debrief · {{ debrief.ticker }}{% endblock %}
+
+{% block head %}
+<style>
+  .stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+    background: var(--border); border-radius: 12px; overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .stat-cell { background: var(--bg2); padding: 12px 8px; text-align: center; }
+  .stat-cell .label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .stat-cell .val { font-size: 16px; font-weight: 800; margin-top: 4px; }
+
+  .verdict-box { padding: 14px 16px; font-size: 13px; line-height: 1.65; }
+
+  .wf { padding: 10px 16px; border-bottom: 1px solid var(--border2); font-size: 12px; line-height: 1.5; }
+  .wf:last-child { border-bottom: none; }
+  .wf.work { border-left: 3px solid var(--green); }
+  .wf.fail { border-left: 3px solid var(--red); }
+
+  .lesson { padding: 12px 16px; border-bottom: 1px solid var(--border2); font-size: 12px; line-height: 1.5; }
+  .lesson:last-child { border-bottom: none; }
+  .lesson .scope-tag { display: inline-block; padding: 1px 7px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-right: 6px; }
+  .lesson .when { color: var(--muted); font-style: italic; }
+  .lesson .guidance { margin-top: 4px; }
+
+  .back { font-size: 12px; color: var(--accent); text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="/debriefs" class="back">← Debriefs</a>
+
+<div class="topbar" style="margin-top: 8px;">
+  <h1><span class="ticker" style="font-size: 22px;">{{ debrief.ticker }}</span> <span class="muted" style="font-size: 14px; font-weight: 600;">{{ debrief.side }}</span></h1>
+  <span><span class="outcome {{ debrief.outcome }}">{{ debrief.outcome }}</span></span>
+</div>
+
+<div class="stats">
+  <div class="stat-cell">
+    <div class="label">PnL</div>
+    <div class="num val {{ debrief.pnl_pct | pnl_class }}">
+      {% if debrief.pnl_pct is not none %}{{ debrief.pnl_pct | signed_pct }}{% else %}—{% endif %}
+    </div>
+    {% if debrief.pnl_abs is not none %}
+    <div class="num {{ debrief.pnl_abs | pnl_class }}" style="font-size: 10px; font-weight: 600; margin-top: 2px;">{{ debrief.pnl_abs | signed_money }}</div>
+    {% endif %}
+  </div>
+  <div class="stat-cell">
+    <div class="label">Hold</div>
+    <div class="num val">{% if debrief.hold_time_minutes is not none %}{{ debrief.hold_time_minutes }}m{% else %}—{% endif %}</div>
+  </div>
+  <div class="stat-cell">
+    <div class="label">Slip (in/out)</div>
+    <div class="num val" style="font-size: 13px;">
+      {% if debrief.entry_slippage_bps is not none %}{{ '%+.1f'|format(debrief.entry_slippage_bps) }}{% else %}—{% endif %}
+      /
+      {% if debrief.exit_slippage_bps is not none %}{{ '%+.1f'|format(debrief.exit_slippage_bps) }}{% else %}—{% endif %}
+      <span class="muted" style="font-size: 9px; font-weight: 500;">bp</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Verdict</span>
+    <span class="card-sub">{{ debrief.model or '—' }}</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="verdict-box">{{ debrief.verdict or '(no verdict)' }}</div>
+  </div>
+</div>
+
+{% if debrief.what_worked or debrief.what_failed %}
+<div class="card">
+  <div class="card-header"><span class="card-label">What worked / failed</span></div>
+  <div class="card-body tight">
+    {% for line in debrief.what_worked %}<div class="wf work">{{ line }}</div>{% endfor %}
+    {% for line in debrief.what_failed %}<div class="wf fail">{{ line }}</div>{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if debrief.lessons %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Lessons</span>
+    <span class="card-sub">read by tomorrow's Scout</span>
+  </div>
+  <div class="card-body tight">
+    {% for l in debrief.lessons %}
+    <div class="lesson">
+      <span class="scope-tag">{{ l.scope }}</span><span class="when">when {{ l.applies_when }}</span>
+      <div class="guidance">→ {{ l.guidance }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

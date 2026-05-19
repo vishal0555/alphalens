@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %} · NAV{% endblock %}
+
+{% block head %}
+<style>
+  .big {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 18px 16px; margin-bottom: 12px;
+  }
+  .big-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .big-val { font-size: 32px; font-weight: 800; margin-top: 4px; line-height: 1.1; }
+  .big-pnl { font-size: 14px; font-weight: 700; margin-top: 6px; }
+
+  .spark-wrap { padding: 14px 16px; }
+  .spark-svg { width: 100%; height: 100px; display: block; }
+
+  .nav-row { padding: 10px 16px; border-bottom: 1px solid var(--border2); display: flex; justify-content: space-between; align-items: center; }
+  .nav-row:last-child { border-bottom: none; }
+  .nav-row-date { font-size: 12px; }
+  .nav-row-vals { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="topbar">
+  <h1>NAV</h1>
+  <span class="sub">{{ history|length }} marks</span>
+</div>
+
+{% if current %}
+<div class="big">
+  <div class="big-label">Current NAV</div>
+  <div class="num big-val">{{ current.ending_nav | money2 }}</div>
+  {% set pnl = current.realised_pnl %}
+  {% set pct = (pnl / current.starting_nav * 100) if current.starting_nav else None %}
+  <div class="num big-pnl {{ pnl | pnl_class }}">
+    {{ pnl | signed_money }}{% if pct is not none %} · {{ pct | signed_pct }}{% endif %}
+    <span class="muted" style="font-size: 11px; font-weight: 500;">last session</span>
+  </div>
+  {% if current.seed %}
+  <div style="font-size: 11px; color: var(--muted); margin-top: 6px;">Seed value — no session marks yet.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if history %}
+{# ── Sparkline ── #}
+{% set vals = history | map(attribute='ending_nav') | list %}
+{% set vmin = vals | min %}
+{% set vmax = vals | max %}
+{% set vrange = (vmax - vmin) if (vmax - vmin) > 0 else 1 %}
+{% set width = 480 %}
+{% set height = 100 %}
+{% set step = (width / (vals|length - 1)) if vals|length > 1 else 0 %}
+{% set last = vals[-1] %}
+{% set first = vals[0] %}
+{% set spark_color = 'var(--green)' if last >= first else 'var(--red)' %}
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">NAV trajectory</span>
+    <span class="card-sub">{{ history[0].as_of_date }} → {{ history[-1].as_of_date }}</span>
+  </div>
+  <div class="spark-wrap">
+    <svg class="spark-svg" viewBox="0 0 {{ width }} {{ height }}" preserveAspectRatio="none">
+      <polyline
+        fill="none"
+        stroke="{{ spark_color }}"
+        stroke-width="2"
+        points="
+          {% for v in vals %}
+            {{ loop.index0 * step }},{{ height - ((v - vmin) / vrange * (height - 8)) - 4 }}
+          {% endfor %}
+        "/>
+    </svg>
+    <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 4px;">
+      <span>min {{ vmin | money }}</span>
+      <span>max {{ vmax | money }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="card-label">Daily marks</span></div>
+  <div class="card-body tight">
+    {% for h in history | reverse %}
+    <div class="nav-row">
+      <div class="nav-row-date">{{ h.as_of_date }}</div>
+      <div class="nav-row-vals">
+        <span class="num" style="font-size: 13px; font-weight: 700;">{{ h.ending_nav | money2 }}</span>
+        <span class="num {{ h.realised_pnl | pnl_class }}" style="font-size: 11px;">{{ h.realised_pnl | signed_money }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<div class="card"><div class="card-body empty-state">
+  <div class="empty-icon">∿</div>
+  No NAV marks yet. The first one writes when a session completes.
+</div></div>
+{% endif %}
+
+{% endblock %}

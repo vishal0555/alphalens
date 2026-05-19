@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %} · Debriefs{% endblock %}
+
+{% block head %}
+<style>
+  .db-item { display: block; padding: 12px 16px; border-bottom: 1px solid var(--border2); color: var(--text); text-decoration: none; }
+  .db-item:last-child { border-bottom: none; }
+  .db-item:active { background: var(--bg3); }
+  .db-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .db-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .db-verdict { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="topbar">
+  <h1>Debriefs</h1>
+  <span class="sub">{{ debriefs|length }} recent</span>
+</div>
+
+{% if not debriefs %}
+<div class="card"><div class="card-body empty-state">
+  <div class="empty-icon">◐</div>
+  No debriefs yet. They auto-fire when a session completes.
+</div></div>
+{% else %}
+<div class="card">
+  <div class="card-body tight">
+    {% for d in debriefs %}
+    <a href="/debrief/{{ d.debrief_id }}" class="db-item">
+      <div class="db-top">
+        <span>
+          <span class="ticker" style="font-size: 14px;">{{ d.ticker }}</span>
+          <span class="muted" style="font-size: 11px; margin-left: 4px;">{{ d.side }}</span>
+          <span class="outcome {{ d.outcome }}" style="margin-left: 6px;">{{ d.outcome }}</span>
+        </span>
+        <span class="num" style="font-size: 13px; font-weight: 700;" class="{{ d.pnl_pct | pnl_class }}">
+          {% if d.pnl_pct is not none %}
+            <span class="{{ d.pnl_pct | pnl_class }}">{{ d.pnl_pct | signed_pct }}</span>
+          {% else %}<span class="muted">—</span>{% endif %}
+        </span>
+      </div>
+      <div class="db-meta">
+        {{ d.created_at | short_dt }}
+        {% if d.hold_time_minutes %}· held {{ d.hold_time_minutes }}m{% endif %}
+        {% if d.pnl_abs is not none %}· <span class="num {{ d.pnl_abs | pnl_class }}">{{ d.pnl_abs | signed_money }}</span>{% endif %}
+      </div>
+      {% if d.verdict %}<div class="db-verdict">{{ d.verdict }}</div>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
