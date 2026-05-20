@@ -3,19 +3,115 @@
 
 {% block head %}
 <style>
-  /* Universe-stack tile inside the swipe carousel — small + glanceable */
-  .uni-stack-card { padding: 16px 16px; }
-  .uni-stack-card .head {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 4px;
+  /* Universe — tall card with composition bar + layer-grouped tickers */
+  .uni-card-body { padding: 20px 18px; }
+
+  /* Top: stacked horizontal composition bar (100% wide, color-segmented) */
+  .uni-bar {
+    display: flex;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(255,255,255,.04);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
   }
-  .uni-stack-card .head .lhs { display: flex; align-items: center; gap: 10px; }
-  .uni-stack-card .head .count { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
-  .uni-stack-card .total { font-size: 24px; font-weight: 800; letter-spacing: -.025em; margin-top: 6px; }
-  .uni-stack-card .preview {
-    font-size: 12px; color: var(--text-2);
-    margin-top: 8px;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  .uni-bar-seg {
+    height: 100%;
+    position: relative;
+    transition: width .6s var(--ease-ios);
+  }
+  .uni-bar-seg + .uni-bar-seg { box-shadow: -1px 0 0 rgba(0,0,0,.45); }
+
+  /* Color stops — match the layer-pill palette */
+  .uni-bg-silicon     { background: #ffd60a; }
+  .uni-bg-hyperscaler { background: #0a84ff; }
+  .uni-bg-power       { background: #bf5af2; }
+  .uni-bg-infra       { background: #30d158; }
+  .uni-bg-model_lab   { background: #ff375f; }
+  .uni-bg-application { background: #5ac8fa; }
+  .uni-bg-device      { background: #ff9f0a; }
+  .uni-bg-sovereign   { background: #8e8e93; }
+
+  /* Tiny legend label under the bar */
+  .uni-bar-legend {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    font-size: 10px; letter-spacing: .03em;
+    color: var(--muted); margin-top: 8px;
+  }
+
+  /* Per-layer section card with subtle layer-color tint */
+  .uni-layer {
+    display: block; color: inherit; text-decoration: none;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 16px;
+    padding: 14px 14px 12px;
+    margin-top: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s var(--ease-ios), filter .2s var(--ease-ios);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .uni-layer:active { transform: scale(.985); filter: brightness(1.08); }
+  .uni-layer::before {
+    /* layer-colored accent stripe on the left edge */
+    content: ""; position: absolute;
+    left: 0; top: 12px; bottom: 12px; width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: rgba(255,255,255,.4);
+  }
+  .uni-layer.l-silicon::before     { background: #ffd60a; }
+  .uni-layer.l-hyperscaler::before { background: #0a84ff; }
+  .uni-layer.l-power::before       { background: #bf5af2; }
+  .uni-layer.l-infra::before       { background: #30d158; }
+  .uni-layer.l-model_lab::before   { background: #ff375f; }
+  .uni-layer.l-application::before { background: #5ac8fa; }
+  .uni-layer.l-device::before      { background: #ff9f0a; }
+  .uni-layer.l-sovereign::before   { background: #8e8e93; }
+
+  .uni-layer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; padding-left: 8px;
+  }
+  .uni-layer-head .lhs { display: flex; align-items: center; gap: 9px; }
+  .uni-layer-head .total {
+    font-size: 17px; font-weight: 800; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Ticker grid — 2 columns, compact tile with weight bar */
+  .uni-ticker-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    padding-left: 8px;
+  }
+  .uni-ticker {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 10px;
+    padding: 9px 11px;
+    display: flex; flex-direction: column; gap: 6px;
+    min-width: 0;
+  }
+  .uni-ticker .row1 {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  }
+  .uni-ticker .ticker {
+    font-size: 14px; letter-spacing: -.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    min-width: 0;
+  }
+  .uni-ticker .w {
+    font-size: 13px; font-weight: 800; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  .uni-ticker .micro-bar {
+    height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+  .uni-ticker .micro-bar > span {
+    display: block; height: 100%; border-radius: 2px;
   }
 
   /* Lesson-stack card */
@@ -283,34 +379,73 @@
   {% endif %}
 </div>
 
-{# ── Universe — stack of compact layer cards ────────────────── #}
+{# ── Universe — single tall card: composition bar + all picks ── #}
 {% if universe_groups %}
 <div class="w-section">
   <h2>Universe</h2>
-  <a href="/universe" class="more">See all →</a>
+  <a href="/universe" class="more">Detail →</a>
 </div>
 
-<div class="w-stack">
-  <div class="w-stack-track">
+{% set book_total = universe_groups | map(attribute='total_weight') | sum %}
+<div class="widget w-full" style="margin-bottom: 16px;">
+  <div class="uni-card-body">
+    <div class="w-head">
+      <div class="w-title">
+        <span class="w-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3l9 5.2v7.6L12 21l-9-5.2V8.2L12 3z" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" opacity=".85"/>
+            <path d="M12 3v18M3 8.2l9 5.2 9-5.2" stroke="#fff" stroke-width="1.2" opacity=".55"/>
+          </svg>
+        </span>
+        Universe
+      </div>
+      <span class="w-accessory">
+        {{ universe.picks|length }} picks · {{ universe_groups|length }} layers
+      </span>
+    </div>
+
+    {# Stacked composition bar — width per segment proportional to layer weight #}
+    <div class="uni-bar" aria-label="Book composition by layer">
+      {% for g in universe_groups %}
+      <div class="uni-bar-seg uni-bg-{{ g.layer }}"
+           style="width: {{ '%.2f'|format((g.total_weight / book_total * 100) if book_total else 0) }}%;"
+           title="{{ g.layer }} · {{ '%.1f'|format(g.total_weight) }}%"></div>
+      {% endfor %}
+    </div>
+    <div class="uni-bar-legend">
+      {% for g in universe_groups %}
+      <span>{{ g.layer }} {{ '%.0f'|format(g.total_weight) }}%</span>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </div>
+
+    {# Per-layer tinted blocks, each tappable to its sheet #}
     {% for g in universe_groups %}
-    <a class="widget tap layer-card {{ g.layer }}" data-sheet="uni-{{ g.layer }}" href="#uni-{{ g.layer }}" style="color:inherit;text-decoration:none;">
-      <div class="uni-stack-card">
-        <div class="head">
-          <div class="lhs">
-            <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
-            <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
+    {% set layer_max = (g.picks | map(attribute='weight_pct') | list | max) or 1 %}
+    <a class="uni-layer l-{{ g.layer }}" data-sheet="uni-{{ g.layer }}" href="#uni-{{ g.layer }}">
+      <div class="uni-layer-head">
+        <div class="lhs">
+          <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
+          <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: .04em;">
+            {{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}
+          </span>
+        </div>
+        <span class="num total">{{ '%.0f'|format(g.total_weight) }}%</span>
+      </div>
+      <div class="uni-ticker-grid">
+        {% for p in g.picks %}
+        {% set fill = (p.weight_pct / layer_max * 100) if layer_max else 0 %}
+        <div class="uni-ticker">
+          <div class="row1">
+            <span class="ticker ticker-blue">{{ p.ticker }}</span>
+            <span class="num w">{{ '%.1f'|format(p.weight_pct) }}%</span>
           </div>
+          <div class="micro-bar"><span class="uni-bg-{{ g.layer }}" style="width: {{ '%.0f'|format(fill) }}%;"></span></div>
         </div>
-        <div class="num total">{{ '%.0f'|format(g.total_weight) }}<span style="font-size:14px;font-weight:700;color:var(--muted);">% of book</span></div>
-        <div class="preview">
-          {% for p in g.picks[:3] %}<span class="ticker ticker-blue">{{ p.ticker }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
-          {% if g.picks|length > 3 %} <span class="muted">+{{ g.picks|length - 3 }}</span>{% endif %}
-        </div>
+        {% endfor %}
       </div>
     </a>
     {% endfor %}
   </div>
-  <div class="w-stack-dots"></div>
 </div>
 {% endif %}
 
