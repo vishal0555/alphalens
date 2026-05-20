@@ -56,6 +56,12 @@
 
 {% block content %}
 
+<header class="page-nav">
+  <a class="back" href="/">Today</a>
+  <span class="title">Book</span>
+  <span class="sp"></span>
+</header>
+
 <div class="topbar">
   <h1>Book</h1>
   {% if session_hdr %}<span class="sub">{{ session_hdr.briefing_date }}</span>{% endif %}

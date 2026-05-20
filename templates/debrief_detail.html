@@ -31,7 +31,11 @@
 
 {% block content %}
 
-<a href="/debriefs" class="back">← Debriefs</a>
+<header class="page-nav">
+  <a class="back" href="/debriefs">Debriefs</a>
+  <span class="title">{{ debrief.ticker }}</span>
+  <span class="sp"></span>
+</header>
 
 <div class="topbar">
   <h1><span class="ticker ticker-blue" style="font-size: 38px;">{{ debrief.ticker }}</span> <span class="muted" style="font-size: 16px; font-weight: 700;">{{ debrief.side }}</span></h1>

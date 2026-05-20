@@ -46,6 +46,12 @@
 
 {% block content %}
 
+<header class="page-nav">
+  <a class="back" href="/">Today</a>
+  <span class="title">Universe</span>
+  <span class="sp"></span>
+</header>
+
 <div class="topbar">
   <h1>Universe</h1>
   {% if universe %}<span class="sub">{{ universe.as_of_date }}</span>{% endif %}
