@@ -210,6 +210,7 @@
 
 {# ── ROW 2: Calendar + Reminders ────────────────────────────── #}
 <div class="wgrid">
+  {% set upcoming = (calendar_events | rejectattr('state','equalto','done') | list)[:3] %}
   <a class="widget w-cal w-calendar tap" data-sheet="calendar" href="#calendar">
     <div class="widget-body">
       <div class="w-head">
@@ -222,19 +223,19 @@
               <line x1="16" y1="3.5" x2="16" y2="6.5" stroke="#fff" stroke-width="1.4" opacity=".75" stroke-linecap="round"/>
             </svg>
           </span>
-          Calendar
+          Schedule
         </div>
+        {% if upcoming %}<span class="w-accessory">Next {{ upcoming[0].time }}</span>{% endif %}
       </div>
-      <div class="day">{{ today.weekday_short }}</div>
-      <div class="num dom">{{ today.day }}</div>
-      {% set upcoming = (calendar_events | rejectattr('state','equalto','done') | list)[:2] %}
-      {% if upcoming %}
-        {% for e in upcoming %}
-        <div class="event {{ e.state }}"><span class="t num">{{ e.time }}</span><span class="ttl">{{ e.title }}</span></div>
-        {% endfor %}
-      {% else %}
-        <div class="event done"><span class="t num">—</span><span class="ttl">All done</span></div>
-      {% endif %}
+      <div style="margin-top:auto;">
+        {% if upcoming %}
+          {% for e in upcoming %}
+          <div class="event {{ e.state }}"><span class="t num">{{ e.time }}</span><span class="ttl">{{ e.title }}</span></div>
+          {% endfor %}
+        {% else %}
+          <div class="event done"><span class="t num">—</span><span class="ttl">All done</span></div>
+        {% endif %}
+      </div>
     </div>
   </a>
 
