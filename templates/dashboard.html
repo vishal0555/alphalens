@@ -282,31 +282,6 @@
   {% endif %}
 </div>
 
-{# ── ROW 3: News (full-width, compact) ─────────────────────── #}
-{% if briefing %}
-<a class="widget w-news w-full tap" data-sheet="briefing" href="#briefing" style="display:block;color:inherit;text-decoration:none;margin-bottom:16px;">
-  <div class="widget-body">
-    <div class="w-head">
-      <div class="w-title">
-        <span class="w-icon">
-          <svg viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="4" width="14" height="16" rx="1.5" stroke="#0a84ff" stroke-width="1.4"/>
-            <rect x="17" y="9" width="4" height="11" rx="1" stroke="#0a84ff" stroke-width="1.4"/>
-            <line x1="6"  y1="8"  x2="14" y2="8"  stroke="#fff" stroke-width="1.4" opacity=".75" stroke-linecap="round"/>
-            <line x1="6"  y1="12" x2="14" y2="12" stroke="#fff" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>
-            <line x1="6"  y1="15" x2="14" y2="15" stroke="#fff" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>
-          </svg>
-        </span>
-        Briefing
-      </div>
-      <span class="w-accessory">{{ today.month_short|title }} {{ today.day }}</span>
-    </div>
-    <div class="kicker">Session thesis</div>
-    <div class="headline">{{ briefing.plan.session_thesis }}</div>
-  </div>
-</a>
-{% endif %}
-
 {# ── Universe — stack of compact layer cards ────────────────── #}
 {% if universe_groups %}
 <div class="w-section">
@@ -382,7 +357,7 @@
 <aside id="sheet-posture" class="sheet">
   <header class="sheet-hdr">
     <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Posture</h2>
+    <h2 class="sheet-title">Today's briefing</h2>
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
@@ -570,36 +545,6 @@
 </aside>
 {% endif %}
 
-{# Briefing sheet — full headline + thesis + regime + all risks #}
-{% if briefing %}
-<aside id="sheet-briefing" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Briefing</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    <div class="sheet-pill-row">
-      <span class="badge {{ posture }}">{{ posture }}</span>
-    </div>
-    <p class="lead">{{ briefing.plan.session_thesis }}</p>
-
-    {% if briefing.plan.regime_summary %}
-    <h3>Regime</h3>
-    <p>{{ briefing.plan.regime_summary }}</p>
-    {% endif %}
-
-    {% if briefing.plan.risks_today %}
-    <h3>Risks today ({{ briefing.plan.risks_today|length }})</h3>
-    <div class="sheet-risk-list">
-      {% for r in briefing.plan.risks_today %}
-      <div class="item">⚠ {{ r }}</div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-</aside>
-{% endif %}
 
 {# Per-layer universe sheets — picks with rationale #}
 {% if universe_groups %}
