@@ -3,27 +3,110 @@
 
 {% block head %}
 <style>
-  /* Tinted accents for the Universe stack cards (per layer) */
-  .uni-stack-card { padding: 20px 20px; }
+  /* Universe-stack tile inside the swipe carousel — small + glanceable */
+  .uni-stack-card { padding: 16px 16px; }
   .uni-stack-card .head {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 4px;
   }
   .uni-stack-card .head .lhs { display: flex; align-items: center; gap: 10px; }
-  .uni-stack-card .head .count { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
-  .uni-stack-card .head .total { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
-  .uni-stack-card .tiles {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+  .uni-stack-card .head .count { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
+  .uni-stack-card .total { font-size: 24px; font-weight: 800; letter-spacing: -.025em; margin-top: 6px; }
+  .uni-stack-card .preview {
+    font-size: 12px; color: var(--text-2);
+    margin-top: 8px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .uni-stack-card .tile {
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 14px;
+
+  /* Lesson-stack card */
+  .lesson-stack-card .top {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .lesson-stack-card .when { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .lesson-stack-card .guide {
+    font-size: 14px; line-height: 1.4; color: var(--text);
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* Sheet-only — full-density content */
+  .sheet-pill-row {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .sheet-risk-list { display: flex; flex-direction: column; gap: 8px; }
+  .sheet-risk-list .item {
+    padding: 12px 14px; border-radius: 12px;
+    background: rgba(255,159,10,.10);
+    border: 1px solid rgba(255,159,10,.22);
+    font-size: 14px; line-height: 1.45; color: var(--text);
+  }
+  .sheet-levels {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+    background: rgba(255,255,255,.08); border-radius: 12px;
+    overflow: hidden; margin: 10px 0 0;
+  }
+  .sheet-levels .lvl { background: var(--bg-card); padding: 10px 8px; text-align: center; }
+  .sheet-levels .lvl .l { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .sheet-levels .lvl .v { font-size: 15px; font-weight: 800; margin-top: 3px; letter-spacing: -.02em; }
+  .sheet-levels .lvl.stop .v { color: var(--red); }
+  .sheet-levels .lvl.target .v { color: var(--green); }
+
+  .sheet-stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin: 10px 0;
+  }
+  .sheet-stat-grid .cell {
+    background: var(--bg-card); border-radius: 12px;
     padding: 12px 14px;
-    display: flex; align-items: center; justify-content: space-between;
   }
-  .uni-stack-card .tile .ticker { font-size: 17px; }
-  .uni-stack-card .tile .w { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+  .sheet-stat-grid .cell .l { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .sheet-stat-grid .cell .v { font-size: 22px; font-weight: 800; letter-spacing: -.025em; margin-top: 4px; }
+
+  .sheet-tile-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    margin-top: 6px;
+  }
+  .sheet-tile {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .sheet-tile .t { font-size: 16px; }
+  .sheet-tile .w { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+
+  .sheet-event {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 0;
+  }
+  .sheet-event + .sheet-event { border-top: 1px solid var(--border); }
+  .sheet-event .t {
+    font-size: 14px; font-weight: 800; color: var(--accent);
+    width: 56px; flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+  .sheet-event.done .t { color: var(--green); }
+  .sheet-event.next .t { color: var(--orange); }
+  .sheet-event.later .t { color: var(--muted); }
+  .sheet-event.done .ttl { color: var(--muted); text-decoration: line-through; }
+  .sheet-event .ttl { font-size: 15px; font-weight: 600; }
+  .sheet-event .nt { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+  .sheet-link {
+    display: block; text-align: center;
+    background: var(--accent); color: #fff;
+    font-size: 16px; font-weight: 700;
+    padding: 14px; border-radius: 14px;
+    text-decoration: none;
+    margin-top: 18px;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .2s var(--ease-ios), filter .2s var(--ease-ios);
+  }
+  .sheet-link:active { transform: scale(.98); filter: brightness(1.1); }
+
+  .sheet-lesson-card { padding: 14px 16px; }
+  .sheet-lesson-card + .sheet-lesson-card { border-top: 1px solid var(--border); }
+  .sheet-lesson-card .head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .sheet-lesson-card .when { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 4px; }
+  .sheet-lesson-card .guide { font-size: 15px; line-height: 1.5; color: var(--text); }
 </style>
 {% endblock %}
 
@@ -39,75 +122,68 @@
 </div>
 
 {% if not db_ok %}
-<div class="widget w-full"><div class="widget-body empty-state">
+<div class="widget"><div class="widget-body empty-state">
   <div class="empty-icon">⚠</div>
   Database unreachable.
 </div></div>
 {% endif %}
 
-{# ─── 1. WEATHER WIDGET ─ Posture as today's "forecast" ──────── #}
+{# Compute weather class once #}
 {% if briefing %}
   {% set posture = briefing.plan.posture %}
   {% if posture == 'aggressive' %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'AGGRESSIVE', 'Clear skies — full size', 'sun' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'Aggressive', 'Clear · full size', 'sun' %}
   {% elif posture == 'defensive' %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'DEFENSIVE', 'Storm warning — half size', 'storm' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'Defensive', 'Stormy · half size', 'storm' %}
   {% else %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-mix', 'NEUTRAL', 'Mixed conditions — selective', 'cloudsun' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-mix', 'Neutral', 'Mixed · selective', 'cloudsun' %}
   {% endif %}
-<div class="widget w-weather {{ w_class }}">
-  <div class="widget-body-lg">
-    <div class="w-head">
-      <div class="w-title">
-        <span class="w-icon">
-          {% if w_icon == 'sun' %}
-          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#fff"/>
-            <g stroke="#fff" stroke-width="1.6" stroke-linecap="round">
-              <line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/>
-              <line x1="3" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/>
-              <line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/>
-              <line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>
-            </g></svg>
-          {% elif w_icon == 'storm' %}
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M7 16c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H7z" fill="#fff" opacity=".95"/>
-            <path d="M11 14l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffd60a"/>
-          </svg>
-          {% else %}
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="8" cy="9" r="3" fill="#ffd60a"/>
-            <path d="M9 18c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H9z" fill="#fff" opacity=".95"/>
-          </svg>
-          {% endif %}
-        </span>
-        Posture
-      </div>
-      <span class="w-accessory">{{ today.month_short|title }} {{ today.day }}</span>
-    </div>
-
-    <div class="temp">{{ w_label }}</div>
-    <div class="cond">{{ briefing.plan.session_thesis }}</div>
-
-    <div class="row">
-      <span>Conditions: <strong>{{ w_cond }}</strong></span>
-      {% if briefing.plan.regime_summary %}
-      <span style="text-align:right; max-width: 55%; opacity:.8;">{{ briefing.plan.regime_summary[:80] }}{% if briefing.plan.regime_summary|length > 80 %}…{% endif %}</span>
-      {% endif %}
-    </div>
-  </div>
-</div>
 {% endif %}
 
-{# ─── 2. BATTERY + CALENDAR row ──────────────────────────────── #}
+{# ── ROW 1: Weather + Battery ───────────────────────────────── #}
 <div class="wgrid">
-  {# Battery — NAV. Bar fill scales with PnL% vs starting NAV (clamped 8–100). #}
+  {% if briefing %}
+  <a class="widget w-weather {{ w_class }} tap" data-sheet="posture" href="#posture">
+    <div class="widget-body">
+      <div class="w-head">
+        <div class="w-title">
+          <span class="w-icon">
+            {% if w_icon == 'sun' %}
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" fill="#fff"/>
+              <g stroke="#fff" stroke-width="1.5" stroke-linecap="round">
+                <line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/>
+                <line x1="3" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/>
+                <line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/>
+                <line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>
+              </g></svg>
+            {% elif w_icon == 'storm' %}
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M7 16c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H7z" fill="#fff"/>
+              <path d="M11 14l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffd60a"/>
+            </svg>
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="8" cy="9" r="2.6" fill="#ffd60a"/>
+              <path d="M9 18c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H9z" fill="#fff"/>
+            </svg>
+            {% endif %}
+          </span>
+          Posture
+        </div>
+      </div>
+      <div class="temp">{{ w_label }}</div>
+      <div class="cond">{{ w_cond }}</div>
+    </div>
+  </a>
+  {% endif %}
+
   {% if nav %}
     {% set pnl = nav.realised_pnl %}
     {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
     {% set fill_w = 50 + pnl_pct * 5 %}
     {% if fill_w < 8 %}{% set fill_w = 8 %}{% elif fill_w > 100 %}{% set fill_w = 100 %}{% endif %}
     {% set fill_class = 'pos' if pnl > 0 else ('neg' if pnl < 0 else 'flat') %}
-  <a href="/nav" class="widget w-batt w-battery tap">
+  <a class="widget w-batt w-battery tap" data-sheet="nav" href="#nav">
     <div class="widget-body">
       <div class="w-head">
         <div class="w-title">
@@ -122,19 +198,19 @@
         </div>
         <span class="w-accessory">{{ '%+.2f'|format(pnl_pct) }}%</span>
       </div>
-
       <div class="num val">{{ nav.ending_nav | money2 }}</div>
       <div class="num delta {{ fill_class }}">{{ pnl | signed_money }}</div>
-
       <div class="bar">
         <div class="bar-fill {{ fill_class }}" style="width: {{ '%.0f'|format(fill_w) }}%;"></div>
       </div>
     </div>
   </a>
   {% endif %}
+</div>
 
-  {# Calendar — today's session schedule #}
-  <a href="/positions" class="widget w-cal w-calendar tap">
+{# ── ROW 2: Calendar + Reminders ────────────────────────────── #}
+<div class="wgrid">
+  <a class="widget w-cal w-calendar tap" data-sheet="calendar" href="#calendar">
     <div class="widget-body">
       <div class="w-head">
         <div class="w-title">
@@ -146,85 +222,70 @@
               <line x1="16" y1="3.5" x2="16" y2="6.5" stroke="#fff" stroke-width="1.4" opacity=".75" stroke-linecap="round"/>
             </svg>
           </span>
-          Today
+          Calendar
         </div>
       </div>
-
       <div class="day">{{ today.weekday_short }}</div>
       <div class="num dom">{{ today.day }}</div>
-
-      {% for e in calendar_events[:3] %}
-      <div class="event {{ e.state }}">
-        <span class="t num">{{ e.time }}</span>
-        <span class="ttl">{{ e.title }}</span>
-      </div>
-      {% endfor %}
+      {% set upcoming = (calendar_events | rejectattr('state','equalto','done') | list)[:2] %}
+      {% if upcoming %}
+        {% for e in upcoming %}
+        <div class="event {{ e.state }}"><span class="t num">{{ e.time }}</span><span class="ttl">{{ e.title }}</span></div>
+        {% endfor %}
+      {% else %}
+        <div class="event done"><span class="t num">—</span><span class="ttl">All done</span></div>
+      {% endif %}
     </div>
   </a>
-</div>
 
-{# ─── 3. REMINDERS WIDGET — today's plan items as checkmarks ── #}
-{% if items %}
-<div class="widget w-rem w-reminders w-full">
-  <div class="widget-body-lg">
-    <div class="w-head">
-      <div class="w-title">
-        <span class="w-icon">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="6" cy="7" r="2.2"  stroke="#ff9f0a" stroke-width="1.4"/>
-            <circle cx="6" cy="13" r="2.2" stroke="#ff9f0a" stroke-width="1.4"/>
-            <circle cx="6" cy="19" r="2.2" stroke="#ff9f0a" stroke-width="1.4"/>
-            <line x1="11" y1="7"  x2="20" y2="7"  stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
-            <line x1="11" y1="13" x2="20" y2="13" stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
-            <line x1="11" y1="19" x2="20" y2="19" stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
-          </svg>
-        </span>
-        Today's plan
-      </div>
-      <a href="/positions" class="w-accessory" style="color: var(--accent); text-decoration: none;">{{ items|length }} items →</a>
-    </div>
-
-    {% for it in items %}
-      {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
-      {% set is_cancel = it.status in ['expired','cancelled'] %}
-      {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
-    <a href="/positions" class="rem-row row-link" style="display:flex;color:inherit;text-decoration:none;align-items:center;gap:10px;padding:8px 0;">
-      <span class="check {{ check_cls }}"></span>
-      <span class="rem-tx">
-        <span class="top">
-          <span class="tk ticker">{{ it.ticker }}
-            <span class="muted num" style="font-weight:600;font-size:12px;">×{{ it.size_shares }}</span>
+  {% if items %}
+    {% set done_count = items | selectattr('status','in',['exited_target','exited_stop','exited_rotation','exited_cancel']) | list | length %}
+  <a class="widget w-rem w-reminders tap" data-sheet="reminders" href="#reminders">
+    <div class="widget-body">
+      <div class="w-head">
+        <div class="w-title">
+          <span class="w-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="6" cy="7" r="2.2"  stroke="#ff9f0a" stroke-width="1.4"/>
+              <circle cx="6" cy="13" r="2.2" stroke="#ff9f0a" stroke-width="1.4"/>
+              <circle cx="6" cy="19" r="2.2" stroke="#ff9f0a" stroke-width="1.4"/>
+              <line x1="11" y1="7"  x2="20" y2="7"  stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
+              <line x1="11" y1="13" x2="20" y2="13" stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
+              <line x1="11" y1="19" x2="20" y2="19" stroke="#fff" stroke-width="1.4" opacity=".7" stroke-linecap="round"/>
+            </svg>
           </span>
-          {% if it.entry_fill_price and it.exit_fill_price %}
-            {% set rpnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
-            <span class="px num {{ rpnl | pnl_class }}">{{ rpnl | signed_money }}</span>
-          {% elif it.entry_fill_price %}
-            <span class="px num">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
-          {% else %}
-            <span class="px num muted">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</span>
-          {% endif %}
-        </span>
-        <span class="sub">
-          <span class="item-status {{ it.status }}">{{ it.status }}</span>
-        </span>
-      </span>
-    </a>
-    {% endfor %}
-
-    {% if realised is not none %}
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);">
-      <span style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);">Realised today</span>
-      <span class="num {{ realised | pnl_class }}" style="font-size:22px;font-weight:800;letter-spacing:-.02em;">{{ realised | signed_money }}</span>
+          Plan
+        </div>
+        <span class="w-accessory">{{ done_count }}/{{ items|length }}</span>
+      </div>
+      {% for it in items[:3] %}
+        {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
+        {% set is_cancel = it.status in ['expired','cancelled'] %}
+        {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
+        <div class="rem-row">
+          <span class="check {{ check_cls }}"></span>
+          <span class="rem-tk">{{ it.ticker }}</span>
+        </div>
+      {% endfor %}
+      {% if items|length > 3 %}
+        <div class="rem-more">+{{ items|length - 3 }} more</div>
+      {% endif %}
     </div>
-    {% endif %}
+  </a>
+  {% else %}
+  <div class="widget w-rem w-reminders">
+    <div class="widget-body">
+      <div class="w-head"><div class="w-title">Plan</div></div>
+      <div style="margin: auto; text-align: center; color: var(--muted); font-size: 13px;">No plan today</div>
+    </div>
   </div>
+  {% endif %}
 </div>
-{% endif %}
 
-{# ─── 4. NEWS WIDGET — briefing as headline ──────────────────── #}
+{# ── ROW 3: News (full-width, compact) ─────────────────────── #}
 {% if briefing %}
-<div class="widget w-news w-full">
-  <div class="widget-body-lg">
+<a class="widget w-news w-full tap" data-sheet="briefing" href="#briefing" style="display:block;color:inherit;text-decoration:none;margin-bottom:16px;">
+  <div class="widget-body">
     <div class="w-head">
       <div class="w-title">
         <span class="w-icon">
@@ -236,32 +297,17 @@
             <line x1="6"  y1="15" x2="14" y2="15" stroke="#fff" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>
           </svg>
         </span>
-        Market briefing
+        Briefing
       </div>
-      <span class="w-accessory">{{ briefing.as_of_date if briefing.as_of_date is defined else today.iso }}</span>
+      <span class="w-accessory">{{ today.month_short|title }} {{ today.day }}</span>
     </div>
-
-    <div class="kicker">Session thesis · {{ briefing.plan.posture }}</div>
+    <div class="kicker">Session thesis</div>
     <div class="headline">{{ briefing.plan.session_thesis }}</div>
-
-    {% if briefing.plan.regime_summary %}
-    <div class="lede">{{ briefing.plan.regime_summary }}</div>
-    {% endif %}
-
-    {% if briefing.plan.risks_today %}
-    <div class="byline">
-      <span style="color:var(--orange);font-weight:800;">⚠</span>
-      <span>{{ briefing.plan.risks_today[0] }}</span>
-      {% if briefing.plan.risks_today|length > 1 %}
-      <span style="margin-left:auto;color:var(--muted);">+{{ briefing.plan.risks_today|length - 1 }} more</span>
-      {% endif %}
-    </div>
-    {% endif %}
   </div>
-</div>
+</a>
 {% endif %}
 
-{# ─── 5. UNIVERSE STACK — swipeable layer cards ──────────────── #}
+{# ── Universe — stack of compact layer cards ────────────────── #}
 {% if universe_groups %}
 <div class="w-section">
   <h2>Universe</h2>
@@ -271,32 +317,28 @@
 <div class="w-stack">
   <div class="w-stack-track">
     {% for g in universe_groups %}
-    <div class="widget tap layer-card {{ g.layer }}">
+    <a class="widget tap layer-card {{ g.layer }}" data-sheet="uni-{{ g.layer }}" href="#uni-{{ g.layer }}" style="color:inherit;text-decoration:none;">
       <div class="uni-stack-card">
         <div class="head">
           <div class="lhs">
             <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
             <span class="count">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
           </div>
-          <span class="num total">{{ '%.0f'|format(g.total_weight) }}%</span>
         </div>
-        <div class="tiles">
-          {% for p in g.picks %}
-          <div class="tile">
-            <span class="ticker ticker-blue">{{ p.ticker }}</span>
-            <span class="num w">{{ '%.0f'|format(p.weight_pct) }}%</span>
-          </div>
-          {% endfor %}
+        <div class="num total">{{ '%.0f'|format(g.total_weight) }}<span style="font-size:14px;font-weight:700;color:var(--muted);">% of book</span></div>
+        <div class="preview">
+          {% for p in g.picks[:3] %}<span class="ticker ticker-blue">{{ p.ticker }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {% if g.picks|length > 3 %} <span class="muted">+{{ g.picks|length - 3 }}</span>{% endif %}
         </div>
       </div>
-    </div>
+    </a>
     {% endfor %}
   </div>
   <div class="w-stack-dots"></div>
 </div>
 {% endif %}
 
-{# ─── 6. LESSONS STACK — swipeable news-style cards ──────────── #}
+{# ── Lessons — stack of compact lesson cards ────────────────── #}
 {% if lessons %}
 <div class="w-section">
   <h2>Lessons</h2>
@@ -306,24 +348,16 @@
 <div class="w-stack">
   <div class="w-stack-track">
     {% for l in lessons %}
-    <div class="widget w-news">
-      <div class="widget-body-lg">
-        <div class="w-head">
-          <div class="w-title">
-            <span class="w-icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.5 8 12 3z" stroke="#bf5af2" stroke-width="1.4" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            {{ l.ticker }} · {{ l.scope }}
-          </div>
-          <span class="w-accessory">{{ l.created_at | short_dt }}</span>
+    <a class="widget tap w-news" data-sheet="lesson-{{ loop.index0 }}" href="#lesson-{{ loop.index0 }}" style="color:inherit;text-decoration:none;">
+      <div class="widget-body lesson-stack-card">
+        <div class="top">
+          <span class="ticker ticker-blue" style="font-size:14px;">{{ l.ticker }}</span>
+          <span class="layer-pill" style="background:rgba(255,255,255,.10);font-size:11px;">{{ l.scope }}</span>
         </div>
-        <div class="kicker">When</div>
-        <div class="headline" style="font-size: 16px;">{{ l.applies_when }}</div>
-        <div class="lede"><strong style="color:var(--text);">→ </strong>{{ l.guidance }}</div>
+        <div class="when">when {{ l.applies_when[:60] }}{% if l.applies_when|length > 60 %}…{% endif %}</div>
+        <div class="guide">→ {{ l.guidance }}</div>
       </div>
-    </div>
+    </a>
     {% endfor %}
   </div>
   <div class="w-stack-dots"></div>
@@ -331,10 +365,303 @@
 {% endif %}
 
 {% if db_ok and not briefing and not universe %}
-<div class="widget w-full"><div class="widget-body empty-state">
+<div class="widget"><div class="widget-body empty-state">
   <div class="empty-icon">◌</div>
   No fund data yet. Run <code>./run.sh daily</code>.
 </div></div>
+{% endif %}
+
+{# ════════════════════════════════════════════════════════════
+   DETAIL SHEETS — slide up from bottom, "‹ Today" to dismiss
+   ════════════════════════════════════════════════════════════ #}
+
+<div id="sheet-overlay" class="sheet-overlay"></div>
+
+{# Posture sheet — full thesis, regime, risks #}
+{% if briefing %}
+<aside id="sheet-posture" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Posture</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-pill-row">
+      <span class="badge {{ posture }}">{{ posture }}</span>
+      <span class="badge neutral">{{ w_cond }}</span>
+    </div>
+    <p class="lead">{{ briefing.plan.session_thesis }}</p>
+
+    {% if briefing.plan.regime_summary %}
+    <h3>Regime</h3>
+    <p>{{ briefing.plan.regime_summary }}</p>
+    {% endif %}
+
+    {% if briefing.plan.risks_today %}
+    <h3>Risks today</h3>
+    <div class="sheet-risk-list">
+      {% for r in briefing.plan.risks_today %}
+      <div class="item">⚠ {{ r }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</aside>
+{% endif %}
+
+{# NAV sheet — values + breakdown #}
+{% if nav %}
+<aside id="sheet-nav" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Fund NAV</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div style="text-align:center;padding:8px 0 6px;">
+      <div class="num" style="font-size:48px;font-weight:800;letter-spacing:-.03em;">{{ nav.ending_nav | money2 }}</div>
+      {% set pnl = nav.realised_pnl %}
+      {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
+      <div class="num {{ pnl | pnl_class }}" style="font-size:18px;font-weight:800;margin-top:6px;">
+        {{ pnl | signed_money }} · {{ '%+.2f'|format(pnl_pct) }}%
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:4px;">last session</div>
+    </div>
+
+    <h3>Breakdown</h3>
+    <div class="sheet-stat-grid">
+      <div class="cell">
+        <div class="l">Starting</div>
+        <div class="num v">{{ nav.starting_nav | money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">Ending</div>
+        <div class="num v">{{ nav.ending_nav | money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">Realised</div>
+        <div class="num v {{ pnl | pnl_class }}">{{ pnl | signed_money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">As of</div>
+        <div class="v" style="font-size:16px;">{{ nav.as_of_date }}</div>
+      </div>
+    </div>
+
+    {% if nav.seed %}
+    <p class="muted" style="font-size:13px;">Seed value — no session marks yet.</p>
+    {% endif %}
+
+    <a href="/nav" class="sheet-link">View NAV history →</a>
+  </div>
+</aside>
+{% endif %}
+
+{# Calendar sheet — full session schedule #}
+<aside id="sheet-calendar" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Calendar</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:18px;">
+      <div>
+        <div style="font-size:14px;font-weight:800;letter-spacing:.1em;color:var(--red);text-transform:uppercase;">{{ today.weekday_short }}</div>
+        <div class="num" style="font-size:54px;font-weight:800;line-height:1;letter-spacing:-.03em;">{{ today.day }}</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:var(--muted);font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">{{ today.month }}</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text-2);margin-top:2px;">{{ today.weekday }}</div>
+      </div>
+    </div>
+
+    <h3>Session schedule</h3>
+    {% for e in calendar_events %}
+    <div class="sheet-event {{ e.state }}">
+      <span class="t num">{{ e.time }}</span>
+      <span>
+        <div class="ttl">{{ e.title }}</div>
+        <div class="nt">
+          {% if e.state == 'done' %}Completed
+          {% elif e.state == 'next' %}Up next
+          {% elif e.state == 'later' %}Later today
+          {% else %}Scheduled{% endif %}
+        </div>
+      </span>
+    </div>
+    {% endfor %}
+
+    {% if session_hdr and session_hdr is not false %}
+    <h3>Session</h3>
+    <div class="row-card">
+      <div style="font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Status</div>
+      <div style="font-size:18px;font-weight:700;margin-top:4px;">{{ session_hdr.status }}</div>
+      {% if session_hdr.narrative %}
+      <p style="margin-top:10px;font-size:14px;line-height:1.5;color:var(--text-2);">{{ session_hdr.narrative }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</aside>
+
+{# Reminders sheet — all plan items with full levels #}
+{% if items %}
+<aside id="sheet-reminders" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Plan</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    {% if realised is not none %}
+    <div class="sheet-stat-grid">
+      <div class="cell">
+        <div class="l">Realised today</div>
+        <div class="num v {{ realised | pnl_class }}">{{ realised | signed_money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">Items</div>
+        <div class="v">{{ items|length }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% for it in items %}
+      {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
+      {% set is_cancel = it.status in ['expired','cancelled'] %}
+      {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
+    <div class="row-card" style="padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span class="check {{ check_cls }}" style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.32);display:inline-flex;align-items:center;justify-content:center;{% if is_done %}background:var(--green);border-color:var(--green);{% elif is_cancel %}background:rgba(255,255,255,.05);{% endif %}"></span>
+        <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
+        <span class="muted num" style="font-size:12px;">×{{ it.size_shares }}</span>
+        <span style="margin-left:auto;" class="item-status {{ it.status }}">{{ it.status }}</span>
+      </div>
+      <div class="sheet-levels">
+        <div class="lvl">
+          <div class="l">Entry</div>
+          <div class="num v">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</div>
+        </div>
+        <div class="lvl stop">
+          <div class="l">Stop</div>
+          <div class="num v">{{ '%.2f'|format(it.stop) }}</div>
+        </div>
+        <div class="lvl target">
+          <div class="l">Target</div>
+          <div class="num v">{{ '%.2f'|format(it.target) }}</div>
+        </div>
+      </div>
+      {% if it.entry_fill_price %}
+      <div style="margin-top:10px;font-size:13px;color:var(--text-2);">
+        Entry <strong class="num">${{ '%.2f'|format(it.entry_fill_price) }}</strong>
+        {% if it.exit_fill_price %}
+          · Exit <strong class="num">${{ '%.2f'|format(it.exit_fill_price) }}</strong>
+          {% set rpnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
+          · <span class="num {{ rpnl | pnl_class }}">{{ rpnl | signed_money }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <a href="/positions" class="sheet-link">Open book →</a>
+  </div>
+</aside>
+{% endif %}
+
+{# Briefing sheet — full headline + thesis + regime + all risks #}
+{% if briefing %}
+<aside id="sheet-briefing" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Briefing</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-pill-row">
+      <span class="badge {{ posture }}">{{ posture }}</span>
+    </div>
+    <p class="lead">{{ briefing.plan.session_thesis }}</p>
+
+    {% if briefing.plan.regime_summary %}
+    <h3>Regime</h3>
+    <p>{{ briefing.plan.regime_summary }}</p>
+    {% endif %}
+
+    {% if briefing.plan.risks_today %}
+    <h3>Risks today ({{ briefing.plan.risks_today|length }})</h3>
+    <div class="sheet-risk-list">
+      {% for r in briefing.plan.risks_today %}
+      <div class="item">⚠ {{ r }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</aside>
+{% endif %}
+
+{# Per-layer universe sheets — picks with rationale #}
+{% if universe_groups %}
+{% for g in universe_groups %}
+<aside id="sheet-uni-{{ g.layer }}" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">{{ g.layer|capitalize }}</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-pill-row">
+      <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
+      <span class="badge neutral">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
+      <span class="badge neutral num">{{ '%.0f'|format(g.total_weight) }}% of book</span>
+    </div>
+
+    {% for p in g.picks %}
+    <div class="row-card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <span class="ticker ticker-blue" style="font-size:22px;">{{ p.ticker }}</span>
+        <span class="num" style="font-size:22px;font-weight:800;letter-spacing:-.02em;">{{ '%.1f'|format(p.weight_pct) }}%</span>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:2px;letter-spacing:.04em;">rank #{{ p.rank }}</div>
+      {% if p.rationale %}
+      <p style="font-size:14px;line-height:1.5;color:var(--text-2);margin-top:8px;margin-bottom:0;">{{ p.rationale }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <a href="/universe" class="sheet-link">All universe layers →</a>
+  </div>
+</aside>
+{% endfor %}
+{% endif %}
+
+{# Per-lesson sheets — full lesson detail #}
+{% if lessons %}
+{% for l in lessons %}
+<aside id="sheet-lesson-{{ loop.index0 }}" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Lesson</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-pill-row">
+      <span class="ticker ticker-blue" style="font-size:18px;">{{ l.ticker }}</span>
+      <span class="badge neutral">{{ l.scope }}</span>
+      <span class="badge neutral">{{ l.created_at | short_dt }}</span>
+    </div>
+
+    <h3>When</h3>
+    <p>{{ l.applies_when }}</p>
+
+    <h3>Guidance</h3>
+    <p class="lead">→ {{ l.guidance }}</p>
+
+    <a href="/debriefs" class="sheet-link">All debriefs →</a>
+  </div>
+</aside>
+{% endfor %}
 {% endif %}
 
 {% endblock %}

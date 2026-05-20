@@ -225,13 +225,13 @@
        ════════════════════════════════════════════════════════════════ */
 
     :root {
-      --widget-radius: 26px;
-      --widget-radius-inner: 18px;
+      --widget-radius: 22px;
+      --widget-radius-inner: 16px;
       --ease-ios: cubic-bezier(.32, .72, 0, 1);
       --shadow-widget:
         0 1px 0 rgba(255,255,255,.04) inset,
         0 1px 2px rgba(0,0,0,.4),
-        0 8px 24px rgba(0,0,0,.35);
+        0 6px 18px rgba(0,0,0,.32);
       --glass-bg: rgba(28, 28, 30, .72);
       --glass-stroke: rgba(255,255,255,.08);
     }
@@ -264,18 +264,21 @@
     .wgrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
+      gap: 16px;
+      margin-bottom: 16px;
+      grid-auto-rows: 1fr;       /* equalize row heights */
+      align-items: stretch;
     }
     .wgrid .w-full { grid-column: 1 / -1; }
+    .wgrid > .widget { min-height: 152px; }    /* iOS medium-widget feel */
 
     /* Section heading inside Today View (like "Suggested · Photos") */
     .w-section {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 22px 6px 10px;
+      padding: 26px 6px 12px;
     }
     .w-section h2 {
-      font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+      font-size: 20px; font-weight: 800; letter-spacing: -.02em;
     }
     .w-section .more {
       font-size: 14px; font-weight: 700; color: var(--accent);
@@ -303,8 +306,8 @@
     .widget.tap:active { transform: scale(.97); filter: brightness(1.08); }
     a.widget { display: block; color: inherit; text-decoration: none; }
 
-    .widget-body { padding: 18px 18px; }
-    .widget-body-lg { padding: 22px 22px; }
+    .widget-body { padding: 16px 16px; height: 100%; display: flex; flex-direction: column; }
+    .widget-body-lg { padding: 20px 20px; }
 
     /* Widget tints (vibrant gradients, weather-widget style) */
     .widget.w-weather-sun  { background: linear-gradient(160deg, #f59e0b 0%, #d97706 45%, #7c2d12 100%); color: #fff; }
@@ -334,29 +337,31 @@
 
     /* Weather widget */
     .w-weather .temp {
-      font-size: 62px; font-weight: 300; letter-spacing: -.04em; line-height: 1;
+      font-size: 32px; font-weight: 700; letter-spacing: -.025em; line-height: 1;
       font-variant-numeric: tabular-nums;
+      margin-top: auto;
     }
     .w-weather .cond {
-      font-size: 15px; font-weight: 600; margin-top: 6px;
-      color: rgba(255,255,255,.85); letter-spacing: -.005em;
+      font-size: 13px; font-weight: 600; margin-top: 4px;
+      color: rgba(255,255,255,.8); letter-spacing: -.005em;
     }
     .w-weather .row {
       display: flex; justify-content: space-between; align-items: baseline;
-      margin-top: 18px; font-size: 12px;
+      margin-top: 10px; font-size: 11px;
       color: rgba(255,255,255,.7); letter-spacing: .04em;
     }
     .w-weather .row strong { color: #fff; font-weight: 800; }
 
     /* Battery widget */
     .w-batt .val {
-      font-size: 32px; font-weight: 800; letter-spacing: -.025em;
+      font-size: 24px; font-weight: 800; letter-spacing: -.025em;
       font-variant-numeric: tabular-nums;
+      margin-top: auto;
     }
-    .w-batt .delta { font-size: 14px; font-weight: 700; margin-top: 4px; letter-spacing: -.01em; }
+    .w-batt .delta { font-size: 13px; font-weight: 700; margin-top: 2px; letter-spacing: -.01em; }
     .w-batt .bar {
-      margin-top: 14px;
-      height: 14px; border-radius: 4px;
+      margin-top: 10px;
+      height: 11px; border-radius: 3px;
       border: 1.5px solid rgba(255,255,255,.4);
       padding: 1.5px;
       position: relative;
@@ -380,37 +385,36 @@
 
     /* Calendar widget */
     .w-cal .day {
-      font-size: 13px; font-weight: 800; letter-spacing: .1em;
-      color: var(--red);  /* iOS calendar uses red for weekday */
+      font-size: 12px; font-weight: 800; letter-spacing: .1em;
+      color: var(--red);
       text-transform: uppercase;
     }
     .w-cal .dom {
-      font-size: 36px; font-weight: 800; line-height: 1;
-      letter-spacing: -.03em; margin: 2px 0 12px;
+      font-size: 28px; font-weight: 800; line-height: 1;
+      letter-spacing: -.03em; margin: 2px 0 10px;
     }
     .w-cal .event {
       display: flex; align-items: flex-start; gap: 8px;
-      padding: 4px 0; font-size: 13px;
-      border-left: 3px solid var(--accent); padding-left: 9px;
+      padding: 2px 0; font-size: 12px;
+      border-left: 2.5px solid var(--accent); padding-left: 8px;
     }
-    .w-cal .event + .event { margin-top: 6px; }
+    .w-cal .event + .event { margin-top: 4px; }
     .w-cal .event.done { border-left-color: var(--green); opacity: .55; }
     .w-cal .event.next { border-left-color: var(--orange); }
     .w-cal .event .t {
-      font-size: 11px; font-weight: 800; color: var(--muted);
-      width: 46px; flex-shrink: 0; letter-spacing: .03em;
+      font-size: 10px; font-weight: 800; color: var(--muted);
+      width: 36px; flex-shrink: 0; letter-spacing: .03em;
     }
     .w-cal .event .ttl { color: var(--text); font-weight: 600; }
 
     /* Reminders widget — checkbox list */
     .w-rem .rem-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 0; font-size: 14px;
+      display: flex; align-items: center; gap: 9px;
+      padding: 5px 0; font-size: 13px;
     }
-    .w-rem .rem-row + .rem-row { border-top: 1px solid rgba(255,255,255,.06); }
     .w-rem .check {
       flex-shrink: 0;
-      width: 20px; height: 20px; border-radius: 50%;
+      width: 17px; height: 17px; border-radius: 50%;
       border: 1.5px solid rgba(255,255,255,.32);
       display: inline-flex; align-items: center; justify-content: center;
       background: transparent;
@@ -418,48 +422,134 @@
     }
     .w-rem .check.done { background: var(--green); border-color: var(--green); }
     .w-rem .check.done::after {
-      content: ""; width: 9px; height: 5px;
+      content: ""; width: 7px; height: 4px;
       border-left: 2px solid #000; border-bottom: 2px solid #000;
       transform: rotate(-45deg) translate(1px, -1px);
     }
     .w-rem .check.cancel { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.2); }
     .w-rem .check.cancel::after {
-      content: "×"; color: var(--muted); font-size: 14px; line-height: 1; font-weight: 700;
+      content: "×"; color: var(--muted); font-size: 12px; line-height: 1; font-weight: 700;
     }
-    .w-rem .rem-tx { flex: 1; min-width: 0; }
-    .w-rem .rem-tx .top {
-      display: flex; align-items: baseline; gap: 8px; justify-content: space-between;
+    .w-rem .rem-tk {
+      font-size: 13px; font-weight: 700; letter-spacing: -.01em;
+      color: var(--text);
+      flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .w-rem .rem-tx .tk { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
-    .w-rem .rem-tx .px {
-      font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
-      color: var(--muted);
-    }
-    .w-rem .rem-tx .sub {
-      font-size: 11px; color: var(--muted); margin-top: 2px;
+    .w-rem .rem-more {
+      margin-top: auto; padding-top: 6px;
+      font-size: 11px; color: var(--muted); font-weight: 700;
       letter-spacing: .04em;
     }
-    .w-rem .rem-tx .sub .strike { text-decoration: line-through; }
 
     /* News widget — headline-style card */
     .w-news .kicker {
-      font-size: 11px; font-weight: 800; letter-spacing: 1.4px;
+      font-size: 10px; font-weight: 800; letter-spacing: 1.4px;
       text-transform: uppercase; color: var(--accent);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .w-news .headline {
-      font-size: 19px; font-weight: 700; line-height: 1.3;
-      letter-spacing: -.015em; color: var(--text);
+      font-size: 15px; font-weight: 700; line-height: 1.35;
+      letter-spacing: -.01em; color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .w-news .lede {
-      margin-top: 10px; font-size: 13px; line-height: 1.5;
+      margin-top: 6px; font-size: 12px; line-height: 1.45;
       color: var(--text-2);
     }
     .w-news .byline {
-      margin-top: 14px; padding-top: 12px;
+      margin-top: auto; padding-top: 10px;
       border-top: 1px solid rgba(255,255,255,.08);
-      font-size: 11px; color: var(--muted); letter-spacing: .04em;
-      display: flex; gap: 8px; align-items: center;
+      font-size: 10px; color: var(--muted); letter-spacing: .04em;
+      display: flex; gap: 6px; align-items: center;
+    }
+
+    /* ── Detail Sheet (slides up; iOS-style "‹ Back" header) ── */
+    .sheet-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 300;
+      opacity: 0; pointer-events: none;
+      transition: opacity .35s var(--ease-ios);
+    }
+    .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .sheet {
+      position: fixed;
+      left: 0; right: 0; bottom: 0; top: 18px;
+      background: var(--bg);
+      border-radius: 14px 14px 0 0;
+      z-index: 310;
+      transform: translateY(100%);
+      transition: transform .45s var(--ease-ios);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      max-width: 720px;
+      margin: 0 auto;
+      box-shadow: 0 -12px 40px rgba(0,0,0,.5);
+    }
+    .sheet.open { transform: translateY(0); }
+    .sheet::before {
+      /* Grabber handle */
+      content: ""; position: absolute;
+      top: 6px; left: 50%; transform: translateX(-50%);
+      width: 36px; height: 5px; border-radius: 3px;
+      background: rgba(255,255,255,.18);
+    }
+    .sheet-hdr {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 22px 14px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(28,28,30,.94);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
+    }
+    .sheet-back {
+      justify-self: start;
+      font-size: 17px; font-weight: 500;
+      color: var(--accent);
+      background: none; border: none; padding: 4px 10px;
+      display: inline-flex; align-items: center; gap: 2px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-back::before {
+      content: "\2039";
+      font-size: 28px; line-height: 1; font-weight: 300;
+      margin-right: 2px; margin-top: -2px;
+    }
+    .sheet-back:active { opacity: .55; }
+    .sheet-title { font-size: 17px; font-weight: 700; text-align: center; letter-spacing: -.01em; }
+    .sheet-hdr .sp { justify-self: end; min-width: 60px; }
+    .sheet-body {
+      flex: 1; overflow-y: auto;
+      padding: 18px 18px calc(env(safe-area-inset-bottom, 0px) + 32px);
+      -webkit-overflow-scrolling: touch;
+    }
+    .sheet-body h3 {
+      font-size: 13px; font-weight: 800; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--muted);
+      margin: 22px 0 8px;
+    }
+    .sheet-body h3:first-child { margin-top: 0; }
+    .sheet-body p { font-size: 16px; line-height: 1.55; color: var(--text-2); margin-bottom: 12px; }
+    .sheet-body p.lead { font-size: 19px; color: var(--text); font-weight: 500; line-height: 1.45; letter-spacing: -.01em; }
+    .sheet-body .row-card {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+    }
+    body.sheet-open { overflow: hidden; }
+    @media (prefers-reduced-motion: reduce) {
+      .sheet, .sheet-overlay { transition: none; }
     }
 
     /* ── Widget Stack (swipeable, scroll-snap) ──────────── */
@@ -543,6 +633,59 @@
 {% block scripts %}{% endblock %}
 
 <script>
+  // ── Detail sheet (iOS-style slide-up with back chevron) ──
+  (function () {
+    var overlay = document.getElementById('sheet-overlay');
+    if (!overlay) return;
+    var sheets = document.querySelectorAll('.sheet');
+    var isOpen = false;
+
+    function open(name) {
+      var sheet = document.getElementById('sheet-' + name);
+      if (!sheet) return;
+      sheets.forEach(function (s) { s.classList.remove('open'); });
+      sheet.classList.add('open');
+      overlay.classList.add('open');
+      document.body.classList.add('sheet-open');
+      sheet.querySelector('.sheet-body').scrollTop = 0;
+      if (!isOpen) {
+        history.pushState({ sheet: name }, '', '#' + name);
+      } else {
+        history.replaceState({ sheet: name }, '', '#' + name);
+      }
+      isOpen = true;
+    }
+    function close() {
+      sheets.forEach(function (s) { s.classList.remove('open'); });
+      overlay.classList.remove('open');
+      document.body.classList.remove('sheet-open');
+      isOpen = false;
+    }
+
+    document.querySelectorAll('[data-sheet]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        open(el.dataset.sheet);
+      });
+    });
+    document.querySelectorAll('.sheet-back').forEach(function (el) {
+      el.addEventListener('click', function () { history.back(); });
+    });
+    overlay.addEventListener('click', function () { history.back(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen) history.back();
+    });
+    window.addEventListener('popstate', function (e) {
+      if (e.state && e.state.sheet) open(e.state.sheet);
+      else close();
+    });
+    // Deep-link: open sheet if URL already has hash
+    var initial = location.hash.slice(1);
+    if (initial && document.getElementById('sheet-' + initial)) {
+      open(initial);
+    }
+  })();
+
   // Widget-stack dot indicator (iOS-style swipe).
   // Each .w-stack contains a .w-stack-track (scroll-snap-x) and .w-stack-dots.
   document.querySelectorAll('.w-stack').forEach(function (stack) {
