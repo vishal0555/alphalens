@@ -20,6 +20,15 @@ import os
 from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+# Market timezone — "today" on the dashboard means the trading day in ET,
+# regardless of where the server runs (Vercel is UTC).
+_MARKET_TZ = ZoneInfo("America/New_York")
+
+
+def _now_market() -> datetime:
+    return datetime.now(_MARKET_TZ)
 
 from flask import Flask, abort, redirect, render_template, request, session, url_for
 
@@ -169,8 +178,9 @@ def _group_picks_by_layer(picks: list[dict]) -> list[dict]:
 
 
 def _today_header() -> dict:
-    """Date pieces for the iOS Today View header + Calendar widget."""
-    today = date.today()
+    """Date pieces for the iOS Today View header + Calendar widget.
+    Anchored to America/New_York so the "today" shown is the trading day."""
+    today = _now_market().date()
     return {
         "iso":     today.isoformat(),
         "weekday": today.strftime("%A"),
@@ -182,10 +192,14 @@ def _today_header() -> dict:
 
 
 def _calendar_events(session_hdr, items) -> list[dict]:
-    """Today's session as a sequence of calendar events for the iOS-style
-    Calendar widget. Each event = {time, title, state} where state is one of
-    'done' | 'next' | 'later'."""
-    now = datetime.now().time()
+    """Today's trading session as calendar events for the iOS-style
+    Schedule widget. Each event = {time, title, state} where state is one
+    of 'done' | 'next' | 'later'. Times are ET market hours.
+
+    The "morning brief" is intentionally omitted — its output is the
+    Posture widget, so including it here duplicates that information.
+    """
+    now = _now_market().time()
     open_t  = (9, 30)
     close_t = (16, 0)
 
@@ -201,8 +215,6 @@ def _calendar_events(session_hdr, items) -> list[dict]:
         return "now"
 
     events = [
-        {"time": "08:30", "title": "Morning brief",
-         "state": "done" if has_session else _state_for(8, 30)},
         {"time": "09:30", "title": "Open · execute plan",
          "state": _state_for(*open_t) if not session_done else "done"},
         {"time": "16:00", "title": "Close · mark book",
