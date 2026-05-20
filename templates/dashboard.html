@@ -527,43 +527,118 @@
       {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
       {% set is_cancel = it.status in ['expired','cancelled'] %}
       {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
-    <div class="row-card" style="padding:14px 16px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <span class="check {{ check_cls }}" style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.32);display:inline-flex;align-items:center;justify-content:center;{% if is_done %}background:var(--green);border-color:var(--green);{% elif is_cancel %}background:rgba(255,255,255,.05);{% endif %}"></span>
-        <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
-        <span class="muted num" style="font-size:12px;">×{{ it.size_shares }}</span>
-        <span style="margin-left:auto;" class="item-status {{ it.status }}">{{ it.status }}</span>
-      </div>
-      <div class="sheet-levels">
-        <div class="lvl">
-          <div class="l">Entry</div>
-          <div class="num v">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</div>
-        </div>
-        <div class="lvl stop">
-          <div class="l">Stop</div>
-          <div class="num v">{{ '%.2f'|format(it.stop) }}</div>
-        </div>
-        <div class="lvl target">
-          <div class="l">Target</div>
-          <div class="num v">{{ '%.2f'|format(it.target) }}</div>
-        </div>
-      </div>
-      {% if it.entry_fill_price %}
-      <div style="margin-top:10px;font-size:13px;color:var(--text-2);">
-        Entry <strong class="num">${{ '%.2f'|format(it.entry_fill_price) }}</strong>
-        {% if it.exit_fill_price %}
-          · Exit <strong class="num">${{ '%.2f'|format(it.exit_fill_price) }}</strong>
-          {% set rpnl = (it.exit_fill_price - it.entry_fill_price) * it.size_shares %}
-          · <span class="num {{ rpnl | pnl_class }}">{{ rpnl | signed_money }}</span>
+      {% set rpnl = ((it.exit_fill_price - it.entry_fill_price) * it.size_shares) if (it.entry_fill_price and it.exit_fill_price) else None %}
+    <a class="row-card plan-band" data-sheet="item-{{ it.ticker }}" href="#item-{{ it.ticker }}"
+       style="display:flex;align-items:center;gap:12px;padding:14px 16px;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent;">
+      <span class="check {{ check_cls }}" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.32);display:inline-flex;align-items:center;justify-content:center;{% if is_done %}background:var(--green);border-color:var(--green);{% elif is_cancel %}background:rgba(255,255,255,.05);{% endif %}"></span>
+      <span style="flex:1;min-width:0;">
+        <span style="display:flex;align-items:baseline;gap:8px;">
+          <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
+          <span class="muted num" style="font-size:12px;">×{{ it.size_shares }}</span>
+        </span>
+        <span style="display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:2px;">
+          <span class="item-status {{ it.status }}">{{ it.status }}</span>
+        </span>
+      </span>
+      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+        {% if rpnl is not none %}
+        <span class="num {{ rpnl | pnl_class }}" style="font-size:15px;font-weight:800;letter-spacing:-.01em;">{{ rpnl | signed_money }}</span>
+        {% elif it.entry_fill_price %}
+        <span class="num muted" style="font-size:13px;">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
+        {% else %}
+        <span class="num muted" style="font-size:12px;">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</span>
         {% endif %}
-      </div>
-      {% endif %}
-    </div>
+        <span style="color:var(--muted);font-size:18px;line-height:1;">›</span>
+      </span>
+    </a>
     {% endfor %}
-
-    <a href="/positions" class="sheet-link">Open book →</a>
   </div>
 </aside>
+{% endif %}
+
+{# Per-ticker drilldown sheets — full plan-item detail #}
+{% if items %}
+{% for it in items %}
+  {% set pb = (playbooks or {}).get(it.ticker) %}
+  {% set rpnl = ((it.exit_fill_price - it.entry_fill_price) * it.size_shares) if (it.entry_fill_price and it.exit_fill_price) else None %}
+  {% set rpnl_pct = ((it.exit_fill_price - it.entry_fill_price) / it.entry_fill_price * 100) if (it.entry_fill_price and it.exit_fill_price) else None %}
+<aside id="sheet-item-{{ it.ticker }}" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Plan</button>
+    <h2 class="sheet-title">{{ it.ticker }}</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-pill-row">
+      <span class="badge {{ 'aggressive' if it.side == 'long' else 'defensive' }}">{{ it.side }}</span>
+      <span class="item-status {{ it.status }}">{{ it.status }}</span>
+      <span class="badge neutral num">×{{ it.size_shares }}</span>
+      {% if pb %}<span class="layer-pill {{ pb.layer }}">{{ pb.layer }} · {{ '%.0f'|format(pb.weight_pct) }}%</span>{% endif %}
+    </div>
+
+    {% if rpnl is not none %}
+    <div style="text-align:center;padding:6px 0 12px;">
+      <div class="num {{ rpnl | pnl_class }}" style="font-size:42px;font-weight:800;letter-spacing:-.03em;">{{ rpnl | signed_money }}</div>
+      {% if rpnl_pct is not none %}
+      <div class="num {{ rpnl_pct | pnl_class }}" style="font-size:15px;font-weight:700;margin-top:4px;">{{ rpnl_pct | signed_pct }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <h3>Levels</h3>
+    <div class="sheet-levels">
+      <div class="lvl">
+        <div class="l">Entry</div>
+        <div class="num v">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</div>
+      </div>
+      <div class="lvl stop">
+        <div class="l">Stop</div>
+        <div class="num v">{{ '%.2f'|format(it.stop) }}</div>
+      </div>
+      <div class="lvl target">
+        <div class="l">Target</div>
+        <div class="num v">{{ '%.2f'|format(it.target) }}</div>
+      </div>
+    </div>
+
+    {% if it.entry_fill_price %}
+    <h3>Fills</h3>
+    <div class="row-card" style="font-size:14px;line-height:1.6;">
+      Entry <strong class="num">${{ '%.2f'|format(it.entry_fill_price) }}</strong>
+      {% if it.exit_fill_price %}
+      <br>Exit <strong class="num">${{ '%.2f'|format(it.exit_fill_price) }}</strong>
+      {% if it.exit_reason %}<span class="muted"> · {{ it.exit_reason }}</span>{% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if pb and pb.recommended_action %}
+    <h3>Action</h3>
+    <div class="row-card">
+      <span class="action {{ pb.recommended_action }}">{{ pb.recommended_action }}</span>
+      {% if pb.action_rationale %}
+      <p style="margin-top:10px;margin-bottom:0;font-size:14px;line-height:1.55;color:var(--text-2);">{{ pb.action_rationale }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if pb and pb.catalyst %}
+    <h3>Catalyst</h3>
+    <p>{{ pb.catalyst }}</p>
+    {% endif %}
+
+    {% if pb and pb.technicals %}
+    <h3>Technicals</h3>
+    <p>{{ pb.technicals }}</p>
+    {% endif %}
+
+    {% if it.rationale and not pb %}
+    <h3>Rationale</h3>
+    <p>{{ it.rationale }}</p>
+    {% endif %}
+  </div>
+</aside>
+{% endfor %}
 {% endif %}
 
 

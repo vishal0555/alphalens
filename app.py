@@ -249,6 +249,13 @@ def index():
     lessons  = _db.fetch_recent_lessons(limit=5)
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
 
+    # Pair each plan item with its playbook so the per-ticker drilldown
+    # sheet can surface catalyst / technicals / action rationale.
+    playbooks_by_ticker = {}
+    if briefing and isinstance(briefing, dict):
+        for pb in (briefing.get("plan", {}).get("playbooks") or []):
+            playbooks_by_ticker[pb["ticker"]] = pb
+
     db_ok = not (universe is None and briefing is None and nav is None)
 
     return render_template(
@@ -263,6 +270,7 @@ def index():
         items=items,
         realised=realised,
         lessons=lessons,
+        playbooks=playbooks_by_ticker,
         today=_today_header(),
         calendar_events=_calendar_events(session_hdr, items),
     )

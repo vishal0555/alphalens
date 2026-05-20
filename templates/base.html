@@ -641,14 +641,14 @@
 {% block scripts %}{% endblock %}
 
 <script>
-  // ── Detail sheet (iOS-style slide-up with back chevron) ──
+  // ── Detail sheets (iOS-style slide-up with back chevron + nesting) ──
   (function () {
     var overlay = document.getElementById('sheet-overlay');
     if (!overlay) return;
     var sheets = document.querySelectorAll('.sheet');
-    var isOpen = false;
+    var stack  = [];  // names of currently-open sheets, deepest last
 
-    function open(name) {
+    function open(name, push) {
       var sheet = document.getElementById('sheet-' + name);
       if (!sheet) return;
       sheets.forEach(function (s) { s.classList.remove('open'); });
@@ -656,41 +656,48 @@
       overlay.classList.add('open');
       document.body.classList.add('sheet-open');
       sheet.querySelector('.sheet-body').scrollTop = 0;
-      if (!isOpen) {
-        history.pushState({ sheet: name }, '', '#' + name);
-      } else {
-        history.replaceState({ sheet: name }, '', '#' + name);
+      if (push !== false) {
+        stack.push(name);
+        history.pushState({ sheet: name, depth: stack.length }, '', '#' + name);
       }
-      isOpen = true;
     }
     function close() {
       sheets.forEach(function (s) { s.classList.remove('open'); });
       overlay.classList.remove('open');
       document.body.classList.remove('sheet-open');
-      isOpen = false;
+      stack = [];
     }
 
     document.querySelectorAll('[data-sheet]').forEach(function (el) {
       el.addEventListener('click', function (e) {
         e.preventDefault();
-        open(el.dataset.sheet);
+        open(el.dataset.sheet, true);
       });
     });
     document.querySelectorAll('.sheet-back').forEach(function (el) {
       el.addEventListener('click', function () { history.back(); });
     });
-    overlay.addEventListener('click', function () { history.back(); });
+    overlay.addEventListener('click', function () {
+      if (stack.length > 0) history.go(-stack.length);
+    });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && isOpen) history.back();
+      if (e.key === 'Escape' && stack.length > 0) history.go(-stack.length);
     });
     window.addEventListener('popstate', function (e) {
-      if (e.state && e.state.sheet) open(e.state.sheet);
-      else close();
+      if (e.state && e.state.sheet) {
+        stack = stack.slice(0, e.state.depth || 1);
+        open(e.state.sheet, false);
+      } else {
+        close();
+      }
     });
-    // Deep-link: open sheet if URL already has hash
+    // Deep-link: open the sheet for an existing #hash, without pushing a
+    // duplicate history entry on top of the one the page loaded with.
     var initial = location.hash.slice(1);
     if (initial && document.getElementById('sheet-' + initial)) {
-      open(initial);
+      history.replaceState({ sheet: initial, depth: 1 }, '', '#' + initial);
+      stack = [initial];
+      open(initial, false);
     }
   })();
 
