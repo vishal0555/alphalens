@@ -198,25 +198,31 @@
     }
     .page-nav .back {
       justify-self: start;
-      font-size: 17px; font-weight: 500;
-      color: var(--accent); text-decoration: none;
-      display: inline-flex; align-items: center;
-      padding: 4px 8px 4px 0;
+      width: 34px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0;                 /* hide accessible label */
       -webkit-tap-highlight-color: transparent;
-      transition: opacity .15s;
+      transition: background .15s, transform .15s var(--ease-ios);
     }
     .page-nav .back::before {
       content: "\2039";
-      font-size: 30px; line-height: 1; font-weight: 300;
-      margin-right: 2px; margin-top: -3px;
+      font-size: 26px; line-height: 1; font-weight: 500;
+      margin-left: -1px;            /* optical balance */
     }
-    .page-nav .back:active { opacity: .5; }
+    .page-nav .back:active {
+      background: rgba(255,255,255,.22);
+      transform: scale(.92);
+    }
     .page-nav .title {
       font-size: 17px; font-weight: 700; letter-spacing: -.01em;
       text-align: center; color: var(--text);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .page-nav .sp { justify-self: end; min-width: 50px; }
+    .page-nav .sp { justify-self: end; min-width: 34px; }
 
     .empty-state { text-align: center; padding: 56px 22px; color: var(--muted); }
     .empty-icon  { font-size: 52px; margin-bottom: 14px; opacity: .4; }
@@ -524,21 +530,27 @@
     }
     .sheet-back {
       justify-self: start;
-      font-size: 17px; font-weight: 500;
-      color: var(--accent);
-      background: none; border: none; padding: 4px 10px;
-      display: inline-flex; align-items: center; gap: 2px;
-      cursor: pointer;
+      width: 34px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+      color: var(--text);
+      border: none; cursor: pointer;
+      font-size: 0;
       -webkit-tap-highlight-color: transparent;
+      transition: background .15s, transform .15s var(--ease-ios);
     }
     .sheet-back::before {
       content: "\2039";
-      font-size: 28px; line-height: 1; font-weight: 300;
-      margin-right: 2px; margin-top: -2px;
+      font-size: 26px; line-height: 1; font-weight: 500;
+      margin-left: -1px;
     }
-    .sheet-back:active { opacity: .55; }
+    .sheet-back:active {
+      background: rgba(255,255,255,.22);
+      transform: scale(.92);
+    }
     .sheet-title { font-size: 17px; font-weight: 700; text-align: center; letter-spacing: -.01em; }
-    .sheet-hdr .sp { justify-self: end; min-width: 60px; }
+    .sheet-hdr .sp { justify-self: end; min-width: 34px; }
     .sheet-body {
       flex: 1; overflow-y: auto;
       padding: 18px 18px calc(env(safe-area-inset-bottom, 0px) + 32px);
