@@ -97,6 +97,12 @@
   .sheet-tile .t { font-size: 16px; }
   .sheet-tile .w { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
 
+  .sheet-event.in_progress .t { color: var(--green); }
+  .sheet-event.in_progress .ttl { color: var(--text); font-weight: 700; }
+  .sheet-event.in_progress .nt { color: var(--green); }
+  .event.in_progress .t { color: var(--green); }
+  .event.in_progress .ttl { color: var(--text); font-weight: 700; }
+
   .sheet-event {
     display: flex; gap: 12px; align-items: flex-start;
     padding: 12px 0;
@@ -231,7 +237,7 @@
   </div>
   {% endif %}
 
-  {% if nav and (freshness is not defined or freshness.nav.fresh) %}
+  {% if nav %}
     {% set pnl = nav.realised_pnl %}
     {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
     {% set fill_w = 50 + pnl_pct * 5 %}
@@ -287,7 +293,13 @@
           </span>
           Schedule
         </div>
-        {% if upcoming %}<span class="w-accessory">Next {{ upcoming[0].time }}</span>{% endif %}
+        {% if upcoming %}
+          {% if upcoming[0].state in ('in_progress', 'now') %}
+            <span class="w-accessory">{% if upcoming[0].state == 'in_progress' %}Now{% else %}Overdue{% endif %}</span>
+          {% else %}
+            <span class="w-accessory">Next {{ upcoming[0].time }}</span>
+          {% endif %}
+        {% endif %}
       </div>
       <div style="margin-top:auto;">
         {% if upcoming %}
@@ -425,6 +437,9 @@
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
+    {% if last_updated and last_updated.briefing %}
+    <div class="sheet-updated">Updated {{ last_updated.briefing }}</div>
+    {% endif %}
     <div class="sheet-pill-row">
       <span class="badge {{ posture }}">{{ posture }}</span>
       <span class="badge neutral">{{ w_cond }}</span>
@@ -457,6 +472,9 @@
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
+    {% if last_updated and last_updated.nav %}
+    <div class="sheet-updated">Updated {{ last_updated.nav }}</div>
+    {% endif %}
     <div style="text-align:center;padding:8px 0 6px;">
       <div class="num" style="font-size:48px;font-weight:800;letter-spacing:-.03em;">{{ nav.ending_nav | money2 }}</div>
       {% set pnl = nav.realised_pnl %}
@@ -523,6 +541,8 @@
         <div class="ttl">{{ e.title }}</div>
         <div class="nt">
           {% if e.state == 'done' %}Completed
+          {% elif e.state == 'in_progress' %}In progress
+          {% elif e.state == 'now' %}Overdue
           {% elif e.state == 'next' %}Up next
           {% elif e.state == 'later' %}Later today
           {% else %}Scheduled{% endif %}
@@ -550,6 +570,9 @@
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
+    {% if last_updated and last_updated.session %}
+    <div class="sheet-updated">Updated {{ last_updated.session }}</div>
+    {% endif %}
     {% if realised is not none %}
     <div class="sheet-stat-grid">
       <div class="cell">
@@ -609,6 +632,9 @@
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
+    {% if last_updated and last_updated.session %}
+    <div class="sheet-updated">Updated {{ last_updated.session }}</div>
+    {% endif %}
     <div class="sheet-pill-row">
       <span class="badge {{ 'aggressive' if it.side == 'long' else 'defensive' }}">{{ it.side }}</span>
       <span class="item-status {{ it.status }}">{{ it.status }}</span>
@@ -692,6 +718,9 @@
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
+    {% if last_updated and last_updated.universe %}
+    <div class="sheet-updated">Updated {{ last_updated.universe }}</div>
+    {% endif %}
     <div class="sheet-pill-row">
       <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
       <span class="badge neutral">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>

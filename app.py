@@ -222,48 +222,63 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
     """
     now_dt = _now_market()
     today_et = now_dt.date()
-    now = now_dt.time()
+    now_hm = (now_dt.hour, now_dt.minute)
 
-    # Events are "done" iff (a) the underlying artefact for `active_date`
-    # already exists in DB, OR (b) the wall-clock has passed and the
-    # active_date is today (so the deadline has lapsed regardless).
     active_is_today = (active_date == today_et)
+    active_is_past  = (active_date < today_et)
+
     have_universe = bool(universe and universe is not False
                          and str(universe.get("as_of_date") or "") == active_date.isoformat())
     have_briefing = bool(briefing and isinstance(briefing, dict)
                          and str(briefing.get("as_of_date") or "") == active_date.isoformat())
-    session_done = bool(session_hdr and session_hdr is not False
-                        and session_hdr.get("status") in ("completed", "settled"))
+    session_status = (session_hdr or {}).get("status") if session_hdr and session_hdr is not False else None
+    session_done   = session_status in ("completed", "settled")
+    session_live   = session_status in ("pending", "active")
+    # The session row must belong to the active trading day before we
+    # can claim its status reflects "today's plan."
+    session_today  = bool(session_hdr and session_hdr is not False
+                          and str(session_hdr.get("briefing_date") or "") == active_date.isoformat())
 
-    def _state(hour: int, minute: int, *, done: bool) -> str:
-        if done:
-            return "done"
-        if active_is_today and (now.hour, now.minute) > (hour, minute):
-            # Deadline lapsed and the artefact still isn't there.
-            return "now"
-        if not active_is_today:
-            # Showing a past trading day — anything not done is bygone.
-            return "done"
-        return "later"
+    def _point(hm, *, done: bool) -> str:
+        # Single-moment event (scout, briefing, debrief).
+        if done:           return "done"
+        if active_is_past: return "done"
+        if now_hm < hm:    return "later"
+        return "now"  # deadline lapsed, artefact still missing
+
+    def _window(start_hm, end_hm, *, done: bool, live: bool) -> str:
+        # Window event — start has happened, work is ongoing until end_hm.
+        if done:               return "done"
+        if active_is_past:     return "done"
+        if now_hm < start_hm:  return "later"
+        if now_hm >= end_hm:   return "now"  # window closed, still not done
+        return "in_progress" if live else "now"
 
     events = [
         {"time": "09:00", "title": "Scout · pick universe",
-         "state": _state(9, 0, done=have_universe)},
+         "state": _point((9, 0), done=have_universe)},
         {"time": "09:10", "title": "Briefing · plan ready",
-         "state": _state(9, 10, done=have_briefing)},
+         "state": _point((9, 10), done=have_briefing)},
         {"time": "09:30", "title": "Open · execute plan",
-         "state": _state(9, 30, done=session_done)},
+         "state": _window((9, 30), (16, 0),
+                          done=session_done and session_today,
+                          live=session_live and session_today)},
         {"time": "16:00", "title": "Close · mark book",
-         "state": _state(16, 0, done=session_done)},
+         "state": _window((16, 0), (16, 30),
+                          done=session_done and session_today,
+                          live=False)},
         {"time": "17:00", "title": "Debrief lessons",
-         "state": "done" if session_done else ("later" if active_is_today else "done")},
+         "state": _point((17, 0), done=session_done and session_today)},
     ]
-    # Mark the first non-done event as 'next' (others stay 'later'/'now')
-    flipped_next = False
-    for e in events:
-        if e["state"] in ("now", "later") and not flipped_next:
-            e["state"] = "next"
-            flipped_next = True
+    # Promote the first 'later' to 'next' only when nothing is actively
+    # happening (in_progress / overdue) — otherwise the focus is already
+    # carried by the current event.
+    has_focus = any(e["state"] in ("in_progress", "now") for e in events)
+    if not has_focus:
+        for e in events:
+            if e["state"] == "later":
+                e["state"] = "next"
+                break
     return events
 
 
@@ -347,6 +362,15 @@ def index():
         nav=nav, session_hdr=session_hdr,
     )
 
+    def _iso(d) -> Optional[str]:
+        return str(d) if d else None
+    last_updated = {
+        "universe":  _iso(universe.get("as_of_date")) if universe and universe is not False else None,
+        "briefing":  _iso(briefing.get("as_of_date")) if briefing and isinstance(briefing, dict) else None,
+        "nav":       _iso(nav.get("as_of_date")) if nav else None,
+        "session":   _iso(session_hdr.get("briefing_date")) if session_hdr and session_hdr is not False else None,
+    }
+
     return render_template(
         "dashboard.html",
         active="dashboard",
@@ -366,6 +390,7 @@ def index():
             active_date=active_date, universe=universe, briefing=briefing,
         ),
         freshness=freshness,
+        last_updated=last_updated,
     )
 
 
