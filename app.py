@@ -20,6 +20,7 @@ import os
 from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
+from typing import Optional
 from zoneinfo import ZoneInfo
 
 # Market timezone — "today" on the dashboard means the trading day in ET,
@@ -177,10 +178,33 @@ def _group_picks_by_layer(picks: list[dict]) -> list[dict]:
     return groups
 
 
-def _today_header() -> dict:
+def _active_trading_date(universe, briefing) -> date:
+    """The trading day the dashboard is currently showing data for.
+
+    Anchored to the latest event the pipeline has emitted today:
+      • universe.as_of_date (scout fires first, ~09:00 ET)
+      • briefing.as_of_date (morning briefing, ~09:08 ET)
+
+    Falls back to the ET wall-clock date when nothing has been emitted yet.
+    This stops the header from drifting ahead of the data during the
+    overnight window (after midnight ET, before next scout run)."""
+    candidates: list[str] = []
+    if universe and universe is not False and universe.get("as_of_date"):
+        candidates.append(str(universe["as_of_date"]))
+    if briefing and isinstance(briefing, dict) and briefing.get("as_of_date"):
+        candidates.append(str(briefing["as_of_date"]))
+    if candidates:
+        try:
+            return max(date.fromisoformat(s) for s in candidates)
+        except ValueError:
+            pass
+    return _now_market().date()
+
+
+def _today_header(active: Optional[date] = None) -> dict:
     """Date pieces for the iOS Today View header + Calendar widget.
-    Anchored to America/New_York so the "today" shown is the trading day."""
-    today = _now_market().date()
+    `active` is the active trading day (see _active_trading_date)."""
+    today = active or _now_market().date()
     return {
         "iso":     today.isoformat(),
         "weekday": today.strftime("%A"),
@@ -191,44 +215,103 @@ def _today_header() -> dict:
     }
 
 
-def _calendar_events(session_hdr, items) -> list[dict]:
+def _calendar_events(session_hdr, items, *, active_date: date, universe, briefing) -> list[dict]:
     """Today's trading session as calendar events for the iOS-style
     Schedule widget. Each event = {time, title, state} where state is one
     of 'done' | 'next' | 'later'. Times are ET market hours.
-
-    The "morning brief" is intentionally omitted — its output is the
-    Posture widget, so including it here duplicates that information.
     """
-    now = _now_market().time()
-    open_t  = (9, 30)
-    close_t = (16, 0)
+    now_dt = _now_market()
+    today_et = now_dt.date()
+    now = now_dt.time()
 
-    has_session = bool(session_hdr) and session_hdr is not False
-    session_done = (
-        has_session
-        and session_hdr.get("status") in ("completed", "settled")
-    )
+    # Events are "done" iff (a) the underlying artefact for `active_date`
+    # already exists in DB, OR (b) the wall-clock has passed and the
+    # active_date is today (so the deadline has lapsed regardless).
+    active_is_today = (active_date == today_et)
+    have_universe = bool(universe and universe is not False
+                         and str(universe.get("as_of_date") or "") == active_date.isoformat())
+    have_briefing = bool(briefing and isinstance(briefing, dict)
+                         and str(briefing.get("as_of_date") or "") == active_date.isoformat())
+    session_done = bool(session_hdr and session_hdr is not False
+                        and session_hdr.get("status") in ("completed", "settled"))
 
-    def _state_for(hour: int, minute: int) -> str:
-        if (now.hour, now.minute) > (hour, minute):
+    def _state(hour: int, minute: int, *, done: bool) -> str:
+        if done:
             return "done"
-        return "now"
+        if active_is_today and (now.hour, now.minute) > (hour, minute):
+            # Deadline lapsed and the artefact still isn't there.
+            return "now"
+        if not active_is_today:
+            # Showing a past trading day — anything not done is bygone.
+            return "done"
+        return "later"
 
     events = [
+        {"time": "09:00", "title": "Scout · pick universe",
+         "state": _state(9, 0, done=have_universe)},
+        {"time": "09:10", "title": "Briefing · plan ready",
+         "state": _state(9, 10, done=have_briefing)},
         {"time": "09:30", "title": "Open · execute plan",
-         "state": _state_for(*open_t) if not session_done else "done"},
+         "state": _state(9, 30, done=session_done)},
         {"time": "16:00", "title": "Close · mark book",
-         "state": _state_for(*close_t) if not session_done else "done"},
+         "state": _state(16, 0, done=session_done)},
         {"time": "17:00", "title": "Debrief lessons",
-         "state": "done" if session_done else "later"},
+         "state": "done" if session_done else ("later" if active_is_today else "done")},
     ]
-    # Mark the next-upcoming event as 'next'
+    # Mark the first non-done event as 'next' (others stay 'later'/'now')
     flipped_next = False
     for e in events:
-        if e["state"] == "now":
-            e["state"] = "next" if not flipped_next else "later"
+        if e["state"] in ("now", "later") and not flipped_next:
+            e["state"] = "next"
             flipped_next = True
     return events
+
+
+def _next_update_label(now_dt: datetime, *, what: str) -> str:
+    """Human-readable 'next update at HH:MM ET' string for a pending card."""
+    targets = {
+        "scout":    (9, 0,  "Scout · pick universe"),
+        "briefing": (9, 10, "Briefing · plan ready"),
+        "session":  (9, 30, "Open · execute plan"),
+        "nav":      (16, 0, "Close · mark book"),
+    }
+    if what not in targets:
+        return "Next update pending"
+    h, m, label = targets[what]
+    if (now_dt.hour, now_dt.minute) < (h, m):
+        return f"Next update at {h:02d}:{m:02d} ET · {label}"
+    return f"{label} — pending"
+
+
+def _card_freshness(*, active_date: date, universe, briefing, nav, session_hdr) -> dict:
+    """Per-card flag: is the card's data fresh for `active_date`?
+
+    When fresh is False, the template shows a 'next update at HH:MM ET'
+    placeholder instead of stale prior-day data.
+    """
+    iso = active_date.isoformat()
+    now_dt = _now_market()
+    def _matches(d) -> bool:
+        return bool(d and str(d) == iso)
+
+    return {
+        "universe": {
+            "fresh":  _matches(universe.get("as_of_date") if universe and universe is not False else None),
+            "note":   _next_update_label(now_dt, what="scout"),
+        },
+        "briefing": {
+            "fresh":  _matches(briefing.get("as_of_date") if briefing and isinstance(briefing, dict) else None),
+            "note":   _next_update_label(now_dt, what="briefing"),
+        },
+        "nav": {
+            "fresh":  _matches(nav.get("as_of_date") if nav else None),
+            "note":   _next_update_label(now_dt, what="nav"),
+        },
+        "plan": {
+            "fresh":  _matches(session_hdr.get("briefing_date") if session_hdr and session_hdr is not False else None),
+            "note":   _next_update_label(now_dt, what="session"),
+        },
+    }
 
 
 @app.route("/")
@@ -258,6 +341,12 @@ def index():
 
     db_ok = not (universe is None and briefing is None and nav is None)
 
+    active_date = _active_trading_date(universe, briefing)
+    freshness   = _card_freshness(
+        active_date=active_date, universe=universe, briefing=briefing,
+        nav=nav, session_hdr=session_hdr,
+    )
+
     return render_template(
         "dashboard.html",
         active="dashboard",
@@ -271,8 +360,12 @@ def index():
         realised=realised,
         lessons=lessons,
         playbooks=playbooks_by_ticker,
-        today=_today_header(),
-        calendar_events=_calendar_events(session_hdr, items),
+        today=_today_header(active_date),
+        calendar_events=_calendar_events(
+            session_hdr, items,
+            active_date=active_date, universe=universe, briefing=briefing,
+        ),
+        freshness=freshness,
     )
 
 

@@ -13,9 +13,12 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
+
+_MARKET_TZ = ZoneInfo("America/New_York")
 
 import psycopg2
 import psycopg2.extras
@@ -162,7 +165,7 @@ def fetch_current_nav() -> Optional[dict]:
             row = cur.fetchone()
             if not row:
                 return {
-                    "as_of_date":   date.today().isoformat(),
+                    "as_of_date":   datetime.now(_MARKET_TZ).date().isoformat(),
                     "starting_nav": STARTING_NAV_DEFAULT,
                     "realised_pnl": 0.0,
                     "ending_nav":   STARTING_NAV_DEFAULT,

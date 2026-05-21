@@ -668,9 +668,19 @@
       stack = [];
     }
 
+    // Scroll-suppression: a click that fires within ~250 ms of a scroll
+    // gesture is almost always an accidental tap during momentum scrolling
+    // (iOS Safari especially). Opening a fullscreen sheet in that case
+    // looks like the page "went blank" to the user, because
+    // body.sheet-open locks the underlying page. Ignore those clicks.
+    var lastScrollAt = 0;
+    function _onScrollish() { lastScrollAt = Date.now(); }
+    window.addEventListener('scroll', _onScrollish, { passive: true, capture: true });
+    window.addEventListener('touchmove', _onScrollish, { passive: true });
     document.querySelectorAll('[data-sheet]').forEach(function (el) {
       el.addEventListener('click', function (e) {
         e.preventDefault();
+        if (Date.now() - lastScrollAt < 250) return;  // recent scroll → ignore
         open(el.dataset.sheet, true);
       });
     });

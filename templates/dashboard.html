@@ -130,6 +130,29 @@
   .sheet-lesson-card .head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
   .sheet-lesson-card .when { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 4px; }
   .sheet-lesson-card .guide { font-size: 15px; line-height: 1.5; color: var(--text); }
+
+  /* Pending widget — used when today's first event has fired but this
+     card's underlying artefact hasn't landed yet. Replaces stale prior-day
+     content with a "next update at HH:MM ET" placeholder. */
+  .w-pending .widget-body {
+    display: flex; flex-direction: column; justify-content: center;
+    align-items: center; text-align: center; gap: 6px;
+    color: var(--muted);
+  }
+  .w-pending .w-pending-icon {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1.5px dashed rgba(255,255,255,.28);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 15px; line-height: 1; color: rgba(255,255,255,.5);
+  }
+  .w-pending .w-pending-title {
+    font-size: 13px; font-weight: 800; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--text-2);
+  }
+  .w-pending .w-pending-note {
+    font-size: 12px; color: var(--muted); line-height: 1.4;
+    max-width: 200px;
+  }
 </style>
 {% endblock %}
 
@@ -165,7 +188,7 @@
 
 {# ── ROW 1: Weather + Battery ───────────────────────────────── #}
 <div class="wgrid">
-  {% if briefing %}
+  {% if briefing and (freshness is not defined or freshness.briefing.fresh) %}
   <a class="widget w-weather {{ w_class }} tap" data-sheet="posture" href="#posture">
     <div class="widget-body">
       <div class="w-head">
@@ -198,9 +221,17 @@
       <div class="cond">{{ w_cond }}</div>
     </div>
   </a>
+  {% elif freshness is defined and not freshness.briefing.fresh %}
+  <div class="widget w-weather w-pending">
+    <div class="widget-body">
+      <span class="w-pending-icon">◌</span>
+      <span class="w-pending-title">Posture</span>
+      <span class="w-pending-note">{{ freshness.briefing.note }}</span>
+    </div>
+  </div>
   {% endif %}
 
-  {% if nav %}
+  {% if nav and (freshness is not defined or freshness.nav.fresh) %}
     {% set pnl = nav.realised_pnl %}
     {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
     {% set fill_w = 50 + pnl_pct * 5 %}
@@ -228,6 +259,14 @@
       </div>
     </div>
   </a>
+  {% elif freshness is defined and not freshness.nav.fresh %}
+  <div class="widget w-batt w-pending">
+    <div class="widget-body">
+      <span class="w-pending-icon">◌</span>
+      <span class="w-pending-title">NAV</span>
+      <span class="w-pending-note">{{ freshness.nav.note }}</span>
+    </div>
+  </div>
   {% endif %}
 </div>
 
@@ -262,7 +301,7 @@
     </div>
   </a>
 
-  {% if items %}
+  {% if items and (freshness is not defined or freshness.plan.fresh) %}
     {% set done_count = items | selectattr('status','in',['exited_target','exited_stop','exited_rotation','exited_cancel']) | list | length %}
   <a class="widget w-rem w-reminders tap" data-sheet="reminders" href="#reminders">
     <div class="widget-body">
@@ -297,10 +336,11 @@
     </div>
   </a>
   {% else %}
-  <div class="widget w-rem w-reminders">
+  <div class="widget w-rem w-reminders w-pending">
     <div class="widget-body">
-      <div class="w-head"><div class="w-title">Plan</div></div>
-      <div style="margin: auto; text-align: center; color: var(--muted); font-size: 13px;">No plan today</div>
+      <span class="w-pending-icon">◌</span>
+      <span class="w-pending-title">Plan</span>
+      <span class="w-pending-note">{% if freshness is defined %}{{ freshness.plan.note }}{% else %}No plan today{% endif %}</span>
     </div>
   </div>
   {% endif %}
