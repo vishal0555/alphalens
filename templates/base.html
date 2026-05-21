@@ -486,9 +486,10 @@
     /* ── Detail Sheet (slides up; iOS-style "‹ Back" header) ── */
     .sheet-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,.55);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      /* No backdrop-filter: stacked blur layers (sheet header + overlay +
+         transform transition) crash iOS Safari's WebKit content process.
+         Solid dim alone reads fine. */
+      background: rgba(0,0,0,.70);
       z-index: 300;
       opacity: 0; pointer-events: none;
       transition: opacity .35s var(--ease-ios);
@@ -524,9 +525,12 @@
       align-items: center;
       padding: 22px 14px 14px;
       border-bottom: 1px solid var(--border);
-      background: rgba(28,28,30,.94);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      backdrop-filter: saturate(180%) blur(20px);
+      /* Solid background — was rgba(.94) + backdrop-filter blur(20). The
+         blur was invisible at 94% opacity and was the most-stacked filter
+         in the DOM (one per sheet × ~24 sheets), triggering iOS Safari
+         crashes when a sheet opened. Pure solid surface, no compositing
+         overhead. */
+      background: #1c1c1e;
     }
     .sheet-back {
       justify-self: start;
@@ -708,11 +712,14 @@
     });
     // Deep-link: open the sheet for an existing #hash, without pushing a
     // duplicate history entry on top of the one the page loaded with.
+    // Deferred to the next frame so the dashboard layout settles before
+    // the sheet's transform transition runs — keeps the initial paint
+    // light and avoids piling sheet-open on top of in-flight layout.
     var initial = location.hash.slice(1);
     if (initial && document.getElementById('sheet-' + initial)) {
       history.replaceState({ sheet: initial, depth: 1 }, '', '#' + initial);
       stack = [initial];
-      open(initial, false);
+      requestAnimationFrame(function () { open(initial, false); });
     }
   })();
 
