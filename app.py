@@ -248,10 +248,16 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
 
     def _window(start_hm, end_hm, *, done: bool, live: bool) -> str:
         # Window event — start has happened, work is ongoing until end_hm.
+        # Past end_hm we treat the event as 'done' on wall-clock alone:
+        # "Open · execute plan" and "Close · mark book" are time anchors
+        # (the trading day), not data artefacts. If the underlying session
+        # row hasn't flipped to 'completed' yet (e.g. stop/target watchers
+        # still running on overnight holds), that's a positional detail
+        # surfaced elsewhere, not a missed deadline.
         if done:               return "done"
         if active_is_past:     return "done"
         if now_hm < start_hm:  return "later"
-        if now_hm >= end_hm:   return "now"  # window closed, still not done
+        if now_hm >= end_hm:   return "done"
         return "in_progress" if live else "now"
 
     events = [
