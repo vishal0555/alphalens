@@ -656,14 +656,41 @@
     if (!overlay) return;
     var sheets = document.querySelectorAll('.sheet');
     var stack  = [];  // names of currently-open sheets, deepest last
+    var savedScrollY = 0;
+
+    // iOS Safari body-scroll-lock: `overflow: hidden` alone doesn't stop
+    // the page from scrolling underneath the sheet. The standard pattern
+    // is to pin the body with position:fixed and a negative top equal to
+    // the saved scroll position, then restore on close. Without this you
+    // get bleed-through (page scrolls behind a partly-open sheet) and a
+    // "stuck" feeling because taps on the sheet get eaten by the page.
+    function _lockBody() {
+      savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.style.position = 'fixed';
+      document.body.style.top      = '-' + savedScrollY + 'px';
+      document.body.style.left     = '0';
+      document.body.style.right    = '0';
+      document.body.style.width    = '100%';
+      document.body.classList.add('sheet-open');
+    }
+    function _unlockBody() {
+      document.body.classList.remove('sheet-open');
+      document.body.style.position = '';
+      document.body.style.top      = '';
+      document.body.style.left     = '';
+      document.body.style.right    = '';
+      document.body.style.width    = '';
+      window.scrollTo(0, savedScrollY);
+    }
 
     function open(name, push) {
       var sheet = document.getElementById('sheet-' + name);
       if (!sheet) return;
+      var wasUnlocked = !document.body.classList.contains('sheet-open');
       sheets.forEach(function (s) { s.classList.remove('open'); });
       sheet.classList.add('open');
       overlay.classList.add('open');
-      document.body.classList.add('sheet-open');
+      if (wasUnlocked) _lockBody();
       sheet.querySelector('.sheet-body').scrollTop = 0;
       if (push !== false) {
         stack.push(name);
@@ -671,9 +698,10 @@
       }
     }
     function close() {
+      var wasLocked = document.body.classList.contains('sheet-open');
       sheets.forEach(function (s) { s.classList.remove('open'); });
       overlay.classList.remove('open');
-      document.body.classList.remove('sheet-open');
+      if (wasLocked) _unlockBody();
       stack = [];
     }
 
