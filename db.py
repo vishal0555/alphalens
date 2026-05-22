@@ -231,6 +231,34 @@ def fetch_today_session() -> Optional[dict]:
     return _safe(_q)
 
 
+def fetch_carrying_positions() -> Optional[list[dict]]:
+    """Open positions held over from a prior, already-settled plan.
+
+    Every row is a plan_item in status='carrying_overnight' — the
+    ExitMonitor is still watching its stop/target, but the position
+    no longer belongs to today's plan.
+
+    Returns each position with the entry fill price (so the dashboard
+    can render an unrealised P&L hint once a live quote is available).
+    """
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT i.item_id, i.plan_id, i.session_id, i.ticker, i.side,
+                       i.size_shares, i.entry_low, i.entry_high, i.target, i.stop,
+                       p.briefing_date AS opened_on,
+                       (SELECT fill_price FROM executed_trades
+                         WHERE plan_item_id = i.item_id AND exit_reason IS NULL
+                         LIMIT 1) AS entry_fill_price
+                  FROM pm_plan_items i
+                  JOIN pm_plans p ON p.plan_id = i.plan_id
+                 WHERE i.status = 'carrying_overnight'
+                 ORDER BY p.briefing_date ASC, i.ticker ASC
+            """)
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q)
+
+
 def fetch_session_items(plan_id: str) -> Optional[list[dict]]:
     """All plan items for a session with linked entry/exit fills."""
     def _q():

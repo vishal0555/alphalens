@@ -350,6 +350,10 @@ def index():
         pnl   = _db.session_pnl_summary(str(session_hdr["plan_id"]))
         realised = pnl["realised_pnl"] if pnl else None
 
+    # Carry book — positions left over from a prior, already-settled plan.
+    # Distinct from today's items: separate card, separate semantics.
+    carry = _db.fetch_carrying_positions() or []
+
     lessons  = _db.fetch_recent_lessons(limit=5)
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
 
@@ -397,6 +401,7 @@ def index():
         ),
         freshness=freshness,
         last_updated=last_updated,
+        carry=carry,
     )
 
 
