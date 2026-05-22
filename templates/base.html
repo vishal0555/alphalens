@@ -503,14 +503,30 @@
       border-radius: 14px 14px 0 0;
       z-index: 310;
       transform: translateY(100%);
-      transition: transform .45s var(--ease-ios);
+      /* `visibility: hidden` is the load-bearing line: it removes the
+         sheet from iOS WebKit's composited-layer tree while closed.
+         The dashboard pre-renders ~24 of these (per ticker / layer /
+         lesson + main); without this, scrolling on iOS exhausts the
+         GPU layer budget and the page blanks out mid-scroll until
+         WebKit rebuilds the tree.
+
+         The visibility transition is delayed by the slide-out
+         duration so the close animation still plays — visibility
+         only flips back to hidden once the transform has finished
+         translating offscreen. */
+      visibility: hidden;
+      transition: transform .45s var(--ease-ios), visibility 0s .45s;
       display: flex; flex-direction: column;
       overflow: hidden;
       max-width: 720px;
       margin: 0 auto;
       box-shadow: 0 -12px 40px rgba(0,0,0,.5);
     }
-    .sheet.open { transform: translateY(0); }
+    .sheet.open {
+      transform: translateY(0);
+      visibility: visible;
+      transition: transform .45s var(--ease-ios), visibility 0s 0s;
+    }
     .sheet::before {
       /* Grabber handle */
       content: ""; position: absolute;
