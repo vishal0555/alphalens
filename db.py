@@ -231,6 +231,37 @@ def fetch_today_session() -> Optional[dict]:
     return _safe(_q)
 
 
+def debrief_coverage_for_date(as_of_date: str) -> Optional[dict]:
+    """Are all closed items on `as_of_date`'s plan debriefed?
+
+    Returns {"closed": int, "undebriefed": int}. The Schedule widget's
+    Debrief event uses this directly: done iff closed > 0 and
+    undebriefed == 0, regardless of whether the plan itself has
+    settled — overnight holds keep the plan `active` for days, but
+    every closed item can be debriefed in the meantime.
+    """
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  COUNT(*) FILTER (WHERE i.status IN (
+                      'exited_target','exited_stop','exited_rotation',
+                      'exited_cancel','expired','cancelled'
+                  )) AS closed,
+                  COUNT(*) FILTER (WHERE i.status IN (
+                      'exited_target','exited_stop','exited_rotation',
+                      'exited_cancel','expired','cancelled'
+                  ) AND d.debrief_id IS NULL) AS undebriefed
+                  FROM pm_plan_items i
+                  JOIN pm_plans p ON p.plan_id = i.plan_id
+             LEFT JOIN debriefs d ON d.plan_item_id = i.item_id
+                 WHERE p.briefing_date = %s
+            """, (as_of_date,))
+            row = cur.fetchone()
+            return {"closed": int(row[0]), "undebriefed": int(row[1])}
+    return _safe(_q)
+
+
 def fetch_carrying_positions() -> Optional[list[dict]]:
     """Open positions held over from a prior, already-settled plan.
 

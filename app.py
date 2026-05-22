@@ -215,7 +215,8 @@ def _today_header(active: Optional[date] = None) -> dict:
     }
 
 
-def _calendar_events(session_hdr, items, *, active_date: date, universe, briefing) -> list[dict]:
+def _calendar_events(session_hdr, items, *, active_date: date, universe, briefing,
+                      debrief_cov: Optional[dict] = None) -> list[dict]:
     """Today's trading session as calendar events for the iOS-style
     Schedule widget. Each event = {time, title, state} where state is one
     of 'done' | 'next' | 'later'. Times are ET market hours.
@@ -273,8 +274,17 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
          "state": _window((16, 0), (16, 30),
                           done=session_done and session_today,
                           live=False)},
+        # Debrief flips done as soon as every closed item on the active
+        # day has a debrief row — independent of plan settlement. With
+        # per-item debriefs (alphalab/exit_monitor.py), this happens
+        # within seconds of each exit. The wall-clock 17:00 anchor is
+        # only used when there's nothing closed yet (then it shows
+        # "later" / "now" via _point as before).
         {"time": "17:00", "title": "Debrief lessons",
-         "state": _point((17, 0), done=session_done and session_today)},
+         "state": _point((17, 0),
+                         done=bool(debrief_cov)
+                              and debrief_cov.get("closed", 0) > 0
+                              and debrief_cov.get("undebriefed", 0) == 0)},
     ]
     # Promote the first 'later' to 'next' only when nothing is actively
     # happening (in_progress / overdue) — otherwise the focus is already
@@ -371,6 +381,7 @@ def index():
         active_date=active_date, universe=universe, briefing=briefing,
         nav=nav, session_hdr=session_hdr,
     )
+    debrief_cov = _db.debrief_coverage_for_date(active_date.isoformat())
 
     def _iso(d) -> Optional[str]:
         return str(d) if d else None
@@ -398,6 +409,7 @@ def index():
         calendar_events=_calendar_events(
             session_hdr, items,
             active_date=active_date, universe=universe, briefing=briefing,
+            debrief_cov=debrief_cov,
         ),
         freshness=freshness,
         last_updated=last_updated,
