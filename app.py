@@ -216,7 +216,8 @@ def _today_header(active: Optional[date] = None) -> dict:
 
 
 def _calendar_events(session_hdr, items, *, active_date: date, universe, briefing,
-                      debrief_cov: Optional[dict] = None) -> list[dict]:
+                      debrief_cov: Optional[dict] = None,
+                      nav_marked: bool = False) -> list[dict]:
     """Today's trading session as calendar events for the iOS-style
     Schedule widget. Each event = {time, title, state} where state is one
     of 'done' | 'next' | 'later'. Times are ET market hours.
@@ -270,10 +271,18 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
          "state": _window((9, 30), (16, 0),
                           done=session_done and session_today,
                           live=session_live and session_today)},
+        # "Close · mark book" reads `done` only when today's session
+        # actually wrote a fund_nav row. Unlike Open (a time-anchored
+        # event — the trading day ends at 16:00 regardless), Close is
+        # data-anchored: the NAV write happens when the ExitMonitor's
+        # completion handler fires, which can lag past close (or never
+        # happen this calendar day for overnight holds). Use the explicit
+        # state machine — no wall-clock-equals-done fallback.
         {"time": "16:00", "title": "Close · mark book",
-         "state": _window((16, 0), (16, 30),
-                          done=session_done and session_today,
-                          live=False)},
+         "state": ("done"        if nav_marked
+                   else "later"       if now_hm < (16, 0)
+                   else "in_progress" if now_hm < (16, 30)
+                   else "now")},
         # Debrief flips done as soon as every closed item on the active
         # day has a debrief row — independent of plan settlement. With
         # per-item debriefs (alphalab/exit_monitor.py), this happens
@@ -382,6 +391,7 @@ def index():
         nav=nav, session_hdr=session_hdr,
     )
     debrief_cov = _db.debrief_coverage_for_date(active_date.isoformat())
+    nav_marked  = bool(_db.nav_marked_for_date(active_date.isoformat()))
 
     def _iso(d) -> Optional[str]:
         return str(d) if d else None
@@ -409,7 +419,7 @@ def index():
         calendar_events=_calendar_events(
             session_hdr, items,
             active_date=active_date, universe=universe, briefing=briefing,
-            debrief_cov=debrief_cov,
+            debrief_cov=debrief_cov, nav_marked=nav_marked,
         ),
         freshness=freshness,
         last_updated=last_updated,

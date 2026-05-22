@@ -231,6 +231,28 @@ def fetch_today_session() -> Optional[dict]:
     return _safe(_q)
 
 
+def nav_marked_for_date(as_of_date: str) -> Optional[bool]:
+    """True iff a fund_nav row exists for a session whose briefing_date
+    matches `as_of_date`. Used by the Schedule's "Close · mark book"
+    event so it reads `done` only when today's session actually wrote
+    NAV — not just because the wall-clock crossed 16:00 ET.
+
+    Joins fund_nav.session_id ← pm_plans to make sure the NAV row came
+    from a *plan that belongs to today's trading day*, not from a carry
+    plan that happens to be completing on today's calendar.
+    """
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT 1 FROM fund_nav n
+                  JOIN pm_plans p ON p.session_id = n.session_id
+                 WHERE p.briefing_date = %s
+                 LIMIT 1
+            """, (as_of_date,))
+            return cur.fetchone() is not None
+    return _safe(_q)
+
+
 def debrief_coverage_for_date(as_of_date: str) -> Optional[dict]:
     """Are all closed items on `as_of_date`'s plan debriefed?
 
