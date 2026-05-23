@@ -248,18 +248,17 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
         if now_hm < hm:    return "later"
         return "now"  # deadline lapsed, artefact still missing
 
-    def _window(start_hm, end_hm, *, done: bool, live: bool) -> str:
+    def _window(start_hm, end_hm, *, done: bool, live: bool, exists: bool = True) -> str:
         # Window event — start has happened, work is ongoing until end_hm.
-        # Past end_hm we treat the event as 'done' on wall-clock alone:
-        # "Open · execute plan" and "Close · mark book" are time anchors
-        # (the trading day), not data artefacts. If the underlying session
-        # row hasn't flipped to 'completed' yet (e.g. stop/target watchers
-        # still running on overnight holds), that's a positional detail
-        # surfaced elsewhere, not a missed deadline.
+        # Past end_hm we treat the event as 'done' on wall-clock alone IF the
+        # underlying artefact exists for the active day. If `exists=False`
+        # (e.g. no pm_plans row — session never spawned), the event remains
+        # 'now' (overdue) past the window so the dashboard surfaces the gap
+        # rather than reporting a phantom completion.
         if done:               return "done"
-        if active_is_past:     return "done"
+        if active_is_past:     return "done" if exists else "now"
         if now_hm < start_hm:  return "later"
-        if now_hm >= end_hm:   return "done"
+        if now_hm >= end_hm:   return "done" if exists else "now"
         return "in_progress" if live else "now"
 
     events = [
@@ -270,7 +269,8 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
         {"time": "09:30", "title": "Open · execute plan",
          "state": _window((9, 30), (16, 0),
                           done=session_done and session_today,
-                          live=session_live and session_today)},
+                          live=session_live and session_today,
+                          exists=session_today)},
         # "Close · mark book" reads `done` only when today's session
         # actually wrote a fund_nav row. Unlike Open (a time-anchored
         # event — the trading day ends at 16:00 regardless), Close is
@@ -286,14 +286,19 @@ def _calendar_events(session_hdr, items, *, active_date: date, universe, briefin
         # Debrief flips done as soon as every closed item on the active
         # day has a debrief row — independent of plan settlement. With
         # per-item debriefs (alphalab/exit_monitor.py), this happens
-        # within seconds of each exit. The wall-clock 17:00 anchor is
-        # only used when there's nothing closed yet (then it shows
-        # "later" / "now" via _point as before).
+        # within seconds of each exit.
+        #
+        # All-carry days (every position holds overnight, closed=0) used
+        # to sit at "now/overdue" forever because the old condition
+        # required `closed > 0`. They now flip to "done" at 17:00 wall-
+        # clock — there's nothing to autopsy and never will be for this
+        # trading day, so claiming it overdue is misleading.
         {"time": "17:00", "title": "Debrief lessons",
          "state": _point((17, 0),
                          done=bool(debrief_cov)
-                              and debrief_cov.get("closed", 0) > 0
-                              and debrief_cov.get("undebriefed", 0) == 0)},
+                              and debrief_cov.get("undebriefed", 0) == 0
+                              and (debrief_cov.get("closed", 0) > 0
+                                   or now_hm >= (17, 0)))},
     ]
     # Promote the first 'later' to 'next' only when nothing is actively
     # happening (in_progress / overdue) — otherwise the focus is already
