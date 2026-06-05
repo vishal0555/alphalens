@@ -57,7 +57,17 @@ def _conn():
     url = _get_url()
     if not url:
         raise RuntimeError("DATABASE_URL not set")
-    return psycopg2.connect(url)
+    conn = psycopg2.connect(url)
+    # When the fund tables live in a dedicated schema (e.g. the ai-thematic
+    # `ats` schema), pin the search_path to it. Pointing only at that schema
+    # keeps unrelated tables from other projects invisible, so panels that
+    # depend on them degrade gracefully instead of reading stale data.
+    schema = os.environ.get("ALPHALENS_SCHEMA")
+    if schema:
+        with conn.cursor() as cur:
+            cur.execute(f'SET search_path TO "{schema}"')
+        conn.commit()
+    return conn
 
 
 def _safe(fn, *args, **kwargs):
