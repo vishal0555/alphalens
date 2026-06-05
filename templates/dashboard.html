@@ -184,9 +184,9 @@
 {% if briefing %}
   {% set posture = briefing.plan.posture %}
   {% if posture == 'aggressive' %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'Aggressive', 'Clear · full size', 'sun' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'Risk-On', 'Clear · full size', 'sun' %}
   {% elif posture == 'defensive' %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'Defensive', 'Stormy · half size', 'storm' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'Risk-Off', 'Stormy · half size', 'storm' %}
   {% else %}
     {% set w_class, w_label, w_cond, w_icon = 'w-weather-mix', 'Neutral', 'Mixed · selective', 'cloudsun' %}
   {% endif %}
