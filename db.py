@@ -128,6 +128,33 @@ def held_tickers() -> set:
     return _safe(_q) or set()
 
 
+def execution_by_ticker() -> dict:
+    """Per-ticker execution status from fills: entry price, net position, fill count.
+
+    Used to turn the universe into an execution checklist (filled / pending,
+    held or not). Empty dict on any DB error.
+    """
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT ticker,
+                       MAX(fill_price) FILTER (WHERE lower(side) = 'buy') AS entry_price,
+                       SUM(CASE WHEN lower(side) = 'buy' THEN qty ELSE -qty END) AS net,
+                       COUNT(*) AS fills
+                  FROM executed_trades
+                 GROUP BY ticker
+            """)
+            out = {}
+            for r in cur.fetchall():
+                out[r[0]] = {
+                    "entry_price": float(r[1]) if r[1] is not None else None,
+                    "net": float(r[2]) if r[2] is not None else 0.0,
+                    "fills": int(r[3]),
+                }
+            return out
+    return _safe(_q) or {}
+
+
 def fetch_previous_universe(before_date: str) -> Optional[dict]:
     """Yesterday's universe, for diff computation on /universe."""
     def _q():

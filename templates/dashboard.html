@@ -314,7 +314,11 @@
   </a>
 
   {% if items and (freshness is not defined or freshness.plan.fresh) %}
+    {% if planned %}
+    {% set done_count = items | selectattr('status','equalto','filled') | list | length %}
+    {% else %}
     {% set done_count = items | selectattr('status','in',['exited_target','exited_stop','exited_rotation','exited_cancel']) | list | length %}
+    {% endif %}
   <a class="widget w-rem w-reminders tap" data-sheet="reminders" href="#reminders">
     <div class="widget-body">
       <div class="w-head">
@@ -334,7 +338,7 @@
         <span class="w-accessory">{{ done_count }}/{{ items|length }}</span>
       </div>
       {% for it in items[:3] %}
-        {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
+        {% set is_done = (it.status == 'filled') if planned else (it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel']) %}
         {% set is_cancel = it.status in ['expired','cancelled'] %}
         {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
         <div class="rem-row">
@@ -602,17 +606,30 @@
     <div class="sheet-updated">Updated {{ last_updated.session }}</div>
     {% endif %}
     {% if planned %}
-    {# Today's plan = the curated universe: what to hold and at what weight. #}
+    {# Plan = today's execution checklist over the curated universe. #}
+    <div class="sheet-stat-grid">
+      <div class="cell">
+        <div class="l">Filled</div>
+        <div class="num v">{{ items | selectattr('status','equalto','filled') | list | length }}/{{ items|length }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">Held</div>
+        <div class="num v">{{ items | selectattr('held') | list | length }}</div>
+      </div>
+    </div>
     {% for it in items %}
     <div class="row-card plan-band" style="display:flex;align-items:center;gap:12px;padding:14px 16px;">
+      <span class="check {% if it.status == 'filled' %}done{% endif %}" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.32);display:inline-flex;align-items:center;justify-content:center;{% if it.status == 'filled' %}background:var(--green);border-color:var(--green);{% endif %}"></span>
       <span style="flex:1;min-width:0;">
         <span style="display:flex;align-items:baseline;gap:8px;">
           <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
           <span class="muted" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;">{{ it.layer }}</span>
         </span>
-        {% if it.rationale %}<span style="display:block;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;">{{ it.rationale }}</span>{% endif %}
+        <span style="display:block;font-size:11px;color:var(--muted);margin-top:2px;">
+          {% if it.status == 'filled' %}filled{% if it.fill_price %} @ {{ '%.2f'|format(it.fill_price) }}{% endif %}{% if it.held %} · held{% endif %}{% else %}pending{% endif %}
+        </span>
       </span>
-      <span class="num" style="font-size:15px;font-weight:800;letter-spacing:-.01em;">{{ '%.1f'|format(it.weight_pct) }}%</span>
+      <span class="num" style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:-.01em;">{{ '%.1f'|format(it.weight_pct) }}%</span>
     </div>
     {% endfor %}
     {% else %}

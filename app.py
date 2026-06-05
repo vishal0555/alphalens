@@ -396,13 +396,23 @@ def index():
                 "playbooks": [],
             },
         }
+        # Plan = today's execution checklist: each universe name marked filled
+        # (and held) or pending, from real fills.
+        execu = _db.execution_by_ticker() or {}
         if not items:
-            items = [
-                {"ticker": p.get("ticker"), "status": "planned", "side": "long",
-                 "layer": p.get("layer"), "weight_pct": p.get("weight_pct"),
-                 "rationale": p.get("rationale")}
-                for p in picks
-            ]
+            items = []
+            for p in picks:
+                t = p.get("ticker")
+                ex = execu.get(t) or {}
+                filled = bool(ex.get("fills"))
+                items.append({
+                    "ticker": t, "side": "long",
+                    "layer": p.get("layer"), "weight_pct": p.get("weight_pct"),
+                    "rationale": p.get("rationale"),
+                    "status": "filled" if filled else "pending",
+                    "fill_price": ex.get("entry_price"),
+                    "held": abs(ex.get("net") or 0) > 0.0001,
+                })
         if not session_hdr or session_hdr is False:
             session_hdr = {"briefing_date": universe.get("as_of_date"), "plan_id": None}
 
