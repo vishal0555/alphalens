@@ -601,6 +601,21 @@
     {% if last_updated and last_updated.session %}
     <div class="sheet-updated">Updated {{ last_updated.session }}</div>
     {% endif %}
+    {% if planned %}
+    {# Today's plan = the curated universe: what to hold and at what weight. #}
+    {% for it in items %}
+    <div class="row-card plan-band" style="display:flex;align-items:center;gap:12px;padding:14px 16px;">
+      <span style="flex:1;min-width:0;">
+        <span style="display:flex;align-items:baseline;gap:8px;">
+          <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
+          <span class="muted" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;">{{ it.layer }}</span>
+        </span>
+        {% if it.rationale %}<span style="display:block;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;">{{ it.rationale }}</span>{% endif %}
+      </span>
+      <span class="num" style="font-size:15px;font-weight:800;letter-spacing:-.01em;">{{ '%.1f'|format(it.weight_pct) }}%</span>
+    </div>
+    {% endfor %}
+    {% else %}
     {% if realised is not none %}
     <div class="sheet-stat-grid">
       <div class="cell">
@@ -643,12 +658,13 @@
       </span>
     </a>
     {% endfor %}
+    {% endif %}
   </div>
 </aside>
 {% endif %}
 
 {# Per-ticker drilldown sheets — full plan-item detail #}
-{% if items %}
+{% if items and not planned %}
 {% for it in items %}
   {% set pb = (playbooks or {}).get(it.ticker) %}
   {% set rpnl = ((it.exit_fill_price - it.entry_fill_price) * it.size_shares) if (it.entry_fill_price and it.exit_fill_price) else None %}

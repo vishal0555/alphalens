@@ -374,6 +374,38 @@ def index():
         pnl   = _db.session_pnl_summary(str(session_hdr["plan_id"]))
         realised = pnl["realised_pnl"] if pnl else None
 
+    # Post-consolidation: the legacy briefing/plan tables are gone. Synthesize
+    # a briefing + plan from the scout's curated universe so Posture (the day's
+    # thesis) and Plan (today's intended holdings) reflect real scout output
+    # instead of sitting blank.
+    synthetic_plan = False
+    if briefing is None and universe and universe is not False:
+        synthetic_plan = True
+        picks = universe.get("picks", []) or []
+        # Derive posture from the scout's conviction: a concentrated top weight
+        # signals an aggressive tilt; an even spread is neutral.
+        _max_w = max((p.get("weight_pct") or 0) for p in picks) if picks else 0
+        briefing = {
+            "as_of_date": universe.get("as_of_date"),
+            "plan": {
+                "posture": "aggressive" if _max_w >= 16 else "neutral",
+                "session_thesis": universe.get("rationale")
+                    or "Curated AI-stack universe for today.",
+                "regime_summary": "",
+                "risks_today": [],
+                "playbooks": [],
+            },
+        }
+        if not items:
+            items = [
+                {"ticker": p.get("ticker"), "status": "planned", "side": "long",
+                 "layer": p.get("layer"), "weight_pct": p.get("weight_pct"),
+                 "rationale": p.get("rationale")}
+                for p in picks
+            ]
+        if not session_hdr or session_hdr is False:
+            session_hdr = {"briefing_date": universe.get("as_of_date"), "plan_id": None}
+
     # Carry book — positions left over from a prior, already-settled plan.
     # Distinct from today's items: separate card, separate semantics.
     carry = _db.fetch_carrying_positions() or []
@@ -429,6 +461,7 @@ def index():
         freshness=freshness,
         last_updated=last_updated,
         carry=carry,
+        planned=synthetic_plan,
     )
 
 
