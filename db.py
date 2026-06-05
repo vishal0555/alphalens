@@ -110,6 +110,24 @@ def fetch_current_universe() -> Optional[dict]:
     return _safe(_q)
 
 
+def held_tickers() -> set:
+    """Tickers the fund currently holds (net nonzero position from fills).
+
+    Used to mark which universe picks were actually acted on. Returns an empty
+    set on any DB error so callers can treat it as 'none marked'.
+    """
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT ticker
+                  FROM executed_trades
+                 GROUP BY ticker
+                HAVING ABS(SUM(CASE WHEN lower(side) = 'buy' THEN qty ELSE -qty END)) > 0.0001
+            """)
+            return {r[0] for r in cur.fetchall()}
+    return _safe(_q) or set()
+
+
 def fetch_previous_universe(before_date: str) -> Optional[dict]:
     """Yesterday's universe, for diff computation on /universe."""
     def _q():

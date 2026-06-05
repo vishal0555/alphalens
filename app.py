@@ -462,6 +462,7 @@ def index():
         last_updated=last_updated,
         carry=carry,
         planned=synthetic_plan,
+        held=_db.held_tickers(),
     )
 
 
@@ -480,6 +481,7 @@ def universe_page():
         universe=u,
         yesterday=yesterday,
         groups=groups,
+        held=_db.held_tickers(),
     )
 
 

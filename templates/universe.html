@@ -91,7 +91,7 @@
       {% set y = yesterday.picks_by_ticker.get(p.ticker) if yesterday else None %}
       <div class="pick-card">
         <div class="pick-head">
-          <span class="ticker ticker-blue">{{ p.ticker }}</span>
+          <span class="ticker ticker-blue">{{ p.ticker }}{% if held and p.ticker in held %} <span style="color:var(--green);font-size:16px;" title="held">✓</span>{% endif %}</span>
           <span class="num pick-weight">{{ '%.1f'|format(p.weight_pct) }}%</span>
         </div>
         <div class="pick-meta">
