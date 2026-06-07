@@ -484,6 +484,8 @@ def index():
         carry=carry,
         planned=synthetic_plan,
         held=_db.held_tickers(),
+        confidence=_db.decision_confidence(),
+        exceptions=_db.decision_exceptions(),
     )
 
 

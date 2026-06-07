@@ -192,6 +192,46 @@
   {% endif %}
 {% endif %}
 
+{# ── Oversight: trust verdict + exceptions (lead) ────────────── #}
+{% if confidence %}
+<div class="card">
+  <div class="card-pad">
+    <div class="eyebrow">Decision quality</div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin-top:6px;">
+      <span class="num {{ confidence.avg_score | score_class }}" style="font-size:34px;font-weight:800;letter-spacing:-.02em;">{{ '%.2f'|format(confidence.avg_score) }}</span>
+      {% if confidence.trend %}<span class="num" style="font-size:14px;font-weight:700;color:{% if confidence.trend=='up' %}var(--green){% elif confidence.trend=='down' %}var(--red){% else %}var(--muted){% endif %};">{{ '↑' if confidence.trend=='up' else '↓' if confidence.trend=='down' else '→' }} {{ confidence.trend }}</span>{% endif %}
+      <span class="muted" style="font-size:13px;">· {{ confidence.executed }}/{{ confidence.n }} executed · {{ confidence.sessions }} session{{ 's' if confidence.sessions != 1 else '' }}</span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if exceptions %}
+<div class="card">
+  <div style="padding:14px 20px 0;display:flex;align-items:baseline;justify-content:space-between;">
+    <div class="eyebrow">Needs a look</div>
+    <span class="muted" style="font-size:13px;">{{ exceptions|length }}</span>
+  </div>
+  <div style="margin-top:8px;">
+    {% for x in exceptions %}
+    <a href="{% if x.decision_id %}/debrief/{{ x.decision_id }}{% else %}/debriefs{% endif %}" style="display:flex;align-items:center;gap:10px;padding:12px 20px;color:inherit;text-decoration:none;border-top:1px solid var(--border);">
+      <span style="color:var(--amber);font-size:15px;">▲</span>
+      <span class="ticker ticker-blue" style="font-size:15px;min-width:54px;">{{ x.ticker }}</span>
+      <span style="min-width:0;">
+        <span style="display:block;font-size:12px;font-weight:700;color:var(--text-2);">{{ x.type }}</span>
+        <span class="muted" style="display:block;font-size:12px;">{{ x.detail }}</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% elif confidence %}
+<div class="card"><div class="card-pad" style="display:flex;align-items:center;gap:10px;">
+  <span style="color:var(--green);font-size:18px;">✓</span>
+  <span class="muted" style="font-size:14px;">All clear — nothing flagged for review.</span>
+</div></div>
+{% endif %}
+
 {# ── ROW 1: Weather + Battery ───────────────────────────────── #}
 <div class="wgrid">
   {% if briefing and (freshness is not defined or freshness.briefing.fresh) %}
