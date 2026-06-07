@@ -573,7 +573,8 @@ def list_decisions(limit: int = 60) -> Optional[list[dict]]:
             cur.execute("""
                 SELECT decision_id, ticker, layer, scout_decision, pipeline_outcome,
                        weight_pct, score, revised_view, reflection,
-                       morning_price, eod_price, macro_regime, as_of_date, scored_at
+                       morning_price, eod_price, macro_regime, as_of_date, scored_at,
+                       lessons_applied
                   FROM stock_decisions
                  WHERE score IS NOT NULL
                  ORDER BY as_of_date DESC, score DESC
@@ -592,7 +593,7 @@ def fetch_decision(decision_id: str) -> Optional[dict]:
                        pipeline_outcome, weight_pct, conviction, scout_rationale,
                        pipeline_rationale, morning_sentiment, morning_price, macro_regime,
                        eod_sentiment, eod_price, revised_view, score, reflection,
-                       as_of_date, scored_at, signal_id, order_id, macro_id
+                       as_of_date, scored_at, signal_id, order_id, macro_id, lessons_applied
                   FROM stock_decisions WHERE decision_id = %s::uuid
             """, (decision_id,))
             row = cur.fetchone()
