@@ -564,39 +564,6 @@ def decision_confidence() -> Optional[dict]:
     return _safe(_q)
 
 
-def decision_exceptions() -> Optional[list[dict]]:
-    """Things a human should look at: low-conviction fills, weak scores, posture flips."""
-    def _q():
-        items: list[dict] = []
-        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                WITH latest AS (SELECT max(as_of_date) d FROM stock_decisions WHERE score IS NOT NULL)
-                SELECT decision_id, ticker, pipeline_outcome, conviction, score, revised_view
-                  FROM stock_decisions, latest
-                 WHERE as_of_date = latest.d AND score IS NOT NULL
-                   AND ((pipeline_outcome = 'executed' AND conviction < 0.15) OR score < 0.40)
-                 ORDER BY score ASC
-            """)
-            for r in cur.fetchall():
-                if r["pipeline_outcome"] == "executed" and (r["conviction"] or 1) < 0.15:
-                    items.append({"ticker": r["ticker"], "type": "low-conviction fill",
-                                  "detail": "executed at conviction %.2f" % (r["conviction"] or 0),
-                                  "decision_id": str(r["decision_id"])})
-                if r["score"] is not None and r["score"] < 0.40:
-                    items.append({"ticker": r["ticker"], "type": "weak score",
-                                  "detail": (r["revised_view"] or "")[:90],
-                                  "decision_id": str(r["decision_id"])})
-            cur.execute("""
-                SELECT regime FROM macro_reads ORDER BY as_of_date DESC, created_at DESC LIMIT 2
-            """)
-            regimes = [r["regime"] for r in cur.fetchall()]
-            if len(regimes) == 2 and regimes[0] != regimes[1]:
-                items.append({"ticker": "MACRO", "type": "posture flip",
-                              "detail": "%s → %s" % (regimes[1], regimes[0]), "decision_id": None})
-        return items
-    return _safe(_q)
-
-
 # ── Decision journal (stock_decisions) ──────────────────────────────────────
 
 def list_decisions(limit: int = 60) -> Optional[list[dict]]:

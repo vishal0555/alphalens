@@ -41,6 +41,44 @@
     color: var(--text-2);
   }
 
+  /* Today's run — calendar-style widget (mirrors the iOS calendar tile) */
+  .w-runcal { background: linear-gradient(170deg, #1c1c1e 0%, #1a0b22 100%); }
+  .w-runcal .runcal-day {
+    font-size: 11px; font-weight: 800; letter-spacing: .12em;
+    color: var(--red); text-transform: uppercase; margin-top: 2px;
+  }
+  .w-runcal .runcal-dom {
+    font-size: 26px; font-weight: 800; line-height: 1;
+    letter-spacing: -.03em; margin: 1px 0 12px; color: var(--text);
+  }
+  .w-runcal .runcal-ev {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 0 4px 8px; font-size: 12px;
+    border-left: 2.5px solid var(--muted);
+  }
+  .w-runcal .runcal-ev + .runcal-ev { margin-top: 3px; }
+  .w-runcal .runcal-ev.done    { border-left-color: var(--green); }
+  .w-runcal .runcal-ev.overdue { border-left-color: var(--amber); }
+  .w-runcal .runcal-ev.pending { border-left-color: var(--muted); opacity: .7; }
+  .w-runcal .ev-ico {
+    width: 12px; flex-shrink: 0; font-size: 11px;
+    color: var(--muted); text-align: center;
+  }
+  .w-runcal .runcal-ev.done .ev-ico    { color: var(--green); }
+  .w-runcal .runcal-ev.overdue .ev-ico { color: var(--amber); }
+  .w-runcal .ev-ttl {
+    color: var(--text); font-weight: 600; flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .w-runcal .ev-nt {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+  .w-runcal .runcal-ev.done .ev-nt { color: var(--green); }
+
+  /* NAV equity curve */
+  .navchart { overflow: visible; }
+
   /* Lesson-stack card */
   .lesson-stack-card .top {
     display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
@@ -192,47 +230,54 @@
   {% endif %}
 {% endif %}
 
-{# ── Oversight: trust verdict + exceptions (lead) ────────────── #}
-{% if confidence %}
+{# ── Track record: NAV curve + decision quality (lead) ───────── #}
+{% if nav %}
 <div class="card">
   <div class="card-pad">
-    <div class="eyebrow">Decision quality</div>
-    <div style="display:flex;align-items:baseline;gap:12px;margin-top:6px;">
-      <span class="num {{ confidence.avg_score | score_class }}" style="font-size:34px;font-weight:800;letter-spacing:-.02em;">{{ '%.2f'|format(confidence.avg_score) }}</span>
-      {% if confidence.trend %}<span class="num" style="font-size:14px;font-weight:700;color:{% if confidence.trend=='up' %}var(--green){% elif confidence.trend=='down' %}var(--red){% else %}var(--muted){% endif %};">{{ '↑' if confidence.trend=='up' else '↓' if confidence.trend=='down' else '→' }} {{ confidence.trend }}</span>{% endif %}
-      <span class="muted" style="font-size:13px;">· {{ confidence.executed }}/{{ confidence.n }} executed · {{ confidence.sessions }} session{{ 's' if confidence.sessions != 1 else '' }}</span>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div class="eyebrow">Track record</div>
+      <a href="/debriefs" class="muted" style="font-size:12px;text-decoration:none;">journal&nbsp;›</a>
     </div>
-  </div>
-</div>
-{% endif %}
 
-{% if exceptions %}
-<div class="card">
-  <div style="padding:14px 20px 0;display:flex;align-items:baseline;justify-content:space-between;">
-    <div class="eyebrow">Needs a look</div>
-    <span class="muted" style="font-size:13px;">{{ exceptions|length }}</span>
-  </div>
-  <div style="margin-top:8px;">
-    {% for x in exceptions %}
-    <a href="{% if x.decision_id %}/debrief/{{ x.decision_id }}{% else %}/debriefs{% endif %}" style="display:flex;align-items:center;gap:10px;padding:12px 20px;color:inherit;text-decoration:none;border-top:1px solid var(--border);">
-      <span style="color:var(--amber);font-size:15px;">▲</span>
-      <span class="ticker ticker-blue" style="font-size:15px;min-width:54px;">{{ x.ticker }}</span>
-      <span style="min-width:0;">
-        <span style="display:block;font-size:12px;font-weight:700;color:var(--text-2);">{{ x.type }}</span>
-        <span class="muted" style="display:block;font-size:12px;">{{ x.detail }}</span>
-      </span>
+    {# NAV equity curve #}
+    <a href="#nav" data-sheet="nav" style="display:block;text-decoration:none;color:inherit;margin-top:8px;">
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <span class="num" style="font-size:32px;font-weight:800;letter-spacing:-.02em;">{{ nav.ending_nav | money2 }}</span>
+        {% if nav_chart %}
+        <span class="num" style="font-size:14px;font-weight:700;color:{% if nav_chart.up %}var(--green){% else %}var(--red){% endif %};">{{ '%+.2f'|format(nav_chart.change_pct) }}%</span>
+        {% endif %}
+        <span class="muted" style="font-size:12px;">NAV{% if nav_chart and nav_chart.n > 1 %} · {{ nav_chart.n }} marks{% endif %}</span>
+      </div>
+      {% if nav_chart %}
+      {% set col = 'var(--green)' if nav_chart.up else 'var(--red)' %}
+      <svg class="navchart" viewBox="0 0 {{ nav_chart.w }} {{ nav_chart.h }}" preserveAspectRatio="none" style="width:100%;height:64px;margin-top:8px;display:block;">
+        {% if nav_chart.area %}<path d="{{ nav_chart.area }}" fill="{{ col }}" opacity=".10"/>{% endif %}
+        <path d="{{ nav_chart.line }}" fill="none" stroke="{{ col }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"{% if nav_chart.n == 1 %} stroke-dasharray="3 4" opacity=".55"{% endif %}/>
+        <circle cx="{{ '%.1f'|format(nav_chart.dot[0]) }}" cy="{{ '%.1f'|format(nav_chart.dot[1]) }}" r="2.6" fill="{{ col }}"/>
+      </svg>
+      {% if nav_chart.n == 1 %}<div class="muted" style="font-size:11px;margin-top:2px;">curve builds as daily NAV marks accrue</div>{% endif %}
+      {% endif %}
     </a>
-    {% endfor %}
+
+    {# Decision quality — the learning scoreboard #}
+    {% if confidence %}
+    <a href="/debriefs" style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);text-decoration:none;color:inherit;">
+      <div style="flex:1;min-width:0;">
+        <div class="eyebrow" style="margin-bottom:5px;">Decision quality</div>
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+          <span class="num {{ confidence.avg_score | score_class }}" style="font-size:26px;font-weight:800;letter-spacing:-.02em;">{{ '%.2f'|format(confidence.avg_score) }}</span>
+          {% if confidence.trend %}<span class="num" style="font-size:13px;font-weight:700;color:{% if confidence.trend=='up' %}var(--green){% elif confidence.trend=='down' %}var(--red){% else %}var(--muted){% endif %};">{{ '↑' if confidence.trend=='up' else '↓' if confidence.trend=='down' else '→' }} {{ confidence.trend }}</span>{% endif %}
+          <span class="muted" style="font-size:12px;">{{ confidence.executed }}/{{ confidence.n }} executed · {{ confidence.sessions }} session{{ 's' if confidence.sessions != 1 else '' }}</span>
+        </div>
+      </div>
+      <span class="muted" style="font-size:18px;">›</span>
+    </a>
+    {% endif %}
   </div>
 </div>
-{% elif confidence %}
-<div class="card"><div class="card-pad" style="display:flex;align-items:center;gap:10px;">
-  <span style="color:var(--green);font-size:18px;">✓</span>
-  <span class="muted" style="font-size:14px;">All clear — nothing flagged for review.</span>
-</div></div>
 {% endif %}
 
-{# ── ROW 1: Weather + Battery ───────────────────────────────── #}
+{# ── ROW 1: Posture + Today's run ───────────────────────────── #}
 <div class="wgrid">
   {% if briefing and (freshness is not defined or freshness.briefing.fresh) %}
   <a class="widget w-weather {{ w_class }} tap" data-sheet="posture" href="#posture">
@@ -277,61 +322,25 @@
   </div>
   {% endif %}
 
-  {% if nav %}
-    {% set pnl = nav.realised_pnl %}
-    {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
-    {% set fill_w = 50 + pnl_pct * 5 %}
-    {% if fill_w < 8 %}{% set fill_w = 8 %}{% elif fill_w > 100 %}{% set fill_w = 100 %}{% endif %}
-    {% set fill_class = 'pos' if pnl > 0 else ('neg' if pnl < 0 else 'flat') %}
-  <a class="widget w-batt w-battery tap" data-sheet="nav" href="#nav">
+  {# Today's run — calendar-styled liveness of the autonomous cycle #}
+  {% if run %}
+  <div class="widget w-runcal">
     <div class="widget-body">
-      <div class="w-head">
-        <div class="w-title">
-          <span class="w-icon">
-            <svg viewBox="0 0 24 24" fill="none">
-              <rect x="2.5" y="8" width="16" height="8" rx="2" stroke="#fff" stroke-width="1.4" opacity=".8"/>
-              <rect x="19" y="10.5" width="2" height="3" rx=".6" fill="#fff" opacity=".8"/>
-              <rect x="4.5" y="10" width="10" height="4" rx=".6" fill="{% if pnl > 0 %}#30d158{% elif pnl < 0 %}#ff453a{% else %}#8e8e93{% endif %}"/>
-            </svg>
-          </span>
-          NAV
-        </div>
-        <span class="w-accessory">{{ '%+.2f'|format(pnl_pct) }}%</span>
+      <div class="w-head"><div class="w-title">Today's run</div></div>
+      <div class="runcal-day">{{ today.weekday[:3]|upper }}</div>
+      <div class="runcal-dom">{{ today.day }}</div>
+      {% for key in ['curate','rebalance','debrief'] %}
+      {% set s = run[key] %}
+      <div class="runcal-ev {{ s.state }}">
+        <span class="ev-ico">{%- if s.state=='done' %}✓{% elif s.state=='overdue' %}▲{% else %}◌{% endif -%}</span>
+        <span class="ev-ttl">{{ s.label }}</span>
+        <span class="ev-nt">{% if s.state=='done' %}{{ s.detail }}{% elif s.state=='overdue' %}overdue{% else %}pending{% endif %}</span>
       </div>
-      <div class="num val">{{ nav.ending_nav | money2 }}</div>
-      <div class="num delta {{ fill_class }}">{{ pnl | signed_money }}</div>
-      <div class="bar">
-        <div class="bar-fill {{ fill_class }}" style="width: {{ '%.0f'|format(fill_w) }}%;"></div>
-      </div>
-    </div>
-  </a>
-  {% elif freshness is defined and not freshness.nav.fresh %}
-  <div class="widget w-batt w-pending">
-    <div class="widget-body">
-      <span class="w-pending-icon">◌</span>
-      <span class="w-pending-title">NAV</span>
-      <span class="w-pending-note">{{ freshness.nav.note }}</span>
+      {% endfor %}
     </div>
   </div>
   {% endif %}
 </div>
-
-{# ── Today's run — autonomous-cycle liveness ───────────── #}
-{% if run %}
-<div class="widget w-full" style="margin-bottom:16px;">
-  <div class="card-pad" style="padding:14px 18px;">
-    <div class="w-head" style="margin-bottom:8px;"><div class="w-title">Today's run</div></div>
-    {% for key in ['curate','rebalance','debrief'] %}
-    {% set s = run[key] %}
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
-      <span style="font-size:15px;width:18px;text-align:center;color:{% if s.state=='done' %}var(--green){% elif s.state=='overdue' %}var(--amber){% else %}var(--muted-2){% endif %};">{%- if s.state=='done' %}✓{% elif s.state=='overdue' %}▲{% else %}◌{% endif -%}</span>
-      <span style="flex:1;font-size:14px;color:var(--text-2);">{{ s.label }}</span>
-      <span class="muted num" style="font-size:12px;">{% if s.state=='done' %}{{ s.detail }}{% elif s.state=='overdue' %}overdue{% else %}pending{% endif %}</span>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
 
 {# ── Today's book — one row per name: pick -> execute -> score ── #}
 {% if book_groups %}

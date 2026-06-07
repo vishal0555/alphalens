@@ -273,6 +273,47 @@ def _card_freshness(*, active_date: date, universe, briefing, nav, session_hdr) 
     }
 
 
+def _nav_chart(history, *, w: int = 300, h: int = 64, pad: int = 6) -> Optional[dict]:
+    """Build an inline-SVG NAV equity curve from fetch_nav_history (newest-first).
+    A single mark renders as a dashed flat baseline — the curve fills in as
+    daily NAV marks accrue. Returns geometry + the change over the window."""
+    if not history:
+        return None
+    pts = list(reversed(history))  # chronological
+    ys = [float(p["ending_nav"]) for p in pts]
+    n = len(ys)
+    lo, hi = min(ys), max(ys)
+    span = (hi - lo) or 1.0
+
+    def _x(i: int) -> float:
+        return pad + (w - 2 * pad) * (i / (n - 1) if n > 1 else 0.5)
+
+    def _y(v: float) -> float:
+        return h - pad - (h - 2 * pad) * ((v - lo) / span)
+
+    coords = [(_x(i), _y(v)) for i, v in enumerate(ys)]
+    if n == 1:
+        mid = h / 2
+        line = f"M{pad},{mid:.1f} L{w - pad},{mid:.1f}"
+        area = None
+        dot = (w / 2, mid)
+    else:
+        line = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+        area = (f"M{coords[0][0]:.1f},{h - pad} L"
+                + " L".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+                + f" L{coords[-1][0]:.1f},{h - pad} Z")
+        dot = coords[-1]
+
+    first, last = ys[0], ys[-1]
+    change = last - first
+    return {
+        "w": w, "h": h, "line": line, "area": area, "dot": dot, "n": n,
+        "first": first, "last": last, "change": change,
+        "change_pct": (change / first * 100) if first else 0.0,
+        "up": change >= 0,
+    }
+
+
 @app.route("/")
 @_login_required
 def index():
@@ -385,7 +426,7 @@ def index():
         planned=synthetic_plan,
         held=_db.held_tickers(),
         confidence=_db.decision_confidence(),
-        exceptions=_db.decision_exceptions(),
+        nav_chart=_nav_chart(_db.fetch_nav_history(60)),
         run=_db.today_run(),
     )
 
