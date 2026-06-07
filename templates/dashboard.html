@@ -79,16 +79,6 @@
   /* NAV equity curve */
   .navchart { overflow: visible; }
 
-  /* Lesson-stack card */
-  .lesson-stack-card .top {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
-  }
-  .lesson-stack-card .when { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-  .lesson-stack-card .guide {
-    font-size: 14px; line-height: 1.4; color: var(--text);
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  }
-
   /* Sheet-only — full-density content */
   .sheet-pill-row {
     display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
@@ -169,11 +159,6 @@
   }
   .sheet-link:active { transform: scale(.98); filter: brightness(1.1); }
 
-  .sheet-lesson-card { padding: 14px 16px; }
-  .sheet-lesson-card + .sheet-lesson-card { border-top: 1px solid var(--border); }
-  .sheet-lesson-card .head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-  .sheet-lesson-card .when { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 4px; }
-  .sheet-lesson-card .guide { font-size: 15px; line-height: 1.5; color: var(--text); }
 
   /* Pending widget — used when today's first event has fired but this
      card's underlying artefact hasn't landed yet. Replaces stale prior-day
@@ -380,32 +365,6 @@
     </div>
     {% endfor %}
   </div>
-</div>
-{% endif %}
-
-{# ── Lessons — stack of compact lesson cards ────────────────── #}
-{% if lessons %}
-<div class="w-section">
-  <h2>Lessons</h2>
-  <a href="/debriefs" class="more">All debriefs →</a>
-</div>
-
-<div class="w-stack">
-  <div class="w-stack-track">
-    {% for l in lessons %}
-    <a class="widget tap w-news" data-sheet="lesson-{{ loop.index0 }}" href="#lesson-{{ loop.index0 }}" style="color:inherit;text-decoration:none;">
-      <div class="widget-body lesson-stack-card">
-        <div class="top">
-          <span class="ticker ticker-blue" style="font-size:14px;">{{ l.ticker }}</span>
-          {% if l.score is not none %}<span class="layer-pill" style="background:rgba(255,255,255,.10);font-size:11px;">{{ '%.2f'|format(l.score) }}</span>{% endif %}
-        </div>
-        <div class="when">{{ l.as_of_date }}</div>
-        <div class="guide">→ {{ l.reflection }}</div>
-      </div>
-    </a>
-    {% endfor %}
-  </div>
-  <div class="w-stack-dots"></div>
 </div>
 {% endif %}
 
@@ -663,30 +622,5 @@
 </aside>
 {% endif %}
 
-
-{# Per-lesson sheets — full lesson detail #}
-{% if lessons %}
-{% for l in lessons %}
-<aside id="sheet-lesson-{{ loop.index0 }}" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Lesson</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    <div class="sheet-pill-row">
-      <span class="ticker ticker-blue" style="font-size:18px;">{{ l.ticker }}</span>
-      {% if l.score is not none %}<span class="badge neutral">score {{ '%.2f'|format(l.score) }}</span>{% endif %}
-      <span class="badge neutral">{{ l.as_of_date }}</span>
-    </div>
-
-    <h3>Reflection</h3>
-    <p class="lead">→ {{ l.reflection }}</p>
-
-    <a href="/debriefs" class="sheet-link">All debriefs →</a>
-  </div>
-</aside>
-{% endfor %}
-{% endif %}
 
 {% endblock %}

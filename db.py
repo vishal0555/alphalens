@@ -600,16 +600,3 @@ def fetch_decision(decision_id: str) -> Optional[dict]:
     return _safe(_q)
 
 
-def recent_reflections(limit: int = 5) -> Optional[list[dict]]:
-    """Most-recent reflections (lessons) from scored decisions — for the dashboard."""
-    def _q():
-        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT ticker, reflection, score, as_of_date
-                  FROM stock_decisions
-                 WHERE reflection IS NOT NULL AND reflection <> ''
-                 ORDER BY scored_at DESC NULLS LAST
-                 LIMIT %s
-            """, (limit,))
-            return [dict(r) for r in cur.fetchall()]
-    return _safe(_q)

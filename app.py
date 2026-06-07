@@ -375,7 +375,6 @@ def index():
     # Distinct from today's items: separate card, separate semantics.
     carry = _db.fetch_carrying_positions() or []
 
-    lessons  = _db.recent_reflections(limit=5)
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
     book = _db.fetch_book() or []
     book_groups = _group_picks_by_layer(book) if book else []
@@ -417,7 +416,6 @@ def index():
         session_hdr=session_hdr,
         items=items,
         realised=realised,
-        lessons=lessons,
         playbooks=playbooks_by_ticker,
         today=_today_header(active_date),
         freshness=freshness,

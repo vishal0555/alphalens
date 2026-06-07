@@ -540,39 +540,6 @@
       .sheet, .sheet-overlay { transition: none; }
     }
 
-    /* ── Widget Stack (swipeable, scroll-snap) ──────────── */
-    .w-stack { position: relative; }
-    .w-stack-track {
-      display: flex;
-      gap: 14px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 8px;
-      /* hide scroll edge against page padding */
-      margin: 0 -18px;
-      padding-left: 18px; padding-right: 18px;
-    }
-    .w-stack-track::-webkit-scrollbar { display: none; }
-    .w-stack-track > .widget {
-      flex: 0 0 100%;
-      scroll-snap-align: center;
-    }
-    .w-stack-dots {
-      display: flex; justify-content: center; gap: 6px;
-      margin-top: 4px;
-    }
-    .w-stack-dots span {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: rgba(255,255,255,.20);
-      transition: background .2s var(--ease-ios), transform .2s var(--ease-ios);
-    }
-    .w-stack-dots span.on {
-      background: rgba(255,255,255,.75);
-      transform: scale(1.15);
-    }
-
     /* Smooth widget entry animation */
     @keyframes widget-rise {
       from { opacity: 0; transform: translateY(12px) scale(.96); }
@@ -706,34 +673,6 @@
     }
   })();
 
-  // Widget-stack dot indicator (iOS-style swipe).
-  // Each .w-stack contains a .w-stack-track (scroll-snap-x) and .w-stack-dots.
-  document.querySelectorAll('.w-stack').forEach(function (stack) {
-    var track = stack.querySelector('.w-stack-track');
-    var dots  = stack.querySelector('.w-stack-dots');
-    if (!track || !dots) return;
-    var cards = Array.prototype.slice.call(track.children);
-    if (cards.length < 2) { dots.style.display = 'none'; return; }
-    dots.innerHTML = cards.map(function () { return '<span></span>'; }).join('');
-    var dotEls = dots.querySelectorAll('span');
-    dotEls[0].classList.add('on');
-
-    function setActive() {
-      var x = track.scrollLeft + track.clientWidth / 2;
-      var best = 0, bestD = Infinity;
-      cards.forEach(function (c, i) {
-        var mid = c.offsetLeft + c.clientWidth / 2;
-        var d = Math.abs(mid - x);
-        if (d < bestD) { bestD = d; best = i; }
-      });
-      dotEls.forEach(function (d, i) { d.classList.toggle('on', i === best); });
-    }
-    var raf = null;
-    track.addEventListener('scroll', function () {
-      if (raf) return;
-      raf = requestAnimationFrame(function () { setActive(); raf = null; });
-    }, { passive: true });
-  });
 </script>
 </body>
 </html>
