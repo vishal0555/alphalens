@@ -226,103 +226,6 @@ def _today_header(active: Optional[date] = None) -> dict:
     }
 
 
-def _calendar_events(session_hdr, items, *, active_date: date, universe, briefing,
-                      debrief_cov: Optional[dict] = None,
-                      nav_marked: bool = False) -> list[dict]:
-    """Today's trading session as calendar events for the iOS-style
-    Schedule widget. Each event = {time, title, state} where state is one
-    of 'done' | 'next' | 'later'. Times are ET market hours.
-    """
-    now_dt = _now_market()
-    today_et = now_dt.date()
-    now_hm = (now_dt.hour, now_dt.minute)
-
-    active_is_today = (active_date == today_et)
-    active_is_past  = (active_date < today_et)
-
-    have_universe = bool(universe and universe is not False
-                         and str(universe.get("as_of_date") or "") == active_date.isoformat())
-    have_briefing = bool(briefing and isinstance(briefing, dict)
-                         and str(briefing.get("as_of_date") or "") == active_date.isoformat())
-    session_status = (session_hdr or {}).get("status") if session_hdr and session_hdr is not False else None
-    session_done   = session_status in ("completed", "settled")
-    session_live   = session_status in ("pending", "active")
-    # The session row must belong to the active trading day before we
-    # can claim its status reflects "today's plan."
-    session_today  = bool(session_hdr and session_hdr is not False
-                          and str(session_hdr.get("briefing_date") or "") == active_date.isoformat())
-
-    def _point(hm, *, done: bool) -> str:
-        # Single-moment event (scout, briefing, debrief).
-        if done:           return "done"
-        if active_is_past: return "done"
-        if now_hm < hm:    return "later"
-        return "now"  # deadline lapsed, artefact still missing
-
-    def _window(start_hm, end_hm, *, done: bool, live: bool, exists: bool = True) -> str:
-        # Window event — start has happened, work is ongoing until end_hm.
-        # Past end_hm we treat the event as 'done' on wall-clock alone IF the
-        # underlying artefact exists for the active day. If `exists=False`
-        # (e.g. no pm_plans row — session never spawned), the event remains
-        # 'now' (overdue) past the window so the dashboard surfaces the gap
-        # rather than reporting a phantom completion.
-        if done:               return "done"
-        if active_is_past:     return "done" if exists else "now"
-        if now_hm < start_hm:  return "later"
-        if now_hm >= end_hm:   return "done" if exists else "now"
-        return "in_progress" if live else "now"
-
-    events = [
-        {"time": "09:00", "title": "Scout · pick universe",
-         "state": _point((9, 0), done=have_universe)},
-        {"time": "09:10", "title": "Briefing · plan ready",
-         "state": _point((9, 10), done=have_briefing)},
-        {"time": "09:30", "title": "Open · execute plan",
-         "state": _window((9, 30), (16, 0),
-                          done=session_done and session_today,
-                          live=session_live and session_today,
-                          exists=session_today)},
-        # "Close · mark book" reads `done` only when today's session
-        # actually wrote a fund_nav row. Unlike Open (a time-anchored
-        # event — the trading day ends at 16:00 regardless), Close is
-        # data-anchored: the NAV write happens when the ExitMonitor's
-        # completion handler fires, which can lag past close (or never
-        # happen this calendar day for overnight holds). Use the explicit
-        # state machine — no wall-clock-equals-done fallback.
-        {"time": "16:00", "title": "Close · mark book",
-         "state": ("done"        if nav_marked
-                   else "later"       if now_hm < (16, 0)
-                   else "in_progress" if now_hm < (16, 30)
-                   else "now")},
-        # Debrief flips done as soon as every closed item on the active
-        # day has a debrief row — independent of plan settlement. With
-        # per-item debriefs (alphalab/exit_monitor.py), this happens
-        # within seconds of each exit.
-        #
-        # All-carry days (every position holds overnight, closed=0) used
-        # to sit at "now/overdue" forever because the old condition
-        # required `closed > 0`. They now flip to "done" at 17:00 wall-
-        # clock — there's nothing to autopsy and never will be for this
-        # trading day, so claiming it overdue is misleading.
-        {"time": "17:00", "title": "Debrief lessons",
-         "state": _point((17, 0),
-                         done=bool(debrief_cov)
-                              and debrief_cov.get("undebriefed", 0) == 0
-                              and (debrief_cov.get("closed", 0) > 0
-                                   or now_hm >= (17, 0)))},
-    ]
-    # Promote the first 'later' to 'next' only when nothing is actively
-    # happening (in_progress / overdue) — otherwise the focus is already
-    # carried by the current event.
-    has_focus = any(e["state"] in ("in_progress", "now") for e in events)
-    if not has_focus:
-        for e in events:
-            if e["state"] == "later":
-                e["state"] = "next"
-                break
-    return events
-
-
 def _next_update_label(now_dt: datetime, *, what: str) -> str:
     """Human-readable 'next update at HH:MM ET' string for a pending card."""
     targets = {
@@ -450,8 +353,6 @@ def index():
         active_date=active_date, universe=universe, briefing=briefing,
         nav=nav, session_hdr=session_hdr,
     )
-    debrief_cov = _db.debrief_coverage_for_date(active_date.isoformat())
-    nav_marked  = bool(_db.nav_marked_for_date(active_date.isoformat()))
 
     def _iso(d) -> Optional[str]:
         return str(d) if d else None
@@ -478,11 +379,6 @@ def index():
         lessons=lessons,
         playbooks=playbooks_by_ticker,
         today=_today_header(active_date),
-        calendar_events=_calendar_events(
-            session_hdr, items,
-            active_date=active_date, universe=universe, briefing=briefing,
-            debrief_cov=debrief_cov, nav_marked=nav_marked,
-        ),
         freshness=freshness,
         last_updated=last_updated,
         carry=carry,
@@ -490,6 +386,7 @@ def index():
         held=_db.held_tickers(),
         confidence=_db.decision_confidence(),
         exceptions=_db.decision_exceptions(),
+        run=_db.today_run(),
     )
 
 

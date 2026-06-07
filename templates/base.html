@@ -332,8 +332,6 @@
     .widget.w-weather-cloud{ background: linear-gradient(160deg, #4b5563 0%, #1f2937 60%, #0f172a 100%); color: #fff; }
     .widget.w-weather-storm{ background: linear-gradient(160deg, #ef4444 0%, #7f1d1d 55%, #1f0707 100%); color: #fff; }
     .widget.w-news         { background: linear-gradient(170deg, #1c1c1e 0%, #141416 100%); }
-    .widget.w-reminders    { background: linear-gradient(170deg, #1c1c1e 0%, #2a1f08 100%); }
-    .widget.w-calendar     { background: linear-gradient(170deg, #1c1c1e 0%, #1a0b22 100%); }
     .widget.w-battery      { background: linear-gradient(170deg, #1c1c1e 0%, #08231a 100%); }
 
     /* Widget header (icon + title + accessory) */
@@ -399,64 +397,6 @@
     }
     .w-batt .bar-fill.neg   { background: var(--red); }
     .w-batt .bar-fill.flat  { background: var(--muted); }
-
-    /* Calendar widget */
-    .w-cal .day {
-      font-size: 12px; font-weight: 800; letter-spacing: .1em;
-      color: var(--red);
-      text-transform: uppercase;
-    }
-    .w-cal .dom {
-      font-size: 28px; font-weight: 800; line-height: 1;
-      letter-spacing: -.03em; margin: 2px 0 10px;
-    }
-    .w-cal .event {
-      display: flex; align-items: flex-start; gap: 8px;
-      padding: 2px 0; font-size: 12px;
-      border-left: 2.5px solid var(--accent); padding-left: 8px;
-    }
-    .w-cal .event + .event { margin-top: 4px; }
-    .w-cal .event.done { border-left-color: var(--green); opacity: .55; }
-    .w-cal .event.next { border-left-color: var(--orange); }
-    .w-cal .event .t {
-      font-size: 10px; font-weight: 800; color: var(--muted);
-      width: 36px; flex-shrink: 0; letter-spacing: .03em;
-    }
-    .w-cal .event .ttl { color: var(--text); font-weight: 600; }
-
-    /* Reminders widget — checkbox list */
-    .w-rem .rem-row {
-      display: flex; align-items: center; gap: 9px;
-      padding: 5px 0; font-size: 13px;
-    }
-    .w-rem .check {
-      flex-shrink: 0;
-      width: 17px; height: 17px; border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,.32);
-      display: inline-flex; align-items: center; justify-content: center;
-      background: transparent;
-      transition: all .2s var(--ease-ios);
-    }
-    .w-rem .check.done { background: var(--green); border-color: var(--green); }
-    .w-rem .check.done::after {
-      content: ""; width: 7px; height: 4px;
-      border-left: 2px solid #000; border-bottom: 2px solid #000;
-      transform: rotate(-45deg) translate(1px, -1px);
-    }
-    .w-rem .check.cancel { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.2); }
-    .w-rem .check.cancel::after {
-      content: "×"; color: var(--muted); font-size: 12px; line-height: 1; font-weight: 700;
-    }
-    .w-rem .rem-tk {
-      font-size: 13px; font-weight: 700; letter-spacing: -.01em;
-      color: var(--text);
-      flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .w-rem .rem-more {
-      margin-top: auto; padding-top: 6px;
-      font-size: 11px; color: var(--muted); font-weight: 700;
-      letter-spacing: .04em;
-    }
 
     /* News widget — headline-style card */
     .w-news .kicker {
@@ -653,7 +593,6 @@
       .today-header h1 { font-size: 34px; }
       .w-weather .temp { font-size: 54px; }
       .w-batt .val { font-size: 28px; }
-      .w-cal .dom { font-size: 32px; }
     }
 
   </style>

@@ -503,6 +503,39 @@ def fetch_recent_lessons(limit: int = 8) -> Optional[list[dict]]:
     return _safe(_q)
 
 
+# ── Oversight: today's run liveness ─────────────────────────────────────────
+
+def today_run() -> Optional[dict]:
+    """Did the autonomous cycle run today? curate -> rebalance -> debrief."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT (now() AT TIME ZONE 'America/New_York')::date::text AS d,
+                       extract(hour FROM now() AT TIME ZONE 'America/New_York')
+                       + extract(minute FROM now() AT TIME ZONE 'America/New_York') / 60.0 AS h
+            """)
+            r = cur.fetchone(); today = r["d"]; now_h = float(r["h"])
+            cur.execute("SELECT count(*) AS c FROM universes WHERE as_of_date = %s", (today,))
+            curated = cur.fetchone()["c"]
+            cur.execute("""SELECT count(*) AS c FROM executed_trades
+                            WHERE (created_at AT TIME ZONE 'America/New_York')::date = %s::date""", (today,))
+            fills = cur.fetchone()["c"]
+            cur.execute("SELECT count(*) AS c FROM stock_decisions WHERE as_of_date = %s AND score IS NOT NULL", (today,))
+            scored = cur.fetchone()["c"]
+
+            def step(ok, n, unit, due):
+                if ok:
+                    return {"state": "done", "detail": "%d %s" % (n, unit)}
+                return {"state": "overdue" if now_h >= due else "pending", "detail": ""}
+
+            return {
+                "curate":    {"label": "Scout · curate",   **step(curated > 0, curated, "universe", 9.5)},
+                "rebalance": {"label": "Rebalance · trade", **step(fills > 0, fills, "fills", 9.6)},
+                "debrief":   {"label": "Debrief · score",   **step(scored > 0, scored, "scored", 16.0)},
+            }
+    return _safe(_q)
+
+
 # ── Oversight: trust verdict + exceptions ───────────────────────────────────
 
 def decision_confidence() -> Optional[dict]:
