@@ -433,6 +433,8 @@ def index():
 
     lessons  = _db.recent_reflections(limit=5)
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
+    book = _db.fetch_book() or []
+    book_groups = _group_picks_by_layer(book) if book else []
 
     # Pair each plan item with its playbook so the per-ticker drilldown
     # sheet can surface catalyst / technicals / action rationale.
@@ -466,6 +468,8 @@ def index():
         db_ok=db_ok,
         universe=universe,
         universe_groups=universe_groups,
+        book=book,
+        book_groups=book_groups,
         briefing=briefing,
         nav=nav,
         session_hdr=session_hdr,

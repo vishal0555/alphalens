@@ -110,6 +110,37 @@ def fetch_current_universe() -> Optional[dict]:
     return _safe(_q)
 
 
+def fetch_book(limit: int = 30) -> Optional[list[dict]]:
+    """Active universe enriched with execution + EOD score — the connected book.
+
+    One row per pick carrying its whole arc: layer, target weight, the pipeline
+    outcome, conviction and (once scored) the EOD score, plus its decision_id so
+    each name links to its full decision record.
+    """
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                WITH u AS (SELECT universe_id FROM universes WHERE status = 'active'
+                            ORDER BY as_of_date DESC, created_at DESC LIMIT 1)
+                SELECT p.ticker, p.layer, p.weight_pct,
+                       d.decision_id, d.pipeline_outcome, d.conviction, d.score
+                  FROM universe_picks p
+                  JOIN u ON u.universe_id = p.universe_id
+                  LEFT JOIN stock_decisions d
+                    ON d.universe_id = p.universe_id AND d.ticker = p.ticker
+                 ORDER BY p.weight_pct DESC
+                 LIMIT %s
+            """, (limit,))
+            rows = []
+            for r in cur.fetchall():
+                r = dict(r)
+                if r.get("decision_id") is not None:
+                    r["decision_id"] = str(r["decision_id"])
+                rows.append(r)
+            return rows
+    return _safe(_q)
+
+
 def held_tickers() -> set:
     """Tickers the fund currently holds (net nonzero position from fills).
 

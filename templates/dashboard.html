@@ -359,7 +359,7 @@
     {% else %}
     {% set done_count = items | selectattr('status','in',['exited_target','exited_stop','exited_rotation','exited_cancel']) | list | length %}
     {% endif %}
-  <a class="widget w-rem w-reminders tap" data-sheet="reminders" href="#reminders">
+  <a class="widget w-rem w-reminders tap" href="#book">
     <div class="widget-body">
       <div class="w-head">
         <div class="w-title">
@@ -402,32 +402,42 @@
   {% endif %}
 </div>
 
-{# ── Universe — single tall card: composition bar + all picks ── #}
-{% if universe_groups %}
-<div class="w-section">
-  <h2>Universe</h2>
+{# ── Today's book — one row per name: pick -> execute -> score ── #}
+{% if book_groups %}
+<div class="w-section" id="book">
+  <h2>Today's book</h2>
 </div>
 
 <div class="widget w-full" style="margin-bottom: 16px;">
   <div class="uni-card-body">
     <div class="w-head" style="margin-bottom: 6px;">
-      <div class="w-title">Universe</div>
-      <span class="w-accessory">{{ universe.picks|length }} picks</span>
+      <div class="w-title">Universe → execution → score</div>
+      <span class="w-accessory">{{ book|length }} names</span>
     </div>
 
-    {% for g in universe_groups %}
-    <a class="uni-layer" data-sheet="uni-{{ g.layer }}" href="#uni-{{ g.layer }}">
+    {% for g in book_groups %}
+    <div class="uni-layer" style="cursor: default;">
       <div class="uni-layer-head">
         <span class="uni-layer-name">{{ g.layer }}</span>
         <span class="uni-layer-total num">{{ '%.0f'|format(g.total_weight) }}%</span>
       </div>
       {% for p in g.picks %}
-      <div class="uni-pick">
-        <span class="ticker">{{ p.ticker }}{% if held and p.ticker in held %} <span style="color:var(--green);font-size:12px;" title="held">✓</span>{% endif %}</span>
+      <a class="uni-pick" {% if p.decision_id %}href="/debrief/{{ p.decision_id }}"{% endif %}
+         style="display:flex; align-items:center; gap:10px; color:inherit; text-decoration:none;">
+        <span style="flex:1; min-width:0;">
+          <span class="ticker">{{ p.ticker }}{% if held and p.ticker in held %} <span style="color:var(--green);font-size:12px;" title="held">✓</span>{% endif %}</span>
+          <span class="muted" style="font-size:11px; font-weight:600; margin-left:4px;">
+            {%- if held and p.ticker in held %}held{% elif p.pipeline_outcome == 'executed' %}executed{% elif p.pipeline_outcome and p.pipeline_outcome != 'not_traded' %}{{ p.pipeline_outcome }}{% else %}pending{% endif -%}
+          </span>
+        </span>
         <span class="num w">{{ '%.1f'|format(p.weight_pct) }}%</span>
-      </div>
+        {% if p.score is not none %}
+        <span class="num {{ p.score | score_class }}" style="font-size:13px; font-weight:800; min-width:34px; text-align:right;">{{ '%.2f'|format(p.score) }}</span>
+        {% endif %}
+        {% if p.decision_id %}<span style="color:var(--muted); font-size:14px;">›</span>{% endif %}
+      </a>
       {% endfor %}
-    </a>
+    </div>
     {% endfor %}
   </div>
 </div>
