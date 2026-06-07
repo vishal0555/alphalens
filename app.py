@@ -120,6 +120,17 @@ def _signed_pct(n):
     except (TypeError, ValueError): return "—"
 
 
+@app.template_filter("score_class")
+def _score_class(s):
+    try:
+        x = float(s)
+    except (TypeError, ValueError):
+        return "flat"
+    if x >= 0.6: return "pos"
+    if x <= 0.4: return "neg"
+    return "flat"
+
+
 @app.template_filter("pnl_class")
 def _pnl_class(n):
     try:
@@ -420,7 +431,7 @@ def index():
     # Distinct from today's items: separate card, separate semantics.
     carry = _db.fetch_carrying_positions() or []
 
-    lessons  = _db.fetch_recent_lessons(limit=5)
+    lessons  = _db.recent_reflections(limit=5)
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
 
     # Pair each plan item with its playbook so the per-ticker drilldown
@@ -536,24 +547,24 @@ def morning_redirect():
 @app.route("/debriefs")
 @_login_required
 def debriefs_page():
-    debriefs = _db.list_recent_debriefs(limit=50) or []
+    decisions = _db.list_decisions(limit=60) or []
     return render_template(
         "debriefs.html",
         active="debriefs",
-        debriefs=debriefs,
+        decisions=decisions,
     )
 
 
 @app.route("/debrief/<debrief_id>")
 @_login_required
 def debrief_detail(debrief_id: str):
-    d = _db.fetch_debrief(debrief_id)
+    d = _db.fetch_decision(debrief_id)
     if d in (None, False):
         abort(404)
     return render_template(
         "debrief_detail.html",
         active="debriefs",
-        debrief=d,
+        d=d,
     )
 
 

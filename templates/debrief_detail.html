@@ -1,109 +1,89 @@
 {% extends "base.html" %}
-{% block title %} · {{ debrief.ticker }} debrief{% endblock %}
+{% block title %} · {{ d.ticker }} decision{% endblock %}
 
 {% block head %}
 <style>
   .back { font-size: 14px; color: var(--accent); text-decoration: none; display: inline-block; margin-bottom: 12px; }
-
-  .verdict-card .verdict {
-    font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.92);
-  }
-
-  .wf { padding: 14px 20px; font-size: 15px; line-height: 1.55; position: relative; }
-  .wf + .wf { border-top: 1px solid var(--border); }
-  .wf.work { background: rgba(48,209,88,.08); }
-  .wf.work::before { content: "✓"; color: var(--green); font-weight: 800; margin-right: 8px; }
-  .wf.fail { background: rgba(255,69,58,.08); }
-  .wf.fail::before { content: "✗"; color: var(--red); font-weight: 800; margin-right: 8px; }
-
+  .verdict-card .verdict { font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.92); }
+  .thesis-body { padding: 14px 20px; font-size: 15px; line-height: 1.55; color: var(--text-2); }
   .lesson { padding: 18px 20px; }
-  .lesson + .lesson { border-top: 1px solid var(--border); }
-  .lesson .top { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-  .lesson .scope {
-    font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 100px;
-    background: rgba(10,132,255,.18); color: var(--accent);
-  }
-  .lesson .when { font-size: 13px; color: var(--muted); font-style: italic; }
-  .lesson .guidance { font-size: 17px; color: var(--text); line-height: 1.5; margin-top: 6px; }
+  .lesson .guidance { font-size: 17px; color: var(--text); line-height: 1.5; }
+  .lineage { padding: 14px 20px; font-size: 11px; color: var(--muted); line-height: 1.7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
 </style>
 {% endblock %}
 
 {% block content %}
 
 <header class="page-nav">
-  <a class="back" href="/debriefs">Debriefs</a>
-  <span class="title">{{ debrief.ticker }}</span>
+  <a class="back" href="/debriefs">Debrief</a>
+  <span class="title">{{ d.ticker }}</span>
   <span class="sp"></span>
 </header>
 
 <div class="topbar">
-  <h1><span class="ticker ticker-blue" style="font-size: 38px;">{{ debrief.ticker }}</span> <span class="muted" style="font-size: 16px; font-weight: 700;">{{ debrief.side }}</span></h1>
-  <span class="outcome {{ debrief.outcome }}">{{ debrief.outcome }}</span>
+  <h1><span class="ticker ticker-blue" style="font-size: 38px;">{{ d.ticker }}</span>
+    <span class="muted" style="font-size: 16px; font-weight: 700;">{{ d.scout_decision }}</span></h1>
+  <span class="outcome">{{ d.pipeline_outcome }}</span>
 </div>
 
 <div class="stat-strip">
   <div class="stat-cell">
-    <div class="lbl">P&amp;L</div>
-    <div class="num v {{ debrief.pnl_pct | pnl_class }}">
-      {% if debrief.pnl_pct is not none %}{{ debrief.pnl_pct | signed_pct }}{% else %}—{% endif %}
-    </div>
-    {% if debrief.pnl_abs is not none %}
-    <div class="num {{ debrief.pnl_abs | pnl_class }}" style="font-size: 11px; font-weight: 700; margin-top: 2px;">{{ debrief.pnl_abs | signed_money }}</div>
+    <div class="lbl">Score</div>
+    <div class="num v {{ d.score | score_class }}">{{ '%.2f'|format(d.score) }}</div>
+  </div>
+  <div class="stat-cell">
+    <div class="lbl">Move</div>
+    {% set ret = ((d.eod_price - d.morning_price) / d.morning_price * 100) if (d.morning_price and d.eod_price) else None %}
+    <div class="num v {{ ret | pnl_class }}">{% if ret is not none %}{{ ret | signed_pct }}{% else %}—{% endif %}</div>
+    {% if d.morning_price and d.eod_price %}
+    <div class="muted num" style="font-size: 11px; font-weight: 700; margin-top: 2px;">
+      {{ '%.2f'|format(d.morning_price) }} → {{ '%.2f'|format(d.eod_price) }}</div>
     {% endif %}
   </div>
   <div class="stat-cell">
-    <div class="lbl">Hold</div>
-    <div class="num v">{% if debrief.hold_time_minutes is not none %}{{ debrief.hold_time_minutes }}m{% else %}—{% endif %}</div>
-  </div>
-  <div class="stat-cell">
-    <div class="lbl">Slip in/out</div>
+    <div class="lbl">Sentiment</div>
     <div class="num v" style="font-size: 16px;">
-      {% if debrief.entry_slippage_bps is not none %}{{ '%+.1f'|format(debrief.entry_slippage_bps) }}{% else %}—{% endif %}
-      <span class="muted" style="font-size: 11px;"> / </span>
-      {% if debrief.exit_slippage_bps is not none %}{{ '%+.1f'|format(debrief.exit_slippage_bps) }}{% else %}—{% endif %}
-      <span class="muted" style="font-size: 10px; font-weight: 600;">bp</span>
+      {% if d.morning_sentiment is not none %}{{ '%+.2f'|format(d.morning_sentiment) }}{% else %}—{% endif %}
+      <span class="muted" style="font-size: 11px;"> → </span>
+      {% if d.eod_sentiment is not none %}{{ '%+.2f'|format(d.eod_sentiment) }}{% else %}—{% endif %}
     </div>
   </div>
 </div>
 
 <div class="card tint-slate">
   <div class="card-pad verdict-card">
-    <div class="eyebrow on-tint" style="margin-bottom: 12px;">Verdict · {{ debrief.model or '—' }}</div>
-    <div class="verdict">{{ debrief.verdict or '(no verdict)' }}</div>
+    <div class="eyebrow on-tint" style="margin-bottom: 12px;">Revised view{% if d.macro_regime %} · macro {{ d.macro_regime }}{% endif %}</div>
+    <div class="verdict">{{ d.revised_view or '(no revised view yet)' }}</div>
   </div>
 </div>
 
-{% if debrief.what_worked or debrief.what_failed %}
+{% if d.scout_rationale %}
 <div class="card">
-  <div style="padding: 14px 20px 0;">
-    <div class="eyebrow">What worked / failed</div>
-  </div>
-  <div style="margin-top: 8px;">
-    {% for line in debrief.what_worked %}<div class="wf work">{{ line }}</div>{% endfor %}
-    {% for line in debrief.what_failed %}<div class="wf fail">{{ line }}</div>{% endfor %}
-  </div>
+  <div style="padding: 14px 20px 0;"><div class="eyebrow">Morning thesis</div></div>
+  <div class="thesis-body">{{ d.scout_rationale }}</div>
 </div>
 {% endif %}
 
-{% if debrief.lessons %}
+{% if d.reflection %}
 <div class="card">
   <div style="padding: 14px 20px 0;">
-    <div class="eyebrow">Lessons</div>
-    <div class="muted" style="font-size: 13px; margin-top: 4px;">read by tomorrow's Scout</div>
+    <div class="eyebrow">Reflection</div>
+    <div class="muted" style="font-size: 13px; margin-top: 4px;">a lesson for the next session</div>
   </div>
-  <div style="margin-top: 6px;">
-    {% for l in debrief.lessons %}
-    <div class="lesson">
-      <div class="top">
-        <span class="scope">{{ l.scope }}</span>
-        <span class="when">when {{ l.applies_when }}</span>
-      </div>
-      <div class="guidance">→ {{ l.guidance }}</div>
-    </div>
-    {% endfor %}
-  </div>
+  <div class="lesson"><div class="guidance">→ {{ d.reflection }}</div></div>
 </div>
 {% endif %}
+
+<div class="card">
+  <div class="lineage">
+    <div>decision · {{ d.decision_id }}</div>
+    {% if d.signal_id %}<div>signal · {{ d.signal_id }}</div>{% endif %}
+    {% if d.order_id %}<div>order · {{ d.order_id }}</div>{% endif %}
+    <div>universe · {{ d.universe_id }}</div>
+    {% if d.macro_id %}<div>macro · {{ d.macro_id }}</div>{% endif %}
+    {% if d.conviction is not none %}<div>conviction {{ '%.3f'|format(d.conviction) }}{% if d.weight_pct %} · target weight {{ '%.1f'|format(d.weight_pct) }}%{% endif %}</div>{% endif %}
+  </div>
+</div>
 
 {% endblock %}

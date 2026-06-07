@@ -407,10 +407,10 @@
       <div class="widget-body lesson-stack-card">
         <div class="top">
           <span class="ticker ticker-blue" style="font-size:14px;">{{ l.ticker }}</span>
-          <span class="layer-pill" style="background:rgba(255,255,255,.10);font-size:11px;">{{ l.scope }}</span>
+          {% if l.score is not none %}<span class="layer-pill" style="background:rgba(255,255,255,.10);font-size:11px;">{{ '%.2f'|format(l.score) }}</span>{% endif %}
         </div>
-        <div class="when">when {{ l.applies_when[:60] }}{% if l.applies_when|length > 60 %}…{% endif %}</div>
-        <div class="guide">→ {{ l.guidance }}</div>
+        <div class="when">{{ l.as_of_date }}</div>
+        <div class="guide">→ {{ l.reflection }}</div>
       </div>
     </a>
     {% endfor %}
@@ -853,15 +853,12 @@
   <div class="sheet-body">
     <div class="sheet-pill-row">
       <span class="ticker ticker-blue" style="font-size:18px;">{{ l.ticker }}</span>
-      <span class="badge neutral">{{ l.scope }}</span>
-      <span class="badge neutral">{{ l.created_at | short_dt }}</span>
+      {% if l.score is not none %}<span class="badge neutral">score {{ '%.2f'|format(l.score) }}</span>{% endif %}
+      <span class="badge neutral">{{ l.as_of_date }}</span>
     </div>
 
-    <h3>When</h3>
-    <p>{{ l.applies_when }}</p>
-
-    <h3>Guidance</h3>
-    <p class="lead">→ {{ l.guidance }}</p>
+    <h3>Reflection</h3>
+    <p class="lead">→ {{ l.reflection }}</p>
 
     <a href="/debriefs" class="sheet-link">All debriefs →</a>
   </div>

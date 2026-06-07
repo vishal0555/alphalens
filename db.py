@@ -470,3 +470,54 @@ def fetch_recent_lessons(limit: int = 8) -> Optional[list[dict]]:
             """, (limit,))
             return [dict(r) for r in cur.fetchall()]
     return _safe(_q)
+
+
+# ── Decision journal (stock_decisions) ──────────────────────────────────────
+
+def list_decisions(limit: int = 60) -> Optional[list[dict]]:
+    """Recent scored decisions — the EOD decision journal, best-scored first."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT decision_id, ticker, layer, scout_decision, pipeline_outcome,
+                       weight_pct, score, revised_view, reflection,
+                       morning_price, eod_price, macro_regime, as_of_date, scored_at
+                  FROM stock_decisions
+                 WHERE score IS NOT NULL
+                 ORDER BY as_of_date DESC, score DESC
+                 LIMIT %s
+            """, (limit,))
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q)
+
+
+def fetch_decision(decision_id: str) -> Optional[dict]:
+    """One decision with the full morning -> EOD record and lineage ids."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT decision_id, universe_id, ticker, layer, scout_decision,
+                       pipeline_outcome, weight_pct, conviction, scout_rationale,
+                       pipeline_rationale, morning_sentiment, morning_price, macro_regime,
+                       eod_sentiment, eod_price, revised_view, score, reflection,
+                       as_of_date, scored_at, signal_id, order_id, macro_id
+                  FROM stock_decisions WHERE decision_id = %s::uuid
+            """, (decision_id,))
+            row = cur.fetchone()
+            return dict(row) if row else False
+    return _safe(_q)
+
+
+def recent_reflections(limit: int = 5) -> Optional[list[dict]]:
+    """Most-recent reflections (lessons) from scored decisions — for the dashboard."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT ticker, reflection, score, as_of_date
+                  FROM stock_decisions
+                 WHERE reflection IS NOT NULL AND reflection <> ''
+                 ORDER BY scored_at DESC NULLS LAST
+                 LIMIT %s
+            """, (limit,))
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q)

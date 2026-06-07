@@ -21,40 +21,38 @@
 
 <header class="page-nav">
   <a class="back" href="/">Today</a>
-  <span class="title">Debriefs</span>
+  <span class="title">Debrief</span>
   <span class="sp"></span>
 </header>
 
 <div class="topbar">
-  <h1>Debriefs</h1>
-  <span class="sub">{{ debriefs|length }} recent</span>
+  <h1>Decision Journal</h1>
+  <span class="sub">{{ decisions|length }} scored</span>
 </div>
 
-{% if not debriefs %}
+{% if not decisions %}
 <div class="card"><div class="card-pad empty-state">
   <div class="empty-icon">◐</div>
-  No debriefs yet. They auto-fire when a session completes.
+  No scored decisions yet. The debrief grades each decision at the close.
 </div></div>
 {% else %}
 <div class="card">
-  {% for d in debriefs %}
-  <a href="/debrief/{{ d.debrief_id }}" class="db-card">
+  {% for d in decisions %}
+  <a href="/debrief/{{ d.decision_id }}" class="db-card">
     <div class="db-top">
       <div>
         <span class="ticker ticker-blue">{{ d.ticker }}</span>
-        <span class="muted" style="font-size: 12px; margin-left: 6px;">{{ d.side }}</span>
+        <span class="muted" style="font-size: 12px; margin-left: 6px;">{{ d.scout_decision }}</span>
       </div>
-      <div class="db-pnl num {{ d.pnl_pct | pnl_class }}">
-        {% if d.pnl_pct is not none %}{{ d.pnl_pct | signed_pct }}{% else %}<span class="muted">—</span>{% endif %}
-      </div>
+      <div class="db-pnl num {{ d.score | score_class }}">{{ '%.2f'|format(d.score) }}</div>
     </div>
     <div class="db-meta">
-      <span class="outcome {{ d.outcome }}">{{ d.outcome }}</span>
-      <span>{{ d.created_at | short_dt }}</span>
-      {% if d.hold_time_minutes %}<span>· held {{ d.hold_time_minutes }}m</span>{% endif %}
-      {% if d.pnl_abs is not none %}<span class="num {{ d.pnl_abs | pnl_class }}">· {{ d.pnl_abs | signed_money }}</span>{% endif %}
+      <span class="outcome">{{ d.pipeline_outcome }}</span>
+      <span>{{ d.as_of_date }}</span>
+      {% if d.macro_regime %}<span>· {{ d.macro_regime }}</span>{% endif %}
+      {% if d.layer %}<span>· {{ d.layer }}</span>{% endif %}
     </div>
-    {% if d.verdict %}<div class="db-verdict">{{ d.verdict }}</div>{% endif %}
+    {% if d.revised_view %}<div class="db-verdict">{{ d.revised_view }}</div>{% endif %}
   </a>
   {% endfor %}
 </div>
