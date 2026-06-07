@@ -643,92 +643,6 @@
   </div>
 </aside>
 
-{# Reminders sheet — all plan items with full levels #}
-{% if items %}
-<aside id="sheet-reminders" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Plan</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    {% if last_updated and last_updated.session %}
-    <div class="sheet-updated">Updated {{ last_updated.session }}</div>
-    {% endif %}
-    {% if planned %}
-    {# Plan = today's execution checklist over the curated universe. #}
-    <div class="sheet-stat-grid">
-      <div class="cell">
-        <div class="l">Filled</div>
-        <div class="num v">{{ items | selectattr('status','equalto','filled') | list | length }}/{{ items|length }}</div>
-      </div>
-      <div class="cell">
-        <div class="l">Held</div>
-        <div class="num v">{{ items | selectattr('held') | list | length }}</div>
-      </div>
-    </div>
-    {% for it in items %}
-    <div class="row-card plan-band" style="display:flex;align-items:center;gap:12px;padding:14px 16px;">
-      <span class="check {% if it.status == 'filled' %}done{% endif %}" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.32);display:inline-flex;align-items:center;justify-content:center;{% if it.status == 'filled' %}background:var(--green);border-color:var(--green);{% endif %}"></span>
-      <span style="flex:1;min-width:0;">
-        <span style="display:flex;align-items:baseline;gap:8px;">
-          <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
-          <span class="muted" style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;">{{ it.layer }}</span>
-        </span>
-        <span style="display:block;font-size:11px;color:var(--muted);margin-top:2px;">
-          {% if it.status == 'filled' %}filled{% if it.fill_price %} @ {{ '%.2f'|format(it.fill_price) }}{% endif %}{% if it.held %} · held{% endif %}{% else %}pending{% endif %}
-        </span>
-      </span>
-      <span class="num" style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:-.01em;">{{ '%.1f'|format(it.weight_pct) }}%</span>
-    </div>
-    {% endfor %}
-    {% else %}
-    {% if realised is not none %}
-    <div class="sheet-stat-grid">
-      <div class="cell">
-        <div class="l">Realised today</div>
-        <div class="num v {{ realised | pnl_class }}">{{ realised | signed_money }}</div>
-      </div>
-      <div class="cell">
-        <div class="l">Items</div>
-        <div class="v">{{ items|length }}</div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% for it in items %}
-      {% set is_done = it.status in ['exited_target','exited_stop','exited_rotation','exited_cancel'] %}
-      {% set is_cancel = it.status in ['expired','cancelled'] %}
-      {% set check_cls = 'done' if is_done else ('cancel' if is_cancel else '') %}
-      {% set rpnl = ((it.exit_fill_price - it.entry_fill_price) * it.size_shares) if (it.entry_fill_price and it.exit_fill_price) else None %}
-    <a class="row-card plan-band" data-sheet="item-{{ it.ticker }}" href="#item-{{ it.ticker }}"
-       style="display:flex;align-items:center;gap:12px;padding:14px 16px;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent;">
-      <span class="check {{ check_cls }}" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.32);display:inline-flex;align-items:center;justify-content:center;{% if is_done %}background:var(--green);border-color:var(--green);{% elif is_cancel %}background:rgba(255,255,255,.05);{% endif %}"></span>
-      <span style="flex:1;min-width:0;">
-        <span style="display:flex;align-items:baseline;gap:8px;">
-          <span class="ticker ticker-blue" style="font-size:18px;">{{ it.ticker }}</span>
-          <span class="muted num" style="font-size:12px;">×{{ it.size_shares }}</span>
-        </span>
-        <span style="display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:2px;">
-          <span class="item-status {{ it.status }}">{{ it.status }}</span>
-        </span>
-      </span>
-      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-        {% if rpnl is not none %}
-        <span class="num {{ rpnl | pnl_class }}" style="font-size:15px;font-weight:800;letter-spacing:-.01em;">{{ rpnl | signed_money }}</span>
-        {% elif it.entry_fill_price %}
-        <span class="num muted" style="font-size:13px;">@ {{ '%.2f'|format(it.entry_fill_price) }}</span>
-        {% else %}
-        <span class="num muted" style="font-size:12px;">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</span>
-        {% endif %}
-        <span style="color:var(--muted);font-size:18px;line-height:1;">›</span>
-      </span>
-    </a>
-    {% endfor %}
-    {% endif %}
-  </div>
-</aside>
-{% endif %}
 
 {# Per-ticker drilldown sheets — full plan-item detail #}
 {% if items and not planned %}
@@ -855,41 +769,6 @@
 </aside>
 {% endif %}
 
-{# Per-layer universe sheets — picks with rationale #}
-{% if universe_groups %}
-{% for g in universe_groups %}
-<aside id="sheet-uni-{{ g.layer }}" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">{{ g.layer|capitalize }}</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    {% if last_updated and last_updated.universe %}
-    <div class="sheet-updated">Updated {{ last_updated.universe }}</div>
-    {% endif %}
-    <div class="sheet-pill-row">
-      <span class="layer-pill {{ g.layer }}">{{ g.layer }}</span>
-      <span class="badge neutral">{{ g.picks|length }} {% if g.picks|length == 1 %}pick{% else %}picks{% endif %}</span>
-      <span class="badge neutral num">{{ '%.0f'|format(g.total_weight) }}% of book</span>
-    </div>
-
-    {% for p in g.picks %}
-    <div class="row-card">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <span class="ticker ticker-blue" style="font-size:22px;">{{ p.ticker }}</span>
-        <span class="num" style="font-size:22px;font-weight:800;letter-spacing:-.02em;">{{ '%.1f'|format(p.weight_pct) }}%</span>
-      </div>
-      <div class="muted" style="font-size:11px;margin-top:2px;letter-spacing:.04em;">rank #{{ p.rank }}</div>
-      {% if p.rationale %}
-      <p style="font-size:14px;line-height:1.5;color:var(--text-2);margin-top:8px;margin-bottom:0;">{{ p.rationale }}</p>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-</aside>
-{% endfor %}
-{% endif %}
 
 {# Per-lesson sheets — full lesson detail #}
 {% if lessons %}
