@@ -65,6 +65,18 @@
 </div>
 {% endif %}
 
+{% if d.lessons_applied %}
+<div class="card">
+  <div style="padding: 14px 20px 0;">
+    <div class="eyebrow">Lessons applied</div>
+    <div class="muted" style="font-size: 13px; margin-top: 4px;">past reflections that shaped this morning's call</div>
+  </div>
+  {% for lesson in d.lessons_applied %}
+  <div class="lesson"><div class="guidance">↺ {{ lesson }}</div></div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% if d.reflection %}
 <div class="card">
   <div style="padding: 14px 20px 0;">

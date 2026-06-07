@@ -56,6 +56,7 @@
     </div>
     {% if d.revised_view %}<div class="db-verdict">{{ d.revised_view }}</div>{% endif %}
     {% if d.reflection %}<div class="db-lesson">→ {{ d.reflection }}</div>{% endif %}
+    {% if d.lessons_applied %}<div class="db-lesson muted">↺ {{ d.lessons_applied|length }} lesson{{ 's' if d.lessons_applied|length != 1 else '' }} applied</div>{% endif %}
   </a>
   {% endfor %}
 </div>
