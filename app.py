@@ -227,6 +227,21 @@ def _today_header(active: Optional[date] = None) -> dict:
     }
 
 
+def _parse_view_date(s: Optional[str]) -> Optional[str]:
+    """A valid *past* trading date from ?d=YYYY-MM-DD, else None (live/today view).
+
+    Future or today resolves to None so the dashboard shows the live view; only a
+    strictly-past date switches to the historical render.
+    """
+    if not s:
+        return None
+    try:
+        d = date.fromisoformat(s)
+    except (TypeError, ValueError):
+        return None
+    return d.isoformat() if d < _now_market().date() else None
+
+
 def _next_update_label(now_dt: datetime, *, what: str) -> str:
     """Human-readable 'next update at HH:MM ET' string for a pending card."""
     targets = {
@@ -318,10 +333,12 @@ def _nav_chart(history, *, w: int = 300, h: int = 64, pad: int = 6) -> Optional[
 @app.route("/")
 @_login_required
 def index():
-    universe = _db.fetch_current_universe()
-    briefing = _db.fetch_current_briefing()
-    nav      = _db.fetch_current_nav()
-    session_hdr = _db.fetch_today_session()
+    # Optional ?d=YYYY-MM-DD renders a past trading day; otherwise the live view.
+    as_of = _parse_view_date(request.args.get("d"))
+    universe = _db.fetch_current_universe(as_of=as_of)
+    briefing = None if as_of else _db.fetch_current_briefing()
+    nav      = _db.fetch_current_nav(as_of=as_of)
+    session_hdr = None if as_of else _db.fetch_today_session()
 
     items = None
     realised = None
@@ -353,31 +370,34 @@ def index():
             },
         }
         # Plan = today's execution checklist: each universe name marked filled
-        # (and held) or pending, from real fills.
-        execu = _db.execution_by_ticker() or {}
-        if not items:
-            items = []
-            for p in picks:
-                t = p.get("ticker")
-                ex = execu.get(t) or {}
-                filled = bool(ex.get("fills"))
-                items.append({
-                    "ticker": t, "side": "long",
-                    "layer": p.get("layer"), "weight_pct": p.get("weight_pct"),
-                    "rationale": p.get("rationale"),
-                    "status": "filled" if filled else "pending",
-                    "fill_price": ex.get("entry_price"),
-                    "held": abs(ex.get("net") or 0) > 0.0001,
-                })
+        # (and held) or pending, from real fills. Execution reflects *current*
+        # positions, so it's only meaningful for the live view — skip it when
+        # viewing a past date (the "Today's book" panel carries that day's record).
+        if not as_of:
+            execu = _db.execution_by_ticker() or {}
+            if not items:
+                items = []
+                for p in picks:
+                    t = p.get("ticker")
+                    ex = execu.get(t) or {}
+                    filled = bool(ex.get("fills"))
+                    items.append({
+                        "ticker": t, "side": "long",
+                        "layer": p.get("layer"), "weight_pct": p.get("weight_pct"),
+                        "rationale": p.get("rationale"),
+                        "status": "filled" if filled else "pending",
+                        "fill_price": ex.get("entry_price"),
+                        "held": abs(ex.get("net") or 0) > 0.0001,
+                    })
         if not session_hdr or session_hdr is False:
             session_hdr = {"briefing_date": universe.get("as_of_date"), "plan_id": None}
 
     # Carry book — positions left over from a prior, already-settled plan.
     # Distinct from today's items: separate card, separate semantics.
-    carry = _db.fetch_carrying_positions() or []
+    carry = [] if as_of else (_db.fetch_carrying_positions() or [])
 
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
-    book = _db.fetch_book() or []
+    book = _db.fetch_book(as_of=as_of) or []
     book_groups = _group_picks_by_layer(book) if book else []
 
     # Pair each plan item with its playbook so the per-ticker drilldown
@@ -389,7 +409,7 @@ def index():
 
     db_ok = not (universe is None and briefing is None and nav is None)
 
-    active_date = _active_trading_date(universe, briefing)
+    active_date = date.fromisoformat(as_of) if as_of else _active_trading_date(universe, briefing)
     freshness   = _card_freshness(
         active_date=active_date, universe=universe, briefing=briefing,
         nav=nav, session_hdr=session_hdr,
@@ -423,10 +443,12 @@ def index():
         last_updated=last_updated,
         carry=carry,
         planned=synthetic_plan,
-        held=_db.held_tickers(),
+        held=set() if as_of else _db.held_tickers(),
         confidence=_db.decision_confidence(),
-        nav_chart=_nav_chart(_db.fetch_nav_history(60)),
-        run=_db.today_run(),
+        nav_chart=_nav_chart(_db.fetch_nav_history(60, as_of=as_of)),
+        run=None if as_of else _db.today_run(),
+        viewing_date=as_of,
+        today_iso=_now_market().date().isoformat(),
     )
 
 

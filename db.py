@@ -83,18 +83,29 @@ def _safe(fn, *args, **kwargs):
 
 # ── Universe ────────────────────────────────────────────────────────────────
 
-def fetch_current_universe() -> Optional[dict]:
-    """Return the active universe with picks, or None."""
+def fetch_current_universe(as_of: Optional[str] = None) -> Optional[dict]:
+    """Return the active universe with picks, or the universe curated on a given
+    `as_of` date (any status — past universes are 'superseded'). None if missing."""
     def _q():
         with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT universe_id, as_of_date, status, model, source, rationale,
-                       layer_coverage, created_at
-                  FROM universes
-                 WHERE status = 'active'
-                 ORDER BY as_of_date DESC, created_at DESC
-                 LIMIT 1
-            """)
+            if as_of:
+                cur.execute("""
+                    SELECT universe_id, as_of_date, status, model, source, rationale,
+                           layer_coverage, created_at
+                      FROM universes
+                     WHERE as_of_date = %s
+                     ORDER BY created_at DESC
+                     LIMIT 1
+                """, (as_of,))
+            else:
+                cur.execute("""
+                    SELECT universe_id, as_of_date, status, model, source, rationale,
+                           layer_coverage, created_at
+                      FROM universes
+                     WHERE status = 'active'
+                     ORDER BY as_of_date DESC, created_at DESC
+                     LIMIT 1
+                """)
             uni = cur.fetchone()
             if not uni:
                 return False
@@ -110,18 +121,25 @@ def fetch_current_universe() -> Optional[dict]:
     return _safe(_q)
 
 
-def fetch_book(limit: int = 30) -> Optional[list[dict]]:
+def fetch_book(limit: int = 30, as_of: Optional[str] = None) -> Optional[list[dict]]:
     """Active universe enriched with execution + EOD score — the connected book.
 
     One row per pick carrying its whole arc: layer, target weight, the pipeline
     outcome, conviction and (once scored) the EOD score, plus its decision_id so
-    each name links to its full decision record.
+    each name links to its full decision record. With `as_of`, the book for the
+    universe curated on that date (for the historical date view).
     """
     def _q():
         with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                WITH u AS (SELECT universe_id FROM universes WHERE status = 'active'
-                            ORDER BY as_of_date DESC, created_at DESC LIMIT 1)
+            if as_of:
+                u_cte = ("WITH u AS (SELECT universe_id FROM universes WHERE as_of_date = %s "
+                         "ORDER BY created_at DESC LIMIT 1)")
+                params: tuple = (as_of, limit)
+            else:
+                u_cte = ("WITH u AS (SELECT universe_id FROM universes WHERE status = 'active' "
+                         "ORDER BY as_of_date DESC, created_at DESC LIMIT 1)")
+                params = (limit,)
+            cur.execute(u_cte + """
                 SELECT p.ticker, p.layer, p.weight_pct,
                        d.decision_id, d.pipeline_outcome, d.conviction, d.score
                   FROM universe_picks p
@@ -130,7 +148,7 @@ def fetch_book(limit: int = 30) -> Optional[list[dict]]:
                     ON d.universe_id = p.universe_id AND d.ticker = p.ticker
                  ORDER BY p.weight_pct DESC
                  LIMIT %s
-            """, (limit,))
+            """, params)
             rows = []
             for r in cur.fetchall():
                 r = dict(r)
@@ -238,18 +256,27 @@ def fetch_current_briefing() -> Optional[dict]:
 STARTING_NAV_DEFAULT = 100_000.0
 
 
-def fetch_current_nav() -> Optional[dict]:
+def fetch_current_nav(as_of: Optional[str] = None) -> Optional[dict]:
     """{starting_nav, ending_nav, realised_pnl, as_of_date} of the most recent
-    mark, or a synthetic seed dict if no marks yet.
+    mark (or the most recent on/before `as_of`), or a synthetic seed dict if none.
     """
     def _q():
         with _conn() as conn, conn.cursor() as cur:
-            cur.execute("""
-                SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
-                  FROM fund_nav
-                 ORDER BY as_of_date DESC, created_at DESC
-                 LIMIT 1
-            """)
+            if as_of:
+                cur.execute("""
+                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
+                      FROM fund_nav
+                     WHERE as_of_date <= %s
+                     ORDER BY as_of_date DESC, created_at DESC
+                     LIMIT 1
+                """, (as_of,))
+            else:
+                cur.execute("""
+                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
+                      FROM fund_nav
+                     ORDER BY as_of_date DESC, created_at DESC
+                     LIMIT 1
+                """)
             row = cur.fetchone()
             if not row:
                 return {
@@ -269,16 +296,25 @@ def fetch_current_nav() -> Optional[dict]:
     return _safe(_q)
 
 
-def fetch_nav_history(limit: int = 60) -> Optional[list[dict]]:
-    """Recent NAV marks, oldest → newest for charting."""
+def fetch_nav_history(limit: int = 60, as_of: Optional[str] = None) -> Optional[list[dict]]:
+    """Recent NAV marks, oldest → newest for charting (up to `as_of` if given)."""
     def _q():
         with _conn() as conn, conn.cursor() as cur:
-            cur.execute("""
-                SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
-                  FROM fund_nav
-                 ORDER BY as_of_date DESC, created_at DESC
-                 LIMIT %s
-            """, (limit,))
+            if as_of:
+                cur.execute("""
+                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
+                      FROM fund_nav
+                     WHERE as_of_date <= %s
+                     ORDER BY as_of_date DESC, created_at DESC
+                     LIMIT %s
+                """, (as_of, limit))
+            else:
+                cur.execute("""
+                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
+                      FROM fund_nav
+                     ORDER BY as_of_date DESC, created_at DESC
+                     LIMIT %s
+                """, (limit,))
             rows = cur.fetchall()
         rows = list(reversed(rows))   # oldest → newest
         return [
