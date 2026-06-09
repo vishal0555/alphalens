@@ -330,7 +330,7 @@
   {% if run %}
   <a class="widget w-runcal tap" data-sheet="run" href="#run" style="display:block;color:inherit;text-decoration:none;">
     <div class="widget-body">
-      <div class="w-head"><div class="w-title">Today's run</div></div>
+      <div class="w-head"><div class="w-title">{% if viewing_date %}{{ today.month_short|title }} {{ today.day }} run{% else %}Today's run{% endif %}</div></div>
       <div class="runcal-day">{{ today.weekday[:3]|upper }}</div>
       <div class="runcal-dom">{{ today.day }}</div>
       {% for key in ['curate','rebalance','debrief'] %}
@@ -433,7 +433,7 @@
 <aside id="sheet-run" class="sheet">
   <header class="sheet-hdr">
     <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Today's run</h2>
+    <h2 class="sheet-title">{% if viewing_date %}{{ today.month_short|title }} {{ today.day }} run{% else %}Today's run{% endif %}</h2>
     <span class="sp"></span>
   </header>
   <div class="sheet-body">

@@ -541,16 +541,21 @@ def fetch_recent_lessons(limit: int = 8) -> Optional[list[dict]]:
 
 # ── Oversight: today's run liveness ─────────────────────────────────────────
 
-def today_run() -> Optional[dict]:
-    """Did the autonomous cycle run today? curate -> rebalance -> debrief."""
+def today_run(as_of: Optional[str] = None) -> Optional[dict]:
+    """Did the autonomous cycle run? curate -> rebalance -> debrief. For `as_of`
+    (a past date) the day is over, so anything that didn't happen reads overdue."""
     def _q():
         with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT (now() AT TIME ZONE 'America/New_York')::date::text AS d,
-                       extract(hour FROM now() AT TIME ZONE 'America/New_York')
-                       + extract(minute FROM now() AT TIME ZONE 'America/New_York') / 60.0 AS h
-            """)
-            r = cur.fetchone(); today = r["d"]; now_h = float(r["h"])
+            if as_of:
+                today = as_of
+                now_h = 24.0   # the day is fully past
+            else:
+                cur.execute("""
+                    SELECT (now() AT TIME ZONE 'America/New_York')::date::text AS d,
+                           extract(hour FROM now() AT TIME ZONE 'America/New_York')
+                           + extract(minute FROM now() AT TIME ZONE 'America/New_York') / 60.0 AS h
+                """)
+                r = cur.fetchone(); today = r["d"]; now_h = float(r["h"])
             cur.execute("SELECT count(*) AS c FROM universes WHERE as_of_date = %s", (today,))
             curated = cur.fetchone()["c"]
             cur.execute("""SELECT count(*) AS c FROM executed_trades

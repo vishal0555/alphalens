@@ -446,7 +446,7 @@ def index():
         held=set() if as_of else _db.held_tickers(),
         confidence=_db.decision_confidence(),
         nav_chart=_nav_chart(_db.fetch_nav_history(60, as_of=as_of)),
-        run=None if as_of else _db.today_run(),
+        run=_db.today_run(as_of=as_of),
         viewing_date=as_of,
         today_iso=_now_market().date().isoformat(),
     )
