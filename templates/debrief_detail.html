@@ -16,7 +16,7 @@
 {% block content %}
 
 <header class="page-nav">
-  <a class="back" href="/debriefs">Debrief</a>
+  <a class="back" href="{{ back_url|default('/debriefs') }}">{{ back_label|default('Debrief') }}</a>
   <span class="title">{{ d.ticker }}</span>
   <span class="sp"></span>
 </header>

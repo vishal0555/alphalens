@@ -21,6 +21,7 @@ from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 # Market timezone — "today" on the dashboard means the trading day in ET,
@@ -503,10 +504,19 @@ def debrief_detail(debrief_id: str):
     d = _db.fetch_decision(debrief_id)
     if d in (None, False):
         abort(404)
+    # Back returns to wherever you came from — the landing page's "Today's book"
+    # or the journal list — instead of always the journal. Default to the journal
+    # for a direct visit / refresh (no referrer).
+    if urlparse(request.referrer or "").path == "/":
+        back_url, back_label = "/", "Today"
+    else:
+        back_url, back_label = "/debriefs", "Debrief"
     return render_template(
         "debrief_detail.html",
         active="debriefs",
         d=d,
+        back_url=back_url,
+        back_label=back_label,
     )
 
 

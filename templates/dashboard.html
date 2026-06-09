@@ -307,9 +307,9 @@
   </div>
   {% endif %}
 
-  {# Today's run — calendar-styled liveness of the autonomous cycle #}
+  {# Today's run — calendar-styled liveness of the autonomous cycle (tap for detail) #}
   {% if run %}
-  <div class="widget w-runcal">
+  <a class="widget w-runcal tap" data-sheet="run" href="#run" style="display:block;color:inherit;text-decoration:none;">
     <div class="widget-body">
       <div class="w-head"><div class="w-title">Today's run</div></div>
       <div class="runcal-day">{{ today.weekday[:3]|upper }}</div>
@@ -323,7 +323,7 @@
       </div>
       {% endfor %}
     </div>
-  </div>
+  </a>
   {% endif %}
 </div>
 
@@ -408,6 +408,31 @@
    ════════════════════════════════════════════════════════════ #}
 
 <div id="sheet-overlay" class="sheet-overlay"></div>
+
+{# Today's run sheet — the day's autonomous schedule (curate / rebalance / debrief) #}
+{% if run %}
+<aside id="sheet-run" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Today's run</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    {% set _times = {'curate': '09:30', 'rebalance': 'intraday', 'debrief': '16:00'} %}
+    {% for key in ['curate','rebalance','debrief'] %}
+    {% set s = run[key] %}
+    <div class="sheet-event {{ 'done' if s.state=='done' else ('next' if s.state=='overdue' else 'later') }}">
+      <div class="t">{{ _times[key] }}</div>
+      <div>
+        <div class="ttl">{{ s.label }}</div>
+        <div class="nt">{% if s.state=='done' %}{{ s.detail or 'done' }}{% elif s.state=='overdue' %}overdue — not yet run{% else %}pending{% endif %}</div>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="sheet-updated" style="margin-top:20px;">Times in ET · scout 09:30, debrief 16:00 · weekdays</div>
+  </div>
+</aside>
+{% endif %}
 
 {# Posture sheet — full thesis, regime, risks #}
 {% if briefing %}
