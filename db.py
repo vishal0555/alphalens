@@ -204,6 +204,72 @@ def execution_by_ticker() -> dict:
     return _safe(_q) or {}
 
 
+def held_sides() -> dict:
+    """Currently-held tickers mapped to 'long' or 'short' (signed net from fills)."""
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            # Net value above $1 (matches the fund's dust rule) — so sub-dollar
+            # exit residuals aren't shown as held longs/shorts.
+            cur.execute("""
+                SELECT ticker, SUM(CASE WHEN lower(side)='buy' THEN qty ELSE -qty END) AS net
+                  FROM executed_trades GROUP BY ticker
+                HAVING ABS(SUM(CASE WHEN lower(side)='buy' THEN qty ELSE -qty END)) * AVG(fill_price) > 1
+            """)
+            return {r[0]: ("short" if float(r[1]) < 0 else "long") for r in cur.fetchall()}
+    return _safe(_q) or {}
+
+
+def book_exposure() -> Optional[dict]:
+    """Long/short counts and gross/net exposure (% of NAV) from current fills.
+
+    Position value uses the average fill price as a proxy (alphalens has no live
+    marks), so gross/net are approximate — enough for a posture-at-a-glance read.
+    """
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT SUM(CASE WHEN lower(side)='buy' THEN qty ELSE -qty END) AS net,
+                       AVG(fill_price) AS px
+                  FROM executed_trades GROUP BY ticker
+                HAVING ABS(SUM(CASE WHEN lower(side)='buy' THEN qty ELSE -qty END)) * AVG(fill_price) > 1
+            """)
+            longs = shorts = 0
+            gross = net = 0.0
+            for r in cur.fetchall():
+                n = float(r[0]); px = float(r[1]) if r[1] is not None else 0.0
+                val = n * px
+                shorts += n < 0
+                longs += n > 0
+                gross += abs(val); net += val
+            if longs + shorts == 0:
+                return None
+            cur.execute("SELECT ending_nav FROM fund_nav ORDER BY as_of_date DESC, created_at DESC LIMIT 1")
+            nav_row = cur.fetchone()
+            nav = float(nav_row[0]) if nav_row else None
+            return {"longs": longs, "shorts": shorts,
+                    "gross_pct": round(gross / nav * 100, 0) if nav else None,
+                    "net_pct": round(net / nav * 100, 0) if nav else None}
+    return _safe(_q)
+
+
+def risk_exits(as_of_date: str) -> list[dict]:
+    """Intraday stop-loss exits (risk-monitor fills) on a date — ticker + time."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT payload->>'symbol' AS ticker,
+                       to_char((COALESCE((payload->>'filled_at')::timestamptz, timestamp)
+                                AT TIME ZONE 'America/New_York'), 'HH24:MI') AS at
+                  FROM events
+                 WHERE subject = 'trade.fill' AND source = 'risk-monitor'
+                   AND (COALESCE((payload->>'filled_at')::timestamptz, timestamp)
+                        AT TIME ZONE 'America/New_York')::date = %s::date
+                 ORDER BY timestamp DESC
+            """, (as_of_date,))
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q) or []
+
+
 def fetch_previous_universe(before_date: str) -> Optional[dict]:
     """Yesterday's universe, for diff computation on /universe."""
     def _q():

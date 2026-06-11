@@ -193,6 +193,12 @@
   }
   .today-reset { font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none; }
   .today-reset:active { opacity: .6; }
+
+  /* long / short side tags + risk exits */
+  .side-tag { font-size: 9px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 5px; margin-left: 6px; vertical-align: middle; }
+  .side-tag.long  { background: rgba(48,209,88,.18); color: var(--green); }
+  .side-tag.short { background: rgba(255,69,58,.20); color: var(--red); }
 </style>
 {% endblock %}
 
@@ -356,7 +362,7 @@
   <div class="uni-card-body">
     <div class="w-head" style="margin-bottom: 6px;">
       <div class="w-title">Universe → execution → score</div>
-      <span class="w-accessory">{{ book|length }} names</span>
+      <span class="w-accessory">{% if exposure %}{{ exposure.longs }}L · {{ exposure.shorts }}S · net {{ exposure.net_pct|int }}% · gross {{ exposure.gross_pct|int }}%{% else %}{{ book|length }} names{% endif %}</span>
     </div>
 
     {% for g in book_groups %}
@@ -369,9 +375,10 @@
       <a class="uni-pick" {% if p.decision_id %}href="/debrief/{{ p.decision_id }}"{% endif %}
          style="display:flex; align-items:center; gap:10px; color:inherit; text-decoration:none;">
         <span style="flex:1; min-width:0;">
-          <span class="ticker">{{ p.ticker }}{% if held and p.ticker in held %} <span style="color:var(--green);font-size:12px;" title="held">✓</span>{% endif %}</span>
+          {% set side = held.get(p.ticker) if held else None %}
+          <span class="ticker">{{ p.ticker }}</span>{% if side %}<span class="side-tag {{ side }}">{{ side }}</span>{% endif %}
           <span class="muted" style="font-size:11px; font-weight:600; margin-left:4px;">
-            {%- if held and p.ticker in held %}held{% elif p.pipeline_outcome == 'executed' %}executed{% elif p.pipeline_outcome and p.pipeline_outcome != 'not_traded' %}{{ p.pipeline_outcome }}{% else %}pending{% endif -%}
+            {%- if side %}held{% elif p.pipeline_outcome == 'executed' %}executed{% elif p.pipeline_outcome and p.pipeline_outcome != 'not_traded' %}{{ p.pipeline_outcome }}{% else %}pending{% endif -%}
           </span>
         </span>
         <span class="num w">{{ '%.1f'|format(p.weight_pct) }}%</span>
@@ -381,6 +388,26 @@
         {% if p.decision_id %}<span style="color:var(--muted); font-size:14px;">›</span>{% endif %}
       </a>
       {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Risk exits — intraday stop-loss flattens (source: risk-monitor) ── #}
+{% if risk_exits %}
+<div class="w-section"><h2>Risk exits</h2></div>
+<div class="widget w-full" style="margin-bottom:16px;">
+  <div class="widget-body" style="padding:14px 18px;">
+    <div class="w-head" style="margin-bottom:8px;">
+      <div class="w-title" style="color:var(--red);">▼ Stopped out intraday</div>
+      <span class="w-accessory">{{ risk_exits|length }}</span>
+    </div>
+    {% for x in risk_exits %}
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;
+                border-top:{% if loop.index0 > 0 %}1px solid var(--border){% else %}none{% endif %};">
+      <span class="ticker">{{ x.ticker }}</span>
+      <span class="muted num" style="font-size:13px;">{{ x.at }} ET · stop-loss</span>
     </div>
     {% endfor %}
   </div>
