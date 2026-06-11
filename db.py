@@ -270,6 +270,28 @@ def risk_exits(as_of_date: str) -> list[dict]:
     return _safe(_q) or []
 
 
+def macro_events(as_of_date: str) -> list[dict]:
+    """The day's captured US macro releases (from macro_events, written by the fund)."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT event_time AS time, name, forecast, actual, previous, released, surprise
+                  FROM macro_events WHERE as_of_date = %s ORDER BY event_time
+            """, (as_of_date,))
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q) or []
+
+
+def spx_move(as_of_date: str) -> Optional[float]:
+    """Captured S&P 500 day move for a date (market-reaction context)."""
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT spx_pct FROM macro_market WHERE as_of_date = %s", (as_of_date,))
+            row = cur.fetchone()
+            return float(row[0]) if row and row[0] is not None else None
+    return _safe(_q)
+
+
 def fetch_previous_universe(before_date: str) -> Optional[dict]:
     """Yesterday's universe, for diff computation on /universe."""
     def _q():
