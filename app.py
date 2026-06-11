@@ -47,6 +47,7 @@ except ImportError:
     pass
 
 import db as _db
+import econ as _econ
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
@@ -449,6 +450,8 @@ def index():
         confidence=_db.decision_confidence(),
         nav_chart=_nav_chart(_db.fetch_nav_history(60, as_of=as_of)),
         run=_db.today_run(as_of=as_of),
+        macro=_econ.macro_events(active_date.isoformat()),
+        spx=None if as_of else _econ.spx_move(),
         viewing_date=as_of,
         today_iso=_now_market().date().isoformat(),
     )

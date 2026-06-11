@@ -199,6 +199,26 @@
     padding: 2px 6px; border-radius: 5px; margin-left: 6px; vertical-align: middle; }
   .side-tag.long  { background: rgba(48,209,88,.18); color: var(--green); }
   .side-tag.short { background: rgba(255,69,58,.20); color: var(--red); }
+
+  /* Macro-today widget rows */
+  .macro-ev { display: flex; align-items: center; gap: 8px; font-size: 11px;
+    padding: 4px 0 4px 8px; margin-top: 4px; border-left: 2px solid var(--muted); }
+  .macro-ev.above { border-left-color: var(--amber); }
+  .macro-ev.below { border-left-color: var(--green); }
+  .macro-ev.pending { border-left-color: var(--accent); opacity: .9; }
+  .macro-ev .me-t { font-weight: 800; color: var(--muted); min-width: 34px; }
+  .macro-ev .me-n { flex: 1; font-weight: 600; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .macro-ev .me-s { font-weight: 800; }
+  .macro-ev.above .me-s { color: var(--amber); }
+  .macro-ev.below .me-s { color: var(--green); }
+  .macro-ev.pending .me-s { color: var(--accent); }
+  /* surprise pill in the sheet */
+  .surprise { font-size: 10px; font-weight: 800; letter-spacing: .3px;
+    padding: 2px 8px; border-radius: 6px; margin-left: 6px; vertical-align: middle; white-space: nowrap; }
+  .surprise.above { background: rgba(251,191,36,.18); color: var(--amber); }
+  .surprise.below { background: rgba(48,209,88,.18); color: var(--green); }
+  .surprise.inline { background: rgba(255,255,255,.08); color: var(--muted); }
 </style>
 {% endblock %}
 
@@ -332,21 +352,22 @@
   </div>
   {% endif %}
 
-  {# Today's run — calendar-styled liveness of the autonomous cycle (tap for detail) #}
-  {% if run %}
-  <a class="widget w-runcal tap" data-sheet="run" href="#run" style="display:block;color:inherit;text-decoration:none;">
+  {# Macro today — the day's US releases + how each came in (tap for detail) #}
+  {% if macro %}
+  <a class="widget w-runcal tap" data-sheet="macro" href="#macro" style="display:block;color:inherit;text-decoration:none;">
     <div class="widget-body">
-      <div class="w-head"><div class="w-title">{% if viewing_date %}{{ today.month_short|title }} {{ today.day }} run{% else %}Today's run{% endif %}</div></div>
-      <div class="runcal-day">{{ today.weekday[:3]|upper }}</div>
-      <div class="runcal-dom">{{ today.day }}</div>
-      {% for key in ['curate','rebalance','debrief'] %}
-      {% set s = run[key] %}
-      <div class="runcal-ev {{ s.state }}">
-        <span class="ev-ico">{%- if s.state=='done' %}✓{% elif s.state=='overdue' %}▲{% else %}◌{% endif -%}</span>
-        <span class="ev-ttl">{{ s.label }}</span>
-        <span class="ev-nt">{% if s.state=='done' %}{{ s.detail }}{% elif s.state=='overdue' %}overdue{% else %}pending{% endif %}</span>
+      <div class="w-head">
+        <div class="w-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</div>
+        <span class="w-accessory">{{ macro|length }}</span>
+      </div>
+      {% for e in macro[:3] %}
+      <div class="macro-ev {{ e.surprise if e.released else 'pending' }}">
+        <span class="me-t num">{{ e.time }}</span>
+        <span class="me-n">{{ e.name }}</span>
+        <span class="me-s">{% if e.released %}{% if e.surprise=='above' %}▲{% elif e.surprise=='below' %}▼{% elif e.surprise=='inline' %}={% else %}•{% endif %}{% else %}◷{% endif %}</span>
       </div>
       {% endfor %}
+      {% if macro|length > 3 %}<div class="muted" style="font-size:11px;margin-top:5px;">+{{ macro|length - 3 }} more ›</div>{% endif %}
     </div>
   </a>
   {% endif %}
@@ -455,27 +476,36 @@
 
 <div id="sheet-overlay" class="sheet-overlay"></div>
 
-{# Today's run sheet — the day's autonomous schedule (curate / rebalance / debrief) #}
-{% if run %}
-<aside id="sheet-run" class="sheet">
+{# Macro today sheet — the day's US releases + how each came in vs consensus #}
+{% if macro %}
+<aside id="sheet-macro" class="sheet">
   <header class="sheet-hdr">
     <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">{% if viewing_date %}{{ today.month_short|title }} {{ today.day }} run{% else %}Today's run{% endif %}</h2>
+    <h2 class="sheet-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</h2>
     <span class="sp"></span>
   </header>
   <div class="sheet-body">
-    {% set _times = {'curate': '09:30', 'rebalance': 'intraday', 'debrief': '16:00'} %}
-    {% for key in ['curate','rebalance','debrief'] %}
-    {% set s = run[key] %}
-    <div class="sheet-event {{ 'done' if s.state=='done' else ('next' if s.state=='overdue' else 'later') }}">
-      <div class="t">{{ _times[key] }}</div>
-      <div>
-        <div class="ttl">{{ s.label }}</div>
-        <div class="nt">{% if s.state=='done' %}{{ s.detail or 'done' }}{% elif s.state=='overdue' %}overdue — not yet run{% else %}pending{% endif %}</div>
+    {% if spx is not none %}
+    <div class="row-card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span class="muted" style="font-size:13px;">Market reaction · S&amp;P 500</span>
+      <span class="num {{ 'delta-up' if spx>=0 else 'delta-dn' }}" style="font-size:17px;font-weight:800;">{{ '%+.2f'|format(spx) }}%</span>
+    </div>
+    {% endif %}
+    {% for e in macro %}
+    <div class="sheet-event {{ 'done' if e.released else 'later' }}">
+      <div class="t">{{ e.time }}</div>
+      <div style="flex:1;">
+        <div class="ttl">{{ e.name }}
+          {% if e.released and e.surprise %}<span class="surprise {{ e.surprise }}">{{ {'above':'▲ above est','below':'▼ below est','inline':'= in line'}[e.surprise] }}</span>{% endif %}
+        </div>
+        <div class="nt">
+          {% if e.released %}actual <b style="color:var(--text);">{{ e.actual }}</b>{% if e.forecast %} · est {{ e.forecast }}{% endif %}{% if e.previous %} · prev {{ e.previous }}{% endif %}
+          {% else %}{% if e.forecast %}est {{ e.forecast }} · {% endif %}awaiting release ◷{% endif %}
+        </div>
       </div>
     </div>
     {% endfor %}
-    <div class="sheet-updated" style="margin-top:20px;">Times in ET · scout 09:30, debrief 16:00 · weekdays</div>
+    <div class="sheet-updated" style="margin-top:20px;">US releases · times ET · "surprise" = actual vs consensus</div>
   </div>
 </aside>
 {% endif %}
