@@ -336,16 +336,14 @@ def index():
     # Optional ?d=YYYY-MM-DD renders a past trading day; otherwise the live view.
     as_of = _parse_view_date(request.args.get("d"))
     universe = _db.fetch_current_universe(as_of=as_of)
-    briefing = None if as_of else _db.fetch_current_briefing()
     nav      = _db.fetch_current_nav(as_of=as_of)
-    session_hdr = None if as_of else _db.fetch_today_session()
-
+    # Legacy briefing/plan/session tables (fund_briefings, pm_plans) were
+    # consolidated away — posture, the plan and realised P&L are synthesized from
+    # the curated universe + real fills below.
+    briefing = None
+    session_hdr = None
     items = None
     realised = None
-    if session_hdr and session_hdr is not False and session_hdr.get("plan_id"):
-        items = _db.fetch_session_items(str(session_hdr["plan_id"]))
-        pnl   = _db.session_pnl_summary(str(session_hdr["plan_id"]))
-        realised = pnl["realised_pnl"] if pnl else None
 
     # Post-consolidation: the legacy briefing/plan tables are gone. Synthesize
     # a briefing + plan from the scout's curated universe so Posture (the day's
@@ -392,9 +390,9 @@ def index():
         if not session_hdr or session_hdr is False:
             session_hdr = {"briefing_date": universe.get("as_of_date"), "plan_id": None}
 
-    # Carry book — positions left over from a prior, already-settled plan.
-    # Distinct from today's items: separate card, separate semantics.
-    carry = [] if as_of else (_db.fetch_carrying_positions() or [])
+    # Carry book relied on the consolidated-away pm_plans tables; the live book
+    # is shown via positions/exposure instead.
+    carry = []
 
     universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
     book = _db.fetch_book(as_of=as_of) or []
@@ -478,31 +476,18 @@ def universe_page():
 @app.route("/positions")
 @_login_required
 def positions_page():
-    session_hdr = _db.fetch_today_session()
-    items = None
-    realised = None
-    if session_hdr and session_hdr is not False and session_hdr.get("plan_id"):
-        items = _db.fetch_session_items(str(session_hdr["plan_id"]))
-        pnl = _db.session_pnl_summary(str(session_hdr["plan_id"]))
-        realised = pnl["realised_pnl"] if pnl else None
-
-    # Pair each plan item with its playbook (if the morning has been built).
-    # The playbook carries the catalyst / technicals / recommended_action that
-    # explain *why* this item was on the plan in the first place.
-    briefing = _db.fetch_current_briefing()
-    playbooks_by_ticker = {}
-    if briefing and isinstance(briefing, dict):
-        for pb in (briefing.get("plan", {}).get("playbooks") or []):
-            playbooks_by_ticker[pb["ticker"]] = pb
-
+    # The legacy session/plan tables (pm_plans, pm_plan_items, fund_briefings)
+    # were consolidated away; the live book + exposure are surfaced on the
+    # dashboard. This view renders its empty state until a positions shape is
+    # wired over the consolidated schema.
     return render_template(
         "positions.html",
         active="positions",
-        session_hdr=session_hdr,
-        items=items or [],
-        realised=realised,
-        playbooks=playbooks_by_ticker,
-        briefing=briefing,
+        session_hdr=None,
+        items=[],
+        realised=None,
+        playbooks={},
+        briefing=None,
     )
 
 
