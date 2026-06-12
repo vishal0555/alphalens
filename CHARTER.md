@@ -36,15 +36,20 @@ PM, Trading, Analytics, and Ops write to.
 
 | Counterparty | Their need from us | Our need from them | Contract |
 |--------------|--------------------|--------------------|----------|
-| **Analytics (Console)** | Avoid duplicating views | None directly | We're the consumer view; Console is the engineer view. Both read the same tables. |
-| **Research** | Surface universes + briefings legibly | A stable `universes` + `fund_briefings` shape | Read only |
-| **PM** | Surface plans + plan_items + their playbook context | Stable `pm_plans` + `pm_plan_items` shape | Read only |
-| **Trading** | Surface fills + exits with PnL | `executed_trades` schema | Read only |
-| **Analytics (Debriefer)** | Surface debriefs + lessons | `debriefs` + `lessons` shape | Read only |
-| **Ops** | NAV history view | `nav_marks` shape | Read only |
+| **Research** | Surface today's universe + diff | `universes` + `universe_picks` (the regime/thesis ride on the universe payload) | Read only |
+| **PM / posture** | Surface the day's posture + plan | Derived from the curated universe (the legacy `pm_plans` / `fund_briefings` tables were consolidated away; posture is synthesized from pick weights) | Read only |
+| **Trading** | Surface fills + exits with PnL | `executed_trades` view | Read only |
+| **Debrief / lessons** | Surface scored decisions + reflections + "lessons applied" | `stock_decisions` (the per-decision journal replaced the separate `debriefs`/`lessons` tables) | Read only |
+| **Risk** | Surface intraday stop-outs | `risk.monitor`-sourced rows in `executed_trades` / `events` | Read only |
+| **Macro** | Surface the day's calendar + S&P reaction | `macro_events` + `macro_market` | Read only |
+| **Ops / NAV** | NAV equity curve | `fund_nav` view (rebuilt over `portfolio.nav.marked` events) | Read only |
 
-We never write. If a column we surface changes shape, the owning team
-gives us a heads-up — but we don't gate their schema changes.
+We never write — alphalens is a read-only viewer over the engine's consolidated
+`ats` schema. After the 3-repo consolidation, the day's data lives in
+`universes`/`universe_picks`, `stock_decisions`, the `executed_trades` and
+`fund_nav` views, and `macro_events`/`macro_market`. If a column we surface
+changes shape, the owning team gives us a heads-up — but we don't gate their
+schema changes.
 
 ## Roadmap to leading-fund maturity
 
