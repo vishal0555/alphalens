@@ -23,7 +23,7 @@ hosted, password-gated, analyst-mobile view.
 | Dashboard | `/` | NAV, posture, universe tiles, current positions, recent lessons |
 | Universe | `/universe` | Today's picks with diff vs yesterday |
 | Morning | `/morning` | Per-pick playbooks (entry / stop / target / action) |
-| Positions | `/positions` | Today's filled / exited / no-fill items with realised PnL |
+| Positions | `/positions` | The live book — currently-held names with side, layer, weight, entry, size + gross/net exposure |
 | Debriefs | `/debriefs` | List of recent debriefs |
 | Debrief detail | `/debrief/<id>` | Single retrospective with extracted lessons |
 | NAV | `/nav` | NAV history table + sparkline |

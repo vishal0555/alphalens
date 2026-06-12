@@ -476,18 +476,33 @@ def universe_page():
 @app.route("/positions")
 @_login_required
 def positions_page():
-    # The legacy session/plan tables (pm_plans, pm_plan_items, fund_briefings)
-    # were consolidated away; the live book + exposure are surfaced on the
-    # dashboard. This view renders its empty state until a positions shape is
-    # wired over the consolidated schema.
+    # The live book from the consolidated schema: every currently-held name
+    # (held_sides applies the fund's dust filter), enriched with its entry/size
+    # from fills and its layer/weight/score from today's universe pick.
+    sides = _db.held_sides() or {}
+    execu = _db.execution_by_ticker() or {}
+    book_by_t = {r["ticker"]: r for r in (_db.fetch_book() or [])}
+    holdings = []
+    for ticker, side in sides.items():
+        ex = execu.get(ticker) or {}
+        b = book_by_t.get(ticker) or {}
+        entry = ex.get("entry_price")
+        qty = abs(ex.get("net") or 0.0)
+        holdings.append({
+            "ticker": ticker, "side": side,
+            "layer": b.get("layer"), "weight_pct": b.get("weight_pct"),
+            "entry_price": entry, "qty": qty,
+            "notional": (qty * entry) if (entry and qty) else None,
+            "score": b.get("score"), "outcome": b.get("pipeline_outcome"),
+            "decision_id": b.get("decision_id"),
+        })
+    holdings.sort(key=lambda h: h["notional"] or 0, reverse=True)
     return render_template(
         "positions.html",
         active="positions",
-        session_hdr=None,
-        items=[],
-        realised=None,
-        playbooks={},
-        briefing=None,
+        holdings=holdings,
+        exposure=_db.book_exposure(),
+        nav=_db.fetch_current_nav(),
     )
 
 
