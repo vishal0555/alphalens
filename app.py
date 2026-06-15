@@ -481,18 +481,30 @@ def positions_page():
     # from fills and its layer/weight/score from today's universe pick.
     sides = _db.held_sides() or {}
     execu = _db.execution_by_ticker() or {}
+    marked = _db.holdings_marked() or {}
     book_by_t = {r["ticker"]: r for r in (_db.fetch_book() or [])}
     holdings = []
     for ticker, side in sides.items():
         ex = execu.get(ticker) or {}
         b = book_by_t.get(ticker) or {}
-        entry = ex.get("entry_price")
-        qty = abs(ex.get("net") or 0.0)
+        m = marked.get(ticker) or {}
+        # Prefer the snapshot's average-cost basis (the OMS entry) over the
+        # max-buy-fill proxy; fall back to fills when the view has no row yet.
+        entry = m.get("avg_cost") if m.get("avg_cost") is not None else ex.get("entry_price")
+        qty = abs(m["quantity"]) if m.get("quantity") is not None else abs(ex.get("net") or 0.0)
+        mkt_val = m.get("market_value")
         holdings.append({
             "ticker": ticker, "side": side,
             "layer": b.get("layer"), "weight_pct": b.get("weight_pct"),
             "entry_price": entry, "qty": qty,
-            "notional": (qty * entry) if (entry and qty) else None,
+            # Live marks from current_holdings (None until the first marked snapshot).
+            "market_price": m.get("market_price"),
+            "unrealized_pnl": m.get("unrealized_pnl"),
+            "unrealized_pnl_pct": m.get("unrealized_pnl_pct"),
+            "nav_weight_pct": m.get("nav_weight_pct"),
+            # Market value when marked, else the entry-cost proxy.
+            "notional": abs(mkt_val) if mkt_val is not None
+                        else ((qty * entry) if (entry and qty) else None),
             "score": b.get("score"), "outcome": b.get("pipeline_outcome"),
             "decision_id": b.get("decision_id"),
         })

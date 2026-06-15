@@ -204,6 +204,37 @@ def execution_by_ticker() -> dict:
     return _safe(_q) or {}
 
 
+def holdings_marked() -> dict:
+    """Per-ticker live marks + unrealized P&L from the ``current_holdings`` view.
+
+    The view is the makeup of NAV: the latest portfolio snapshot's average entry
+    cost, the mark it was valued at, market value, unrealized P&L and the name's
+    share of NAV. Keyed by ticker. Empty dict if the view is unavailable (e.g.
+    before migration 0009 / before the first marked snapshot).
+    """
+    def _q():
+        with _conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT ticker, quantity, avg_cost, market_price, market_value,
+                       cost_basis, unrealized_pnl, unrealized_pnl_pct, nav_weight_pct
+                  FROM current_holdings
+            """)
+            out = {}
+            for r in cur.fetchall():
+                out[r[0]] = {
+                    "quantity": float(r[1]) if r[1] is not None else None,
+                    "avg_cost": float(r[2]) if r[2] is not None else None,
+                    "market_price": float(r[3]) if r[3] is not None else None,
+                    "market_value": float(r[4]) if r[4] is not None else None,
+                    "cost_basis": float(r[5]) if r[5] is not None else None,
+                    "unrealized_pnl": float(r[6]) if r[6] is not None else None,
+                    "unrealized_pnl_pct": float(r[7]) if r[7] is not None else None,
+                    "nav_weight_pct": float(r[8]) if r[8] is not None else None,
+                }
+            return out
+    return _safe(_q) or {}
+
+
 def held_sides() -> dict:
     """Currently-held tickers mapped to 'long' or 'short' (signed net from fills)."""
     def _q():

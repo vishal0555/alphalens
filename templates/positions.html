@@ -74,9 +74,12 @@
     </div>
     <div class="fills">
       {% if h.layer %}<span><span class="l">Layer</span>{{ h.layer }}</span>{% endif %}
-      {% if h.weight_pct is not none %}<span><span class="l">Weight</span>{{ h.weight_pct|round|int }}%</span>{% endif %}
+      {% if h.nav_weight_pct is not none %}<span><span class="l">NAV</span>{{ h.nav_weight_pct|round(1) }}%</span>
+      {% elif h.weight_pct is not none %}<span><span class="l">Weight</span>{{ h.weight_pct|round|int }}%</span>{% endif %}
       {% if h.entry_price %}<span><span class="l">Entry</span>${{ '%.2f'|format(h.entry_price) }}</span>{% endif %}
+      {% if h.market_price is not none %}<span><span class="l">Mark</span>${{ '%.2f'|format(h.market_price) }}</span>{% endif %}
       {% if h.qty %}<span><span class="l">Qty</span>{{ '%.3f'|format(h.qty) }}</span>{% endif %}
+      {% if h.unrealized_pnl is not none %}<span><span class="l">Unreal. P&amp;L</span><span class="{{ h.unrealized_pnl|pnl_class }}">{{ h.unrealized_pnl|signed_money }} ({{ h.unrealized_pnl_pct|signed_pct }})</span></span>{% endif %}
       {% if h.score is not none %}<span><span class="l">EOD score</span>{{ '%.2f'|format(h.score) }}</span>{% endif %}
     </div>
   </div>
