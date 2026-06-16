@@ -449,6 +449,7 @@ def index():
         run=_db.today_run(as_of=as_of),
         macro=_db.macro_events(as_of or _now_market().date().isoformat()),
         spx=_db.spx_move(as_of or _now_market().date().isoformat()),
+        narrative=_db.fetch_day_narrative(as_of),
         viewing_date=as_of,
         today_iso=_now_market().date().isoformat(),
     )

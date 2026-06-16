@@ -323,6 +323,25 @@ def spx_move(as_of_date: str) -> Optional[float]:
     return _safe(_q)
 
 
+def fetch_day_narrative(as_of: Optional[str] = None) -> Optional[dict]:
+    """The fund's stored end-of-day narrative for a date (or the latest).
+
+    Read-only: the narrative is composed and persisted by the trading system at
+    the close (table ``day_narratives``); alphalens only displays it. Returns None
+    when no narrative has been written for the day (e.g. before the debrief runs).
+    """
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            if as_of:
+                cur.execute("SELECT * FROM day_narratives WHERE as_of_date = %s", (as_of,))
+            else:
+                cur.execute(
+                    "SELECT * FROM day_narratives ORDER BY as_of_date DESC LIMIT 1")
+            row = cur.fetchone()
+            return dict(row) if row else None
+    return _safe(_q)
+
+
 def fetch_previous_universe(before_date: str) -> Optional[dict]:
     """Yesterday's universe, for diff computation on /universe."""
     def _q():

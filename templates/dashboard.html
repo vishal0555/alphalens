@@ -352,14 +352,15 @@
   </div>
   {% endif %}
 
-  {# Macro today — the day's US releases + how each came in (tap for detail) #}
-  {% if macro %}
+  {# Macro today — the day's US releases + how each came in (tap for detail).
+     Always shown, even on a day with no scheduled releases (empty calendar). #}
   <a class="widget w-runcal tap" data-sheet="macro" href="#macro" style="display:block;color:inherit;text-decoration:none;">
     <div class="widget-body">
       <div class="w-head">
         <div class="w-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</div>
         <span class="w-accessory">{{ macro|length }}</span>
       </div>
+      {% if macro %}
       {% for e in macro[:3] %}
       <div class="macro-ev {{ e.surprise if e.released else 'pending' }}">
         <span class="me-t num">{{ e.time }}</span>
@@ -368,9 +369,13 @@
       </div>
       {% endfor %}
       {% if macro|length > 3 %}<div class="muted" style="font-size:11px;margin-top:5px;">+{{ macro|length - 3 }} more ›</div>{% endif %}
+      {% else %}
+      <div class="macro-ev pending">
+        <span class="me-n muted">No economic releases scheduled</span>
+      </div>
+      {% endif %}
     </div>
   </a>
-  {% endif %}
 </div>
 
 {# ── Today's book — one row per name: pick -> execute -> score ── #}
@@ -470,14 +475,44 @@
 </div></div>
 {% endif %}
 
+{# ── How the day went — the fund's own EOD narrative (composed at the close,
+     after lessons are graded). alphalens only displays it; it never writes it. ── #}
+{% if narrative %}
+<div class="w-section" id="narrative"><h2>How the day went</h2></div>
+<div class="widget w-full" style="margin-bottom:16px;">
+  <div class="widget-body">
+    {% if narrative.headline %}
+    <div class="w-title" style="font-size:18px;margin-bottom:10px;">{{ narrative.headline }}</div>
+    {% endif %}
+    <p style="line-height:1.6;color:var(--text);margin:0 0 14px;">{{ narrative.narrative }}</p>
+    <div class="fills" style="display:flex;gap:18px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);font-size:14px;">
+      {% if narrative.day_pnl is not none %}<span><span class="l">Day P&amp;L</span> <span class="{{ narrative.day_pnl|pnl_class }}">{{ narrative.day_pnl|signed_money }}</span></span>{% endif %}
+      {% if narrative.spx_pct is not none %}<span><span class="l">S&amp;P</span> {{ narrative.spx_pct|signed_pct }}</span>{% endif %}
+      {% if narrative.regime %}<span><span class="l">Regime</span> {{ narrative.regime }}</span>{% endif %}
+      {% if narrative.avg_score is not none %}<span><span class="l">Avg score</span> {{ '%.2f'|format(narrative.avg_score) }}</span>{% endif %}
+      {% if narrative.decisions_scored %}<span><span class="l">Graded</span> {{ narrative.decisions_scored }}</span>{% endif %}
+    </div>
+    {% if narrative.lessons %}
+    <div style="margin-top:16px;">
+      <div class="muted" style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Lessons</div>
+      <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7;color:var(--text);">
+        {% for lesson in narrative.lessons %}<li>{{ lesson }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="sheet-updated" style="margin-top:14px;">EOD narrative · {{ narrative.as_of_date }}</div>
+  </div>
+</div>
+{% endif %}
+
 {# ════════════════════════════════════════════════════════════
    DETAIL SHEETS — slide up from bottom, "‹ Today" to dismiss
    ════════════════════════════════════════════════════════════ #}
 
 <div id="sheet-overlay" class="sheet-overlay"></div>
 
-{# Macro today sheet — the day's US releases + how each came in vs consensus #}
-{% if macro %}
+{# Macro today sheet — the day's US releases + how each came in vs consensus.
+   Always rendered so the empty calendar is still tappable on a no-release day. #}
 <aside id="sheet-macro" class="sheet">
   <header class="sheet-hdr">
     <button class="sheet-back" type="button">Today</button>
@@ -505,10 +540,15 @@
       </div>
     </div>
     {% endfor %}
+    {% if not macro %}
+    <div class="row-card empty-state" style="text-align:center;padding:24px;">
+      <div class="empty-icon">◷</div>
+      No US economic releases scheduled today.
+    </div>
+    {% endif %}
     <div class="sheet-updated" style="margin-top:20px;">US releases · times ET · "surprise" = actual vs consensus</div>
   </div>
 </aside>
-{% endif %}
 
 {# Posture sheet — full thesis, regime, risks #}
 {% if briefing %}
