@@ -576,7 +576,9 @@
   (function () {
     var overlay = document.getElementById('sheet-overlay');
     if (!overlay) return;
-    var sheets = document.querySelectorAll('.sheet');
+    // Sheets may be injected after load (progressive dashboard fragments), so
+    // always re-query rather than caching the NodeList once.
+    function allSheets() { return document.querySelectorAll('.sheet'); }
     var stack  = [];  // names of currently-open sheets, deepest last
     var savedScrollY = 0;
 
@@ -609,7 +611,7 @@
       var sheet = document.getElementById('sheet-' + name);
       if (!sheet) return;
       var wasUnlocked = !document.body.classList.contains('sheet-open');
-      sheets.forEach(function (s) { s.classList.remove('open'); });
+      allSheets().forEach(function (s) { s.classList.remove('open'); });
       sheet.classList.add('open');
       overlay.classList.add('open');
       if (wasUnlocked) _lockBody();
@@ -621,7 +623,7 @@
     }
     function close() {
       var wasLocked = document.body.classList.contains('sheet-open');
-      sheets.forEach(function (s) { s.classList.remove('open'); });
+      allSheets().forEach(function (s) { s.classList.remove('open'); });
       overlay.classList.remove('open');
       if (wasLocked) _unlockBody();
       stack = [];
@@ -636,16 +638,38 @@
     function _onScrollish() { lastScrollAt = Date.now(); }
     window.addEventListener('scroll', _onScrollish, { passive: true, capture: true });
     window.addEventListener('touchmove', _onScrollish, { passive: true });
-    document.querySelectorAll('[data-sheet]').forEach(function (el) {
-      el.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (Date.now() - lastScrollAt < 250) return;  // recent scroll → ignore
-        open(el.dataset.sheet, true);
+
+    // bind(root): wire up the sheet triggers / back buttons inside `root`
+    // (default: whole document). Safe to call repeatedly — each element is
+    // bound at most once — so progressively-injected fragments can register
+    // their sheets by calling window.initSheets(fragmentEl) after insertion.
+    function bind(root) {
+      root = root || document;
+      root.querySelectorAll('[data-sheet]').forEach(function (el) {
+        if (el.dataset.sheetBound) return;
+        el.dataset.sheetBound = '1';
+        el.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (Date.now() - lastScrollAt < 250) return;  // recent scroll → ignore
+          open(el.dataset.sheet, true);
+        });
       });
-    });
-    document.querySelectorAll('.sheet-back').forEach(function (el) {
-      el.addEventListener('click', function () { history.back(); });
-    });
+      root.querySelectorAll('.sheet-back').forEach(function (el) {
+        if (el.dataset.backBound) return;
+        el.dataset.backBound = '1';
+        el.addEventListener('click', function () { history.back(); });
+      });
+      // Deep-link: open the sheet for an existing #hash once it exists in the
+      // DOM (it may have arrived with this fragment). No duplicate history
+      // entry; deferred a frame so layout settles before the slide transition.
+      var initial = location.hash.slice(1);
+      if (initial && document.getElementById('sheet-' + initial) && stack.indexOf(initial) === -1) {
+        history.replaceState({ sheet: initial, depth: 1 }, '', '#' + initial);
+        stack = [initial];
+        requestAnimationFrame(function () { open(initial, false); });
+      }
+    }
+
     overlay.addEventListener('click', function () {
       if (stack.length > 0) history.go(-stack.length);
     });
@@ -660,17 +684,9 @@
         close();
       }
     });
-    // Deep-link: open the sheet for an existing #hash, without pushing a
-    // duplicate history entry on top of the one the page loaded with.
-    // Deferred to the next frame so the dashboard layout settles before
-    // the sheet's transform transition runs — keeps the initial paint
-    // light and avoids piling sheet-open on top of in-flight layout.
-    var initial = location.hash.slice(1);
-    if (initial && document.getElementById('sheet-' + initial)) {
-      history.replaceState({ sheet: initial, depth: 1 }, '', '#' + initial);
-      stack = [initial];
-      requestAnimationFrame(function () { open(initial, false); });
-    }
+
+    bind(document);
+    window.initSheets = bind;  // re-bind hook for injected dashboard fragments
   })();
 
 </script>

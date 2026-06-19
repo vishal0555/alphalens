@@ -1,0 +1,157 @@
+{# Fragment: Posture + Macro widgets, plus their detail sheets. #}
+
+{# Compute weather class once #}
+{% if briefing %}
+  {% set posture = briefing.plan.posture %}
+  {% if posture == 'aggressive' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'Bold', 'Clear · full size', 'sun' %}
+  {% elif posture == 'defensive' %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'Cautious', 'Stormy · half size', 'storm' %}
+  {% else %}
+    {% set w_class, w_label, w_cond, w_icon = 'w-weather-mix', 'Neutral', 'Mixed · selective', 'cloudsun' %}
+  {% endif %}
+{% endif %}
+
+<div class="wgrid">
+  {% if briefing and (freshness is not defined or freshness.briefing.fresh) %}
+  <a class="widget w-weather {{ w_class }} tap" data-sheet="posture" href="#posture">
+    <div class="widget-body">
+      <div class="w-head">
+        <div class="w-title">
+          <span class="w-icon">
+            {% if w_icon == 'sun' %}
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" fill="#fff"/>
+              <g stroke="#fff" stroke-width="1.5" stroke-linecap="round">
+                <line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/>
+                <line x1="3" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/>
+                <line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/>
+                <line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>
+              </g></svg>
+            {% elif w_icon == 'storm' %}
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M7 16c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H7z" fill="#fff"/>
+              <path d="M11 14l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffd60a"/>
+            </svg>
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="8" cy="9" r="2.6" fill="#ffd60a"/>
+              <path d="M9 18c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H9z" fill="#fff"/>
+            </svg>
+            {% endif %}
+          </span>
+          Posture
+        </div>
+      </div>
+      <div class="temp">{{ w_label }}</div>
+      <div class="cond">{{ w_cond }}</div>
+    </div>
+  </a>
+  {% elif freshness is defined and not freshness.briefing.fresh %}
+  <div class="widget w-weather w-pending">
+    <div class="widget-body">
+      <span class="w-pending-icon">◌</span>
+      <span class="w-pending-title">Posture</span>
+      <span class="w-pending-note">{{ freshness.briefing.note }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {# Macro today — the day's US releases + how each came in (tap for detail).
+     Always shown, even on a day with no scheduled releases (empty calendar). #}
+  <a class="widget w-runcal tap" data-sheet="macro" href="#macro" style="display:block;color:inherit;text-decoration:none;">
+    <div class="widget-body">
+      <div class="w-head">
+        <div class="w-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</div>
+        <span class="w-accessory">{{ macro|length }}</span>
+      </div>
+      {% if macro %}
+      {% for e in macro[:3] %}
+      <div class="macro-ev {{ e.surprise if e.released else 'pending' }}">
+        <span class="me-t num">{{ e.time }}</span>
+        <span class="me-n">{{ e.name }}</span>
+        <span class="me-s">{% if e.released %}{% if e.surprise=='above' %}▲{% elif e.surprise=='below' %}▼{% elif e.surprise=='inline' %}={% else %}•{% endif %}{% else %}◷{% endif %}</span>
+      </div>
+      {% endfor %}
+      {% if macro|length > 3 %}<div class="muted" style="font-size:11px;margin-top:5px;">+{{ macro|length - 3 }} more ›</div>{% endif %}
+      {% else %}
+      <div class="macro-ev pending">
+        <span class="me-n muted">No economic releases scheduled</span>
+      </div>
+      {% endif %}
+    </div>
+  </a>
+</div>
+
+{# Macro today sheet — the day's US releases + how each came in vs consensus.
+   Always rendered so the empty calendar is still tappable on a no-release day. #}
+<aside id="sheet-macro" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    {% if spx is not none %}
+    <div class="row-card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span class="muted" style="font-size:13px;">Market reaction · S&amp;P 500</span>
+      <span class="num {{ 'delta-up' if spx>=0 else 'delta-dn' }}" style="font-size:17px;font-weight:800;">{{ '%+.2f'|format(spx) }}%</span>
+    </div>
+    {% endif %}
+    {% for e in macro %}
+    <div class="sheet-event {{ 'done' if e.released else 'later' }}">
+      <div class="t">{{ e.time }}</div>
+      <div style="flex:1;">
+        <div class="ttl">{{ e.name }}
+          {% if e.released and e.surprise %}<span class="surprise {{ e.surprise }}">{{ {'above':'▲ above est','below':'▼ below est','inline':'= in line'}[e.surprise] }}</span>{% endif %}
+        </div>
+        <div class="nt">
+          {% if e.released %}actual <b style="color:var(--text);">{{ e.actual }}</b>{% if e.forecast %} · est {{ e.forecast }}{% endif %}{% if e.previous %} · prev {{ e.previous }}{% endif %}
+          {% else %}{% if e.forecast %}est {{ e.forecast }} · {% endif %}awaiting release ◷{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not macro %}
+    <div class="row-card empty-state" style="text-align:center;padding:24px;">
+      <div class="empty-icon">◷</div>
+      No US economic releases scheduled today.
+    </div>
+    {% endif %}
+    <div class="sheet-updated" style="margin-top:20px;">US releases · times ET · "surprise" = actual vs consensus</div>
+  </div>
+</aside>
+
+{# Posture sheet — full thesis, regime, risks #}
+{% if briefing %}
+<aside id="sheet-posture" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Today's briefing</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    {% if last_updated and last_updated.briefing %}
+    <div class="sheet-updated">Updated {{ last_updated.briefing }}</div>
+    {% endif %}
+    <div class="sheet-pill-row">
+      <span class="badge {{ posture }}">{{ posture }}</span>
+      <span class="badge neutral">{{ w_cond }}</span>
+    </div>
+    <p class="lead">{{ briefing.plan.session_thesis }}</p>
+
+    {% if briefing.plan.regime_summary %}
+    <h3>Regime</h3>
+    <p>{{ briefing.plan.regime_summary }}</p>
+    {% endif %}
+
+    {% if briefing.plan.risks_today %}
+    <h3>Risks today</h3>
+    <div class="sheet-risk-list">
+      {% for r in briefing.plan.risks_today %}
+      <div class="item">⚠ {{ r }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</aside>
+{% endif %}

@@ -219,6 +219,33 @@
   .surprise.above { background: rgba(251,191,36,.18); color: var(--amber); }
   .surprise.below { background: rgba(48,209,88,.18); color: var(--green); }
   .surprise.inline { background: rgba(255,255,255,.08); color: var(--muted); }
+
+  /* ── Progressive-load skeletons ──────────────────────────────
+     The shell paints instantly; each section below is fetched as a
+     fragment (/_dash/*) and swapped in. These placeholders hold the
+     layout so there's no jump when the real content lands. */
+  .sk {
+    background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.10) 37%, rgba(255,255,255,.05) 63%);
+    background-size: 400% 100%;
+    border-radius: 8px;
+    animation: sk-shimmer 1.4s ease infinite;
+  }
+  .sk-line { height: 12px; }
+  .widget.sk-card {
+    min-height: 152px;
+    background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%);
+    background-size: 400% 100%;
+    animation: sk-shimmer 1.4s ease infinite;
+  }
+  @keyframes sk-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  .dash-error { padding: 22px; text-align: center; color: var(--muted); font-size: 14px; }
+  .dash-error button {
+    margin-left: 8px; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 6px 12px; font-weight: 700; cursor: pointer;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sk, .widget.sk-card { animation: none; }
+  }
 </style>
 {% endblock %}
 
@@ -241,527 +268,65 @@
   </form>
 </div>
 
-{% if not db_ok %}
-<div class="widget"><div class="widget-body empty-state">
-  <div class="empty-icon">⚠</div>
-  Database unreachable.
-</div></div>
-{% endif %}
+{# ── Progressive sections — each fetched independently and swapped in.
+     The data-load name maps to a /_dash/<name> fragment endpoint. ── #}
+<div data-load="track" class="dash-slot">
+  <div class="card"><div class="card-pad">
+    <div class="sk sk-line" style="width:38%"></div>
+    <div class="sk" style="height:34px;width:58%;margin-top:12px"></div>
+    <div class="sk" style="height:64px;margin-top:12px"></div>
+  </div></div>
+</div>
 
-{# Compute weather class once #}
-{% if briefing %}
-  {% set posture = briefing.plan.posture %}
-  {% if posture == 'aggressive' %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-sun', 'Bold', 'Clear · full size', 'sun' %}
-  {% elif posture == 'defensive' %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-storm', 'Cautious', 'Stormy · half size', 'storm' %}
-  {% else %}
-    {% set w_class, w_label, w_cond, w_icon = 'w-weather-mix', 'Neutral', 'Mixed · selective', 'cloudsun' %}
-  {% endif %}
-{% endif %}
-
-{# ── Track record: NAV curve + decision quality (lead) ───────── #}
-{% if nav %}
-<div class="card">
-  <div class="card-pad">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;">
-      <div class="eyebrow">Track record</div>
-      <a href="/debriefs" class="muted" style="font-size:12px;text-decoration:none;">journal&nbsp;›</a>
-    </div>
-
-    {# NAV equity curve #}
-    <a href="#nav" data-sheet="nav" style="display:block;text-decoration:none;color:inherit;margin-top:8px;">
-      <div style="display:flex;align-items:baseline;gap:10px;">
-        <span class="num" style="font-size:32px;font-weight:800;letter-spacing:-.02em;">{{ nav.ending_nav | money2 }}</span>
-        {% if nav_chart %}
-        <span class="num" style="font-size:14px;font-weight:700;color:{% if nav_chart.up %}var(--green){% else %}var(--red){% endif %};">{{ '%+.2f'|format(nav_chart.change_pct) }}%</span>
-        {% endif %}
-        <span class="muted" style="font-size:12px;">NAV{% if nav_chart and nav_chart.n > 1 %} · {{ nav_chart.n }} marks{% endif %}</span>
-      </div>
-      {% if nav_chart %}
-      {% set col = 'var(--green)' if nav_chart.up else 'var(--red)' %}
-      <svg class="navchart" viewBox="0 0 {{ nav_chart.w }} {{ nav_chart.h }}" preserveAspectRatio="none" style="width:100%;height:64px;margin-top:8px;display:block;">
-        {% if nav_chart.area %}<path d="{{ nav_chart.area }}" fill="{{ col }}" opacity=".10"/>{% endif %}
-        <path d="{{ nav_chart.line }}" fill="none" stroke="{{ col }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"{% if nav_chart.n == 1 %} stroke-dasharray="3 4" opacity=".55"{% endif %}/>
-        <circle cx="{{ '%.1f'|format(nav_chart.dot[0]) }}" cy="{{ '%.1f'|format(nav_chart.dot[1]) }}" r="2.6" fill="{{ col }}"/>
-      </svg>
-      {% if nav_chart.n == 1 %}<div class="muted" style="font-size:11px;margin-top:2px;">curve builds as daily NAV marks accrue</div>{% endif %}
-      {% endif %}
-    </a>
-
-    {# Decision quality — the learning scoreboard #}
-    {% if confidence %}
-    <a href="/debriefs" style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);text-decoration:none;color:inherit;">
-      <div style="flex:1;min-width:0;">
-        <div class="eyebrow" style="margin-bottom:5px;">Decision quality</div>
-        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-          <span class="num {{ confidence.avg_score | score_class }}" style="font-size:26px;font-weight:800;letter-spacing:-.02em;">{{ '%.2f'|format(confidence.avg_score) }}</span>
-          {% if confidence.trend %}<span class="num" style="font-size:13px;font-weight:700;color:{% if confidence.trend=='up' %}var(--green){% elif confidence.trend=='down' %}var(--red){% else %}var(--muted){% endif %};">{{ '↑' if confidence.trend=='up' else '↓' if confidence.trend=='down' else '→' }} {{ confidence.trend }}</span>{% endif %}
-          <span class="muted" style="font-size:12px;">{{ confidence.executed }}/{{ confidence.n }} executed · {{ confidence.sessions }} session{{ 's' if confidence.sessions != 1 else '' }}</span>
-        </div>
-      </div>
-      <span class="muted" style="font-size:18px;">›</span>
-    </a>
-    {% endif %}
+<div data-load="row1" class="dash-slot">
+  <div class="wgrid">
+    <div class="widget sk-card"></div>
+    <div class="widget sk-card"></div>
   </div>
 </div>
-{% endif %}
 
-{# ── ROW 1: Posture + Today's run ───────────────────────────── #}
-<div class="wgrid">
-  {% if briefing and (freshness is not defined or freshness.briefing.fresh) %}
-  <a class="widget w-weather {{ w_class }} tap" data-sheet="posture" href="#posture">
-    <div class="widget-body">
-      <div class="w-head">
-        <div class="w-title">
-          <span class="w-icon">
-            {% if w_icon == 'sun' %}
-            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" fill="#fff"/>
-              <g stroke="#fff" stroke-width="1.5" stroke-linecap="round">
-                <line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/>
-                <line x1="3" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/>
-                <line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/>
-                <line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>
-              </g></svg>
-            {% elif w_icon == 'storm' %}
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M7 16c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H7z" fill="#fff"/>
-              <path d="M11 14l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffd60a"/>
-            </svg>
-            {% else %}
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="8" cy="9" r="2.6" fill="#ffd60a"/>
-              <path d="M9 18c-2.2 0-4-1.8-4-4 0-2 1.5-3.7 3.4-4 .4-2.6 2.6-4.5 5.3-4.5 2.4 0 4.4 1.6 5.1 3.7.3-.1.6-.2 1-.2 2 0 3.7 1.7 3.7 3.8 0 2-1.7 3.7-3.7 3.7H9z" fill="#fff"/>
-            </svg>
-            {% endif %}
-          </span>
-          Posture
-        </div>
-      </div>
-      <div class="temp">{{ w_label }}</div>
-      <div class="cond">{{ w_cond }}</div>
-    </div>
-  </a>
-  {% elif freshness is defined and not freshness.briefing.fresh %}
-  <div class="widget w-weather w-pending">
-    <div class="widget-body">
-      <span class="w-pending-icon">◌</span>
-      <span class="w-pending-title">Posture</span>
-      <span class="w-pending-note">{{ freshness.briefing.note }}</span>
-    </div>
-  </div>
-  {% endif %}
-
-  {# Macro today — the day's US releases + how each came in (tap for detail).
-     Always shown, even on a day with no scheduled releases (empty calendar). #}
-  <a class="widget w-runcal tap" data-sheet="macro" href="#macro" style="display:block;color:inherit;text-decoration:none;">
-    <div class="widget-body">
-      <div class="w-head">
-        <div class="w-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</div>
-        <span class="w-accessory">{{ macro|length }}</span>
-      </div>
-      {% if macro %}
-      {% for e in macro[:3] %}
-      <div class="macro-ev {{ e.surprise if e.released else 'pending' }}">
-        <span class="me-t num">{{ e.time }}</span>
-        <span class="me-n">{{ e.name }}</span>
-        <span class="me-s">{% if e.released %}{% if e.surprise=='above' %}▲{% elif e.surprise=='below' %}▼{% elif e.surprise=='inline' %}={% else %}•{% endif %}{% else %}◷{% endif %}</span>
-      </div>
-      {% endfor %}
-      {% if macro|length > 3 %}<div class="muted" style="font-size:11px;margin-top:5px;">+{{ macro|length - 3 }} more ›</div>{% endif %}
-      {% else %}
-      <div class="macro-ev pending">
-        <span class="me-n muted">No economic releases scheduled</span>
-      </div>
-      {% endif %}
-    </div>
-  </a>
+<div data-load="main" class="dash-slot">
+  <div class="w-section"><h2 class="sk sk-line" style="width:140px;height:20px"></h2></div>
+  <div class="widget w-full"><div class="uni-card-body">
+    <div class="sk" style="height:16px;margin:10px 0"></div>
+    <div class="sk" style="height:16px;margin:10px 0;width:82%"></div>
+    <div class="sk" style="height:16px;margin:10px 0;width:68%"></div>
+    <div class="sk" style="height:16px;margin:10px 0;width:74%"></div>
+  </div></div>
 </div>
 
-{# ── Today's book — one row per name: pick -> execute -> score ── #}
-{% if book_groups %}
-<div class="w-section" id="book">
-  <h2>Today's book</h2>
-</div>
-
-<div class="widget w-full" style="margin-bottom: 16px;">
-  <div class="uni-card-body">
-    <div class="w-head" style="margin-bottom: 6px;">
-      <div class="w-title">Universe → execution → score</div>
-      <span class="w-accessory">{% if exposure %}{{ exposure.longs }}L · {{ exposure.shorts }}S · net {{ exposure.net_pct|int }}% · gross {{ exposure.gross_pct|int }}%{% else %}{{ book|length }} names{% endif %}</span>
-    </div>
-
-    {% for g in book_groups %}
-    <div class="uni-layer" style="cursor: default;">
-      <div class="uni-layer-head">
-        <span class="uni-layer-name">{{ g.layer }}</span>
-        <span class="uni-layer-total num">{{ '%.0f'|format(g.total_weight) }}%</span>
-      </div>
-      {% for p in g.picks %}
-      <a class="uni-pick" {% if p.decision_id %}href="/debrief/{{ p.decision_id }}"{% endif %}
-         style="display:flex; align-items:center; gap:10px; color:inherit; text-decoration:none;">
-        <span style="flex:1; min-width:0;">
-          {% set side = held.get(p.ticker) if held else None %}
-          <span class="ticker">{{ p.ticker }}</span>{% if side %}<span class="side-tag {{ side }}">{{ side }}</span>{% endif %}
-          <span class="muted" style="font-size:11px; font-weight:600; margin-left:4px;">
-            {%- if side %}held{% elif p.pipeline_outcome == 'executed' %}executed{% elif p.pipeline_outcome and p.pipeline_outcome != 'not_traded' %}{{ p.pipeline_outcome }}{% else %}pending{% endif -%}
-          </span>
-        </span>
-        <span class="num w">{{ '%.1f'|format(p.weight_pct) }}%</span>
-        {% if p.score is not none %}
-        <span class="num {{ p.score | score_class }}" style="font-size:13px; font-weight:800; min-width:34px; text-align:right;">{{ '%.2f'|format(p.score) }}</span>
-        {% endif %}
-        {% if p.decision_id %}<span style="color:var(--muted); font-size:14px;">›</span>{% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
-{# ── Risk exits — intraday stop-loss flattens (source: risk-monitor) ── #}
-{% if risk_exits %}
-<div class="w-section"><h2>Risk exits</h2></div>
-<div class="widget w-full" style="margin-bottom:16px;">
-  <div class="widget-body" style="padding:14px 18px;">
-    <div class="w-head" style="margin-bottom:8px;">
-      <div class="w-title" style="color:var(--red);">▼ Stopped out intraday</div>
-      <span class="w-accessory">{{ risk_exits|length }}</span>
-    </div>
-    {% for x in risk_exits %}
-    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;
-                border-top:{% if loop.index0 > 0 %}1px solid var(--border){% else %}none{% endif %};">
-      <span class="ticker">{{ x.ticker }}</span>
-      <span class="muted num" style="font-size:13px;">{{ x.at }} ET · stop-loss</span>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
-{# ── Carry book — positions left from a prior settled plan ───────── #}
-{% if carry %}
-<div class="w-section">
-  <h2>Carrying overnight</h2>
-</div>
-
-<a class="widget w-full tap" data-sheet="carry" href="#carry" style="margin-bottom:16px;display:block;color:inherit;text-decoration:none;">
-  <div class="widget-body" style="padding:18px 20px;">
-    <div class="w-head" style="margin-bottom:10px;">
-      <div class="w-title">Carry book</div>
-      <span class="w-accessory">{{ carry|length }} {% if carry|length == 1 %}position{% else %}positions{% endif %}</span>
-    </div>
-    {% for c in carry[:3] %}
-    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-top:{% if loop.index0 > 0 %}1px solid var(--border){% else %}none{% endif %};">
-      <span>
-        <span class="ticker ticker-blue" style="font-size:17px;">{{ c.ticker }}</span>
-        <span class="muted num" style="font-size:12px;margin-left:8px;">×{{ c.size_shares }} · {{ c.side }}</span>
-      </span>
-      <span class="num muted" style="font-size:13px;">opened {{ c.opened_on }}</span>
-    </div>
-    {% endfor %}
-    {% if carry|length > 3 %}
-    <div class="muted" style="font-size:12px;margin-top:6px;text-align:center;">+{{ carry|length - 3 }} more</div>
-    {% endif %}
-  </div>
-</a>
-{% endif %}
-
-{% if db_ok and not briefing and not universe %}
-<div class="widget"><div class="widget-body empty-state">
-  <div class="empty-icon">◌</div>
-  No fund data yet. Run <code>./run.sh daily</code>.
-</div></div>
-{% endif %}
-
-{# ── How the day went — the fund's own EOD narrative (composed at the close,
-     after lessons are graded). alphalens only displays it; it never writes it. ── #}
-{% if narrative %}
-<div class="w-section" id="narrative"><h2>How the day went</h2></div>
-<div class="widget w-full" style="margin-bottom:16px;">
-  <div class="widget-body">
-    {% if narrative.headline %}
-    <div class="w-title" style="font-size:18px;margin-bottom:10px;">{{ narrative.headline }}</div>
-    {% endif %}
-    <p style="line-height:1.6;color:var(--text);margin:0 0 14px;">{{ narrative.narrative }}</p>
-    <div class="fills" style="display:flex;gap:18px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);font-size:14px;">
-      {% if narrative.day_pnl is not none %}<span><span class="l">Day P&amp;L</span> <span class="{{ narrative.day_pnl|pnl_class }}">{{ narrative.day_pnl|signed_money }}</span></span>{% endif %}
-      {% if narrative.spx_pct is not none %}<span><span class="l">S&amp;P</span> {{ narrative.spx_pct|signed_pct }}</span>{% endif %}
-      {% if narrative.regime %}<span><span class="l">Regime</span> {{ narrative.regime }}</span>{% endif %}
-      {% if narrative.avg_score is not none %}<span><span class="l">Avg score</span> {{ '%.2f'|format(narrative.avg_score) }}</span>{% endif %}
-      {% if narrative.decisions_scored %}<span><span class="l">Graded</span> {{ narrative.decisions_scored }}</span>{% endif %}
-    </div>
-    {% if narrative.lessons %}
-    <div style="margin-top:16px;">
-      <div class="muted" style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Lessons</div>
-      <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7;color:var(--text);">
-        {% for lesson in narrative.lessons %}<li>{{ lesson }}</li>{% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-    <div class="sheet-updated" style="margin-top:14px;">EOD narrative · {{ narrative.as_of_date }}</div>
-  </div>
-</div>
-{% endif %}
-
-{# ════════════════════════════════════════════════════════════
-   DETAIL SHEETS — slide up from bottom, "‹ Today" to dismiss
-   ════════════════════════════════════════════════════════════ #}
-
+{# Shared overlay for all slide-up detail sheets (the sheets themselves are
+   injected with their fragments). #}
 <div id="sheet-overlay" class="sheet-overlay"></div>
 
-{# Macro today sheet — the day's US releases + how each came in vs consensus.
-   Always rendered so the empty calendar is still tappable on a no-release day. #}
-<aside id="sheet-macro" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Macro {% if viewing_date %}{{ today.month_short|title }} {{ today.day }}{% else %}today{% endif %}</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    {% if spx is not none %}
-    <div class="row-card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <span class="muted" style="font-size:13px;">Market reaction · S&amp;P 500</span>
-      <span class="num {{ 'delta-up' if spx>=0 else 'delta-dn' }}" style="font-size:17px;font-weight:800;">{{ '%+.2f'|format(spx) }}%</span>
-    </div>
-    {% endif %}
-    {% for e in macro %}
-    <div class="sheet-event {{ 'done' if e.released else 'later' }}">
-      <div class="t">{{ e.time }}</div>
-      <div style="flex:1;">
-        <div class="ttl">{{ e.name }}
-          {% if e.released and e.surprise %}<span class="surprise {{ e.surprise }}">{{ {'above':'▲ above est','below':'▼ below est','inline':'= in line'}[e.surprise] }}</span>{% endif %}
-        </div>
-        <div class="nt">
-          {% if e.released %}actual <b style="color:var(--text);">{{ e.actual }}</b>{% if e.forecast %} · est {{ e.forecast }}{% endif %}{% if e.previous %} · prev {{ e.previous }}{% endif %}
-          {% else %}{% if e.forecast %}est {{ e.forecast }} · {% endif %}awaiting release ◷{% endif %}
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-    {% if not macro %}
-    <div class="row-card empty-state" style="text-align:center;padding:24px;">
-      <div class="empty-icon">◷</div>
-      No US economic releases scheduled today.
-    </div>
-    {% endif %}
-    <div class="sheet-updated" style="margin-top:20px;">US releases · times ET · "surprise" = actual vs consensus</div>
-  </div>
-</aside>
+{% endblock %}
 
-{# Posture sheet — full thesis, regime, risks #}
-{% if briefing %}
-<aside id="sheet-posture" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Today's briefing</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    {% if last_updated and last_updated.briefing %}
-    <div class="sheet-updated">Updated {{ last_updated.briefing }}</div>
-    {% endif %}
-    <div class="sheet-pill-row">
-      <span class="badge {{ posture }}">{{ posture }}</span>
-      <span class="badge neutral">{{ w_cond }}</span>
-    </div>
-    <p class="lead">{{ briefing.plan.session_thesis }}</p>
-
-    {% if briefing.plan.regime_summary %}
-    <h3>Regime</h3>
-    <p>{{ briefing.plan.regime_summary }}</p>
-    {% endif %}
-
-    {% if briefing.plan.risks_today %}
-    <h3>Risks today</h3>
-    <div class="sheet-risk-list">
-      {% for r in briefing.plan.risks_today %}
-      <div class="item">⚠ {{ r }}</div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-</aside>
-{% endif %}
-
-{# NAV sheet — values + breakdown #}
-{% if nav %}
-<aside id="sheet-nav" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Fund NAV</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    {% if last_updated and last_updated.nav %}
-    <div class="sheet-updated">Updated {{ last_updated.nav }}</div>
-    {% endif %}
-    <div style="text-align:center;padding:8px 0 6px;">
-      <div class="num" style="font-size:48px;font-weight:800;letter-spacing:-.03em;">{{ nav.ending_nav | money2 }}</div>
-      {% set pnl = nav.realised_pnl %}
-      {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
-      <div class="num {{ pnl | pnl_class }}" style="font-size:18px;font-weight:800;margin-top:6px;">
-        {{ pnl | signed_money }} · {{ '%+.2f'|format(pnl_pct) }}%
-      </div>
-      <div class="muted" style="font-size:12px;margin-top:4px;">last session</div>
-    </div>
-
-    <h3>Breakdown</h3>
-    <div class="sheet-stat-grid">
-      <div class="cell">
-        <div class="l">Starting</div>
-        <div class="num v">{{ nav.starting_nav | money }}</div>
-      </div>
-      <div class="cell">
-        <div class="l">Ending</div>
-        <div class="num v">{{ nav.ending_nav | money }}</div>
-      </div>
-      <div class="cell">
-        <div class="l">Realised</div>
-        <div class="num v {{ pnl | pnl_class }}">{{ pnl | signed_money }}</div>
-      </div>
-      <div class="cell">
-        <div class="l">As of</div>
-        <div class="v" style="font-size:16px;">{{ nav.as_of_date }}</div>
-      </div>
-    </div>
-
-    {% if nav.seed %}
-    <p class="muted" style="font-size:13px;">Seed value — no session marks yet.</p>
-    {% endif %}
-
-    <a href="/nav" class="sheet-link">View NAV history →</a>
-  </div>
-</aside>
-{% endif %}
-
-
-
-{# Per-ticker drilldown sheets — full plan-item detail #}
-{% if items and not planned %}
-{% for it in items %}
-  {% set pb = (playbooks or {}).get(it.ticker) %}
-  {% set rpnl = ((it.exit_fill_price - it.entry_fill_price) * it.size_shares) if (it.entry_fill_price and it.exit_fill_price) else None %}
-  {% set rpnl_pct = ((it.exit_fill_price - it.entry_fill_price) / it.entry_fill_price * 100) if (it.entry_fill_price and it.exit_fill_price) else None %}
-<aside id="sheet-item-{{ it.ticker }}" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Plan</button>
-    <h2 class="sheet-title">{{ it.ticker }}</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    {% if last_updated and last_updated.session %}
-    <div class="sheet-updated">Updated {{ last_updated.session }}</div>
-    {% endif %}
-    <div class="sheet-pill-row">
-      <span class="badge {{ 'aggressive' if it.side == 'long' else 'defensive' }}">{{ it.side }}</span>
-      <span class="item-status {{ it.status }}">{{ it.status }}</span>
-      <span class="badge neutral num">×{{ it.size_shares }}</span>
-      {% if pb %}<span class="layer-pill {{ pb.layer }}">{{ pb.layer }} · {{ '%.0f'|format(pb.weight_pct) }}%</span>{% endif %}
-    </div>
-
-    {% if rpnl is not none %}
-    <div style="text-align:center;padding:6px 0 12px;">
-      <div class="num {{ rpnl | pnl_class }}" style="font-size:42px;font-weight:800;letter-spacing:-.03em;">{{ rpnl | signed_money }}</div>
-      {% if rpnl_pct is not none %}
-      <div class="num {{ rpnl_pct | pnl_class }}" style="font-size:15px;font-weight:700;margin-top:4px;">{{ rpnl_pct | signed_pct }}</div>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    <h3>Levels</h3>
-    <div class="sheet-levels">
-      <div class="lvl">
-        <div class="l">Entry</div>
-        <div class="num v">{{ '%.2f'|format(it.entry_low) }}–{{ '%.2f'|format(it.entry_high) }}</div>
-      </div>
-      <div class="lvl stop">
-        <div class="l">Stop</div>
-        <div class="num v">{{ '%.2f'|format(it.stop) }}</div>
-      </div>
-      <div class="lvl target">
-        <div class="l">Target</div>
-        <div class="num v">{{ '%.2f'|format(it.target) }}</div>
-      </div>
-    </div>
-
-    {% if it.entry_fill_price %}
-    <h3>Fills</h3>
-    <div class="row-card" style="font-size:14px;line-height:1.6;">
-      Entry <strong class="num">${{ '%.2f'|format(it.entry_fill_price) }}</strong>
-      {% if it.exit_fill_price %}
-      <br>Exit <strong class="num">${{ '%.2f'|format(it.exit_fill_price) }}</strong>
-      {% if it.exit_reason %}<span class="muted"> · {{ it.exit_reason }}</span>{% endif %}
-      {% endif %}
-    </div>
-    {% endif %}
-
-    {% if pb and pb.recommended_action %}
-    <h3>Action</h3>
-    <div class="row-card">
-      <span class="action {{ pb.recommended_action }}">{{ pb.recommended_action }}</span>
-      {% if pb.action_rationale %}
-      <p style="margin-top:10px;margin-bottom:0;font-size:14px;line-height:1.55;color:var(--text-2);">{{ pb.action_rationale }}</p>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    {% if pb and pb.catalyst %}
-    <h3>Catalyst</h3>
-    <p>{{ pb.catalyst }}</p>
-    {% endif %}
-
-    {% if pb and pb.technicals %}
-    <h3>Technicals</h3>
-    <p>{{ pb.technicals }}</p>
-    {% endif %}
-
-    {% if it.rationale and not pb %}
-    <h3>Rationale</h3>
-    <p>{{ it.rationale }}</p>
-    {% endif %}
-  </div>
-</aside>
-{% endfor %}
-{% endif %}
-
-
-{# Carry book sheet — every overnight position with levels #}
-{% if carry %}
-<aside id="sheet-carry" class="sheet">
-  <header class="sheet-hdr">
-    <button class="sheet-back" type="button">Today</button>
-    <h2 class="sheet-title">Carry book</h2>
-    <span class="sp"></span>
-  </header>
-  <div class="sheet-body">
-    <p class="lead" style="margin-bottom:18px;">
-      Positions held over from a prior settled plan. The ExitMonitor is still
-      watching their stop/target; rotation will close any whose ticker drops
-      out of the next universe.
-    </p>
-    {% for c in carry %}
-    <div class="row-card" style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <span>
-          <span class="ticker ticker-blue" style="font-size:22px;">{{ c.ticker }}</span>
-          <span class="muted num" style="font-size:13px;margin-left:8px;">×{{ c.size_shares }} · {{ c.side }}</span>
-        </span>
-        {% if c.entry_fill_price %}
-        <span class="num" style="font-size:18px;font-weight:700;">@ {{ '%.2f'|format(c.entry_fill_price) }}</span>
-        {% endif %}
-      </div>
-      <div class="muted" style="font-size:12px;margin-top:6px;letter-spacing:.04em;">
-        opened {{ c.opened_on }}
-        {% if c.stop %} · stop {{ '%.2f'|format(c.stop) }}{% endif %}
-        {% if c.target %} · target {{ '%.2f'|format(c.target) }}{% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</aside>
-{% endif %}
-
-
+{% block scripts %}
+<script>
+  // Progressive loader: fetch each section fragment in parallel and swap it in
+  // as it arrives, then bind any detail sheets it brought with it. No caching —
+  // every load hits the server fresh (matches the app's no-store policy).
+  (function () {
+    var d = new URLSearchParams(location.search).get('d');
+    var qs = d ? ('?d=' + encodeURIComponent(d)) : '';
+    document.querySelectorAll('[data-load]').forEach(function (slot) {
+      var name = slot.getAttribute('data-load');
+      fetch('/_dash/' + name + qs, { headers: { 'X-Requested-With': 'fetch' } })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.text();
+        })
+        .then(function (html) {
+          slot.innerHTML = html;
+          slot.removeAttribute('data-load');
+          if (window.initSheets) window.initSheets(slot);
+        })
+        .catch(function () {
+          slot.innerHTML =
+            '<div class="dash-error">Couldn’t load this section.' +
+            '<button type="button" onclick="location.reload()">Retry</button></div>';
+        });
+    });
+  })();
+</script>
 {% endblock %}

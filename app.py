@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
@@ -154,6 +155,25 @@ def _short_dt(s):
         return dt.strftime("%b %d %H:%M")
     except Exception:
         return str(s)[:16]
+
+
+# ── Parallel fan-out ─────────────────────────────────────────────────────────
+
+def _gather(tasks: dict) -> dict:
+    """Run independent DB reads concurrently; return {key: result}.
+
+    Each db.py helper opens its own short-lived connection, so the cost of a
+    page is dominated by connection setup (TLS + SET search_path, ~hundreds of
+    ms each on Neon) rather than the SQL. Running the reads on threads lets the
+    connections overlap: wall time collapses to the slowest single read instead
+    of the sum. The helpers swallow their own errors (return None/{}/[]), so a
+    future never raises here. This is orchestration only — no data is cached.
+    """
+    if not tasks:
+        return {}
+    with ThreadPoolExecutor(max_workers=len(tasks)) as ex:
+        futures = {key: ex.submit(fn) for key, fn in tasks.items()}
+        return {key: fut.result() for key, fut in futures.items()}
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
@@ -330,135 +350,139 @@ def _nav_chart(history, *, w: int = 300, h: int = 64, pad: int = 6) -> Optional[
     }
 
 
+def _synth_briefing(universe) -> Optional[dict]:
+    """Synthesize the briefing/posture from the scout's curated universe.
+
+    The legacy fund_briefings/pm_plans tables were consolidated away, so Posture
+    (the day's thesis) is derived from the universe: a concentrated top weight
+    signals an aggressive tilt, an even spread is neutral. Returns None when there
+    is no universe to derive from.
+    """
+    if not universe or universe is False:
+        return None
+    picks = universe.get("picks", []) or []
+    _max_w = max((p.get("weight_pct") or 0) for p in picks) if picks else 0
+    return {
+        "as_of_date": universe.get("as_of_date"),
+        "plan": {
+            "posture": "aggressive" if _max_w >= 16 else "neutral",
+            "session_thesis": universe.get("rationale")
+                or "Curated AI-stack universe for today.",
+            "regime_summary": "",
+            "risks_today": [],
+            "playbooks": [],
+        },
+    }
+
+
 @app.route("/")
 @_login_required
 def index():
-    # Optional ?d=YYYY-MM-DD renders a past trading day; otherwise the live view.
+    # The dashboard is rendered progressively: this route returns the shell
+    # (header + skeletons) with no DB work, so first paint is instant. The
+    # heavy panels are fetched as fragments (/_dash/*) and stream in client-side.
     as_of = _parse_view_date(request.args.get("d"))
-    universe = _db.fetch_current_universe(as_of=as_of)
-    nav      = _db.fetch_current_nav(as_of=as_of)
-    # Legacy briefing/plan/session tables (fund_briefings, pm_plans) were
-    # consolidated away — posture, the plan and realised P&L are synthesized from
-    # the curated universe + real fills below.
-    briefing = None
-    session_hdr = None
-    items = None
-    realised = None
-
-    # Post-consolidation: the legacy briefing/plan tables are gone. Synthesize
-    # a briefing + plan from the scout's curated universe so Posture (the day's
-    # thesis) and Plan (today's intended holdings) reflect real scout output
-    # instead of sitting blank.
-    synthetic_plan = False
-    if briefing is None and universe and universe is not False:
-        synthetic_plan = True
-        picks = universe.get("picks", []) or []
-        # Derive posture from the scout's conviction: a concentrated top weight
-        # signals an aggressive tilt; an even spread is neutral.
-        _max_w = max((p.get("weight_pct") or 0) for p in picks) if picks else 0
-        briefing = {
-            "as_of_date": universe.get("as_of_date"),
-            "plan": {
-                "posture": "aggressive" if _max_w >= 16 else "neutral",
-                "session_thesis": universe.get("rationale")
-                    or "Curated AI-stack universe for today.",
-                "regime_summary": "",
-                "risks_today": [],
-                "playbooks": [],
-            },
-        }
-        # Plan = today's execution checklist: each universe name marked filled
-        # (and held) or pending, from real fills. Execution reflects *current*
-        # positions, so it's only meaningful for the live view — skip it when
-        # viewing a past date (the "Today's book" panel carries that day's record).
-        if not as_of:
-            execu = _db.execution_by_ticker() or {}
-            if not items:
-                items = []
-                for p in picks:
-                    t = p.get("ticker")
-                    ex = execu.get(t) or {}
-                    filled = bool(ex.get("fills"))
-                    items.append({
-                        "ticker": t, "side": "long",
-                        "layer": p.get("layer"), "weight_pct": p.get("weight_pct"),
-                        "rationale": p.get("rationale"),
-                        "status": "filled" if filled else "pending",
-                        "fill_price": ex.get("entry_price"),
-                        "held": abs(ex.get("net") or 0) > 0.0001,
-                    })
-        if not session_hdr or session_hdr is False:
-            session_hdr = {"briefing_date": universe.get("as_of_date"), "plan_id": None}
-
-    # Carry book relied on the consolidated-away pm_plans tables; the live book
-    # is shown via positions/exposure instead.
-    carry = []
-
-    universe_groups = _group_picks_by_layer(universe.get("picks", [])) if universe else []
-    book = _db.fetch_book(as_of=as_of) or []
-    book_groups = _group_picks_by_layer(book) if book else []
-
-    # Pair each plan item with its playbook so the per-ticker drilldown
-    # sheet can surface catalyst / technicals / action rationale.
-    playbooks_by_ticker = {}
-    if briefing and isinstance(briefing, dict):
-        for pb in (briefing.get("plan", {}).get("playbooks") or []):
-            playbooks_by_ticker[pb["ticker"]] = pb
-
-    db_ok = not (universe is None and briefing is None and nav is None)
-
-    active_date = date.fromisoformat(as_of) if as_of else _active_trading_date(universe, briefing)
-    freshness   = _card_freshness(
-        active_date=active_date, universe=universe, briefing=briefing,
-        nav=nav, session_hdr=session_hdr,
-    )
-
-    def _iso(d) -> Optional[str]:
-        return str(d) if d else None
-    last_updated = {
-        "universe":  _iso(universe.get("as_of_date")) if universe and universe is not False else None,
-        "briefing":  _iso(briefing.get("as_of_date")) if briefing and isinstance(briefing, dict) else None,
-        "nav":       _iso(nav.get("as_of_date")) if nav else None,
-        "session":   _iso(session_hdr.get("briefing_date")) if session_hdr and session_hdr is not False else None,
-    }
-
+    active = date.fromisoformat(as_of) if as_of else _now_market().date()
     return render_template(
         "dashboard.html",
         active="dashboard",
-        db_ok=db_ok,
-        universe=universe,
-        universe_groups=universe_groups,
-        book=book,
-        book_groups=book_groups,
-        briefing=briefing,
-        nav=nav,
-        session_hdr=session_hdr,
-        items=items,
-        realised=realised,
-        playbooks=playbooks_by_ticker,
-        today=_today_header(active_date),
-        freshness=freshness,
-        last_updated=last_updated,
-        carry=carry,
-        planned=synthetic_plan,
-        held={} if as_of else _db.held_sides(),
-        exposure=None if as_of else _db.book_exposure(),
-        risk_exits=_db.risk_exits(active_date.isoformat()),
-        confidence=_db.decision_confidence(),
-        nav_chart=_nav_chart(_db.fetch_nav_history(60, as_of=as_of)),
-        run=_db.today_run(as_of=as_of),
-        macro=_db.macro_events(as_of or _now_market().date().isoformat()),
-        spx=_db.spx_move(as_of or _now_market().date().isoformat()),
-        narrative=_db.fetch_day_narrative(as_of or _now_market().date().isoformat()),
+        today=_today_header(active),
         viewing_date=as_of,
         today_iso=_now_market().date().isoformat(),
+    )
+
+
+@app.route("/_dash/track")
+@_login_required
+def dash_track():
+    """Fragment: track record — NAV equity curve + decision quality."""
+    as_of = _parse_view_date(request.args.get("d"))
+    r = _gather({
+        "nav":        lambda: _db.fetch_current_nav(as_of=as_of),
+        "nav_hist":   lambda: _db.fetch_nav_history(60, as_of=as_of),
+        "confidence": _db.decision_confidence,
+    })
+    nav = r["nav"]
+    return render_template(
+        "_dash_track.html",
+        nav=nav,
+        nav_chart=_nav_chart(r["nav_hist"]),
+        confidence=r["confidence"],
+        last_updated={"nav": str(nav["as_of_date"]) if nav else None},
+    )
+
+
+@app.route("/_dash/row1")
+@_login_required
+def dash_row1():
+    """Fragment: posture widget + macro calendar (and their detail sheets)."""
+    as_of = _parse_view_date(request.args.get("d"))
+    today_iso = _now_market().date().isoformat()
+    r = _gather({
+        "universe": lambda: _db.fetch_current_universe(as_of=as_of),
+        "macro":    lambda: _db.macro_events(as_of or today_iso),
+        "spx":      lambda: _db.spx_move(as_of or today_iso),
+    })
+    universe = r["universe"]
+    briefing = _synth_briefing(universe)
+    active_date = date.fromisoformat(as_of) if as_of else _active_trading_date(universe, briefing)
+    freshness = _card_freshness(
+        active_date=active_date, universe=universe, briefing=briefing,
+        nav=None, session_hdr=None,
+    )
+    return render_template(
+        "_dash_row1.html",
+        briefing=briefing,
+        macro=r["macro"],
+        spx=r["spx"],
+        freshness=freshness,
+        viewing_date=as_of,
+        today=_today_header(active_date),
+        last_updated={"briefing": str(briefing["as_of_date"]) if briefing else None},
+    )
+
+
+@app.route("/_dash/main")
+@_login_required
+def dash_main():
+    """Fragment: today's book + risk exits + the fund's EOD narrative."""
+    as_of = _parse_view_date(request.args.get("d"))
+    live = not as_of
+    today_iso = _now_market().date().isoformat()
+    tasks = {
+        "universe":  lambda: _db.fetch_current_universe(as_of=as_of),
+        "book":      lambda: _db.fetch_book(as_of=as_of),
+        "narrative": lambda: _db.fetch_day_narrative(as_of or today_iso),
+    }
+    if live:
+        tasks["held"]     = _db.held_sides
+        tasks["exposure"] = _db.book_exposure
+    r = _gather(tasks)
+
+    universe = r["universe"]
+    book = r["book"] or []
+    briefing = _synth_briefing(universe)
+    active_date = date.fromisoformat(as_of) if as_of else _active_trading_date(universe, briefing)
+    return render_template(
+        "_dash_main.html",
+        # universe is None only on a DB error (False = simply no universe yet).
+        db_ok=universe is not None,
+        universe=universe,
+        briefing=briefing,
+        book_groups=_group_picks_by_layer(book) if book else [],
+        book_count=len(book),
+        exposure=r.get("exposure"),
+        held=r.get("held") or {},
+        risk_exits=_db.risk_exits(active_date.isoformat()),
+        narrative=r["narrative"],
     )
 
 
 @app.route("/universe")
 @_login_required
 def universe_page():
-    u = _db.fetch_current_universe()
+    data = _gather({"u": _db.fetch_current_universe, "held": _db.held_tickers})
+    u = data["u"]
     yesterday = None
     groups = []
     if u and u is not False:
@@ -470,7 +494,7 @@ def universe_page():
         universe=u,
         yesterday=yesterday,
         groups=groups,
-        held=_db.held_tickers(),
+        held=data["held"],
     )
 
 
@@ -480,10 +504,18 @@ def positions_page():
     # The live book from the consolidated schema: every currently-held name
     # (held_sides applies the fund's dust filter), enriched with its entry/size
     # from fills and its layer/weight/score from today's universe pick.
-    sides = _db.held_sides() or {}
-    execu = _db.execution_by_ticker() or {}
-    marked = _db.holdings_marked() or {}
-    book_by_t = {r["ticker"]: r for r in (_db.fetch_book() or [])}
+    data = _gather({
+        "sides":    _db.held_sides,
+        "execu":    _db.execution_by_ticker,
+        "marked":   _db.holdings_marked,
+        "book":     _db.fetch_book,
+        "exposure": _db.book_exposure,
+        "nav":      _db.fetch_current_nav,
+    })
+    sides = data["sides"] or {}
+    execu = data["execu"] or {}
+    marked = data["marked"] or {}
+    book_by_t = {row["ticker"]: row for row in (data["book"] or [])}
     holdings = []
     for ticker, side in sides.items():
         ex = execu.get(ticker) or {}
@@ -514,8 +546,8 @@ def positions_page():
         "positions.html",
         active="positions",
         holdings=holdings,
-        exposure=_db.book_exposure(),
-        nav=_db.fetch_current_nav(),
+        exposure=data["exposure"],
+        nav=data["nav"],
     )
 
 

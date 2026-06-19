@@ -1,0 +1,97 @@
+{# Fragment: Track record — NAV equity curve + decision quality, plus NAV sheet. #}
+{% if nav %}
+<div class="card">
+  <div class="card-pad">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div class="eyebrow">Track record</div>
+      <a href="/debriefs" class="muted" style="font-size:12px;text-decoration:none;">journal&nbsp;›</a>
+    </div>
+
+    {# NAV equity curve #}
+    <a href="#nav" data-sheet="nav" style="display:block;text-decoration:none;color:inherit;margin-top:8px;">
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <span class="num" style="font-size:32px;font-weight:800;letter-spacing:-.02em;">{{ nav.ending_nav | money2 }}</span>
+        {% if nav_chart %}
+        <span class="num" style="font-size:14px;font-weight:700;color:{% if nav_chart.up %}var(--green){% else %}var(--red){% endif %};">{{ '%+.2f'|format(nav_chart.change_pct) }}%</span>
+        {% endif %}
+        <span class="muted" style="font-size:12px;">NAV{% if nav_chart and nav_chart.n > 1 %} · {{ nav_chart.n }} marks{% endif %}</span>
+      </div>
+      {% if nav_chart %}
+      {% set col = 'var(--green)' if nav_chart.up else 'var(--red)' %}
+      <svg class="navchart" viewBox="0 0 {{ nav_chart.w }} {{ nav_chart.h }}" preserveAspectRatio="none" style="width:100%;height:64px;margin-top:8px;display:block;">
+        {% if nav_chart.area %}<path d="{{ nav_chart.area }}" fill="{{ col }}" opacity=".10"/>{% endif %}
+        <path d="{{ nav_chart.line }}" fill="none" stroke="{{ col }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"{% if nav_chart.n == 1 %} stroke-dasharray="3 4" opacity=".55"{% endif %}/>
+        <circle cx="{{ '%.1f'|format(nav_chart.dot[0]) }}" cy="{{ '%.1f'|format(nav_chart.dot[1]) }}" r="2.6" fill="{{ col }}"/>
+      </svg>
+      {% if nav_chart.n == 1 %}<div class="muted" style="font-size:11px;margin-top:2px;">curve builds as daily NAV marks accrue</div>{% endif %}
+      {% endif %}
+    </a>
+
+    {# Decision quality — the learning scoreboard #}
+    {% if confidence %}
+    <a href="/debriefs" style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);text-decoration:none;color:inherit;">
+      <div style="flex:1;min-width:0;">
+        <div class="eyebrow" style="margin-bottom:5px;">Decision quality</div>
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+          <span class="num {{ confidence.avg_score | score_class }}" style="font-size:26px;font-weight:800;letter-spacing:-.02em;">{{ '%.2f'|format(confidence.avg_score) }}</span>
+          {% if confidence.trend %}<span class="num" style="font-size:13px;font-weight:700;color:{% if confidence.trend=='up' %}var(--green){% elif confidence.trend=='down' %}var(--red){% else %}var(--muted){% endif %};">{{ '↑' if confidence.trend=='up' else '↓' if confidence.trend=='down' else '→' }} {{ confidence.trend }}</span>{% endif %}
+          <span class="muted" style="font-size:12px;">{{ confidence.executed }}/{{ confidence.n }} executed · {{ confidence.sessions }} session{{ 's' if confidence.sessions != 1 else '' }}</span>
+        </div>
+      </div>
+      <span class="muted" style="font-size:18px;">›</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# NAV sheet — values + breakdown #}
+{% if nav %}
+<aside id="sheet-nav" class="sheet">
+  <header class="sheet-hdr">
+    <button class="sheet-back" type="button">Today</button>
+    <h2 class="sheet-title">Fund NAV</h2>
+    <span class="sp"></span>
+  </header>
+  <div class="sheet-body">
+    {% if last_updated and last_updated.nav %}
+    <div class="sheet-updated">Updated {{ last_updated.nav }}</div>
+    {% endif %}
+    <div style="text-align:center;padding:8px 0 6px;">
+      <div class="num" style="font-size:48px;font-weight:800;letter-spacing:-.03em;">{{ nav.ending_nav | money2 }}</div>
+      {% set pnl = nav.realised_pnl %}
+      {% set pnl_pct = ((pnl / nav.starting_nav) * 100) if nav.starting_nav else 0 %}
+      <div class="num {{ pnl | pnl_class }}" style="font-size:18px;font-weight:800;margin-top:6px;">
+        {{ pnl | signed_money }} · {{ '%+.2f'|format(pnl_pct) }}%
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:4px;">last session</div>
+    </div>
+
+    <h3>Breakdown</h3>
+    <div class="sheet-stat-grid">
+      <div class="cell">
+        <div class="l">Starting</div>
+        <div class="num v">{{ nav.starting_nav | money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">Ending</div>
+        <div class="num v">{{ nav.ending_nav | money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">Realised</div>
+        <div class="num v {{ pnl | pnl_class }}">{{ pnl | signed_money }}</div>
+      </div>
+      <div class="cell">
+        <div class="l">As of</div>
+        <div class="v" style="font-size:16px;">{{ nav.as_of_date }}</div>
+      </div>
+    </div>
+
+    {% if nav.seed %}
+    <p class="muted" style="font-size:13px;">Seed value — no session marks yet.</p>
+    {% endif %}
+
+    <a href="/nav" class="sheet-link">View NAV history →</a>
+  </div>
+</aside>
+{% endif %}
