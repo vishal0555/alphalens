@@ -4,11 +4,7 @@
   <div class="card-pad">
     <div style="display:flex;align-items:baseline;justify-content:space-between;">
       <div class="eyebrow">Track record</div>
-      <span style="font-size:12px;">
-        <a href="/beta" class="muted" style="text-decoration:none;">beta</a>
-        <span class="muted">·</span>
-        <a href="/debriefs" class="muted" style="text-decoration:none;">journal&nbsp;›</a>
-      </span>
+      <a href="/debriefs" class="muted" style="font-size:12px;text-decoration:none;">journal&nbsp;›</a>
     </div>
 
     {# NAV equity curve #}
@@ -30,6 +26,15 @@
       {% if nav_chart.n == 1 %}<div class="muted" style="font-size:11px;margin-top:2px;">curve builds as daily NAV marks accrue</div>{% endif %}
       {% endif %}
     </a>
+
+    {# Scorecard: fund vs a passive QQQ + 200d-overlay benchmark. #}
+    {% if nav.benchmark_nav %}
+    {% set rel = (nav.ending_nav / nav.benchmark_nav - 1) * 100 %}
+    <div class="muted" style="font-size:12px;margin-top:6px;">
+      vs QQQ+overlay {{ nav.benchmark_nav | money2 }}
+      <span class="num {{ rel | pnl_class }}" style="font-weight:700;">({{ '%+.1f'|format(rel) }}%)</span>
+    </div>
+    {% endif %}
 
     {# Decision quality — the learning scoreboard #}
     {% if confidence %}

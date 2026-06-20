@@ -604,27 +604,5 @@ def nav_page():
     )
 
 
-@app.route("/beta")
-@_login_required
-def beta_page():
-    """Risk-managed beta book — SPY + a 200-day de-risk overlay (read-only)."""
-    r = _gather({
-        "series": lambda: _db.beta_nav_series(4000),
-        "latest": _db.beta_latest,
-    })
-    series = r["series"] or []
-    chart = _nav_chart(
-        list(reversed([{"ending_nav": p["nav"]} for p in series]))
-    ) if series else None
-    perf = None
-    if series:
-        s0, s1 = series[0], series[-1]
-        strat = (float(s1["nav"]) / float(s0["nav"]) - 1) * 100 if s0["nav"] else None
-        b0, b1 = s0.get("benchmark_nav"), s1.get("benchmark_nav")
-        bench = (float(b1) / float(b0) - 1) * 100 if (b0 and b1) else None
-        perf = {"strat": strat, "bench": bench}
-    return render_template("beta.html", active="beta", latest=r["latest"], chart=chart, perf=perf)
-
-
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

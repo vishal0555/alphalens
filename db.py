@@ -381,7 +381,8 @@ def fetch_current_nav(as_of: Optional[str] = None) -> Optional[dict]:
         with _conn() as conn, conn.cursor() as cur:
             if as_of:
                 cur.execute("""
-                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
+                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at,
+                           benchmark_nav
                       FROM fund_nav
                      WHERE as_of_date <= %s
                      ORDER BY as_of_date DESC, created_at DESC
@@ -389,7 +390,8 @@ def fetch_current_nav(as_of: Optional[str] = None) -> Optional[dict]:
                 """, (as_of,))
             else:
                 cur.execute("""
-                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at
+                    SELECT as_of_date, starting_nav, realised_pnl, ending_nav, created_at,
+                           benchmark_nav
                       FROM fund_nav
                      ORDER BY as_of_date DESC, created_at DESC
                      LIMIT 1
@@ -401,6 +403,7 @@ def fetch_current_nav(as_of: Optional[str] = None) -> Optional[dict]:
                     "starting_nav": STARTING_NAV_DEFAULT,
                     "realised_pnl": 0.0,
                     "ending_nav":   STARTING_NAV_DEFAULT,
+                    "benchmark_nav": None,
                     "seed":         True,
                 }
             return {
@@ -408,6 +411,7 @@ def fetch_current_nav(as_of: Optional[str] = None) -> Optional[dict]:
                 "starting_nav": float(row[1]),
                 "realised_pnl": float(row[2]),
                 "ending_nav":   float(row[3]),
+                "benchmark_nav": float(row[5]) if row[5] is not None else None,
                 "seed":         False,
             }
     return _safe(_q)
@@ -546,38 +550,6 @@ def fetch_decision(decision_id: str) -> Optional[dict]:
             """, (decision_id,))
             row = cur.fetchone()
             return dict(row) if row else False
-    return _safe(_q)
-
-
-# ── Risk-managed beta book (written by the thematic beta runner) ─────────────
-
-def beta_nav_series(limit: int = 4000) -> Optional[list[dict]]:
-    """Daily equity curve of the beta book (oldest→newest), with SPY benchmark."""
-    def _q():
-        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT as_of_date, nav, ret_pct, benchmark_nav, drawdown_pct,
-                       trend_below, equity_weight
-                  FROM (
-                    SELECT * FROM beta_nav ORDER BY as_of_date DESC LIMIT %s
-                  ) t
-                 ORDER BY as_of_date ASC
-            """, (limit,))
-            return [dict(r) for r in cur.fetchall()]
-    return _safe(_q)
-
-
-def beta_latest() -> Optional[dict]:
-    """The most recent beta_nav row — current NAV + risk flags for the tiles."""
-    def _q():
-        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT as_of_date, nav, benchmark_nav, equity_weight,
-                       trend_below, drawdown_pct
-                  FROM beta_nav ORDER BY as_of_date DESC LIMIT 1
-            """)
-            row = cur.fetchone()
-            return dict(row) if row else None
     return _safe(_q)
 
 
