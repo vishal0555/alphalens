@@ -549,3 +549,66 @@ def fetch_decision(decision_id: str) -> Optional[dict]:
     return _safe(_q)
 
 
+# ── Momentum rotation book (written by the thematic rotation runner) ──────────
+
+def rotation_nav_series(limit: int = 800) -> Optional[list[dict]]:
+    """Daily equity curve of the rotation book (oldest→newest), with benchmark."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT as_of_date, nav, ret_pct, benchmark_nav, drawdown_pct, trend_below
+                  FROM (
+                    SELECT * FROM rotation_nav ORDER BY as_of_date DESC LIMIT %s
+                  ) t
+                 ORDER BY as_of_date ASC
+            """, (limit,))
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q)
+
+
+def rotation_latest() -> Optional[dict]:
+    """The most recent rotation_nav row — current NAV + risk flags for the tiles."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT as_of_date, nav, benchmark_nav, gross, cash_weight,
+                       trend_below, drawdown_pct
+                  FROM rotation_nav ORDER BY as_of_date DESC LIMIT 1
+            """)
+            row = cur.fetchone()
+            return dict(row) if row else None
+    return _safe(_q)
+
+
+def rotation_sleeves() -> Optional[list[dict]]:
+    """Latest per-sleeve momentum leaderboard + current weights (rank order)."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT sleeve, instrument, ret_3m, ret_6m, blended, vol, score,
+                       rank, eligible, state, weight
+                  FROM rotation_sleeves
+                 WHERE as_of_date = (SELECT max(as_of_date) FROM rotation_sleeves)
+                 ORDER BY rank ASC NULLS LAST, weight DESC
+            """)
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q)
+
+
+def rotation_rebalances(limit_dates: int = 12) -> Optional[list[dict]]:
+    """Recent monthly rebalances (most recent first), one row per sleeve held."""
+    def _q():
+        with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT rebalance_date, sleeve, instrument, weight
+                  FROM rotation_rebalances
+                 WHERE rebalance_date IN (
+                    SELECT DISTINCT rebalance_date FROM rotation_rebalances
+                     ORDER BY rebalance_date DESC LIMIT %s
+                 )
+                 ORDER BY rebalance_date DESC, weight DESC
+            """, (limit_dates,))
+            return [dict(r) for r in cur.fetchall()]
+    return _safe(_q)
+
+
