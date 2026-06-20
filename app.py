@@ -604,21 +604,18 @@ def nav_page():
     )
 
 
-@app.route("/rotation")
+@app.route("/beta")
 @_login_required
-def rotation_page():
-    """Momentum thematic rotation cockpit (read-only; written by the thematic runner)."""
+def beta_page():
+    """Risk-managed beta book — SPY + a 200-day de-risk overlay (read-only)."""
     r = _gather({
-        "series":  lambda: _db.rotation_nav_series(800),
-        "latest":  _db.rotation_latest,
-        "sleeves": _db.rotation_sleeves,
-        "rebals":  lambda: _db.rotation_rebalances(12),
+        "series": lambda: _db.beta_nav_series(4000),
+        "latest": _db.beta_latest,
     })
     series = r["series"] or []
     chart = _nav_chart(
         list(reversed([{"ending_nav": p["nav"]} for p in series]))
     ) if series else None
-    # Strategy vs benchmark total return over the shown window.
     perf = None
     if series:
         s0, s1 = series[0], series[-1]
@@ -626,21 +623,7 @@ def rotation_page():
         b0, b1 = s0.get("benchmark_nav"), s1.get("benchmark_nav")
         bench = (float(b1) / float(b0) - 1) * 100 if (b0 and b1) else None
         perf = {"strat": strat, "bench": bench}
-    # Group the rebalance log by date for the journal.
-    rebals: list[dict] = []
-    for row in (r["rebals"] or []):
-        if not rebals or rebals[-1]["date"] != row["rebalance_date"]:
-            rebals.append({"date": row["rebalance_date"], "rows": []})
-        rebals[-1]["rows"].append(row)
-    return render_template(
-        "rotation.html",
-        active="rotation",
-        latest=r["latest"],
-        sleeves=r["sleeves"] or [],
-        chart=chart,
-        perf=perf,
-        rebals=rebals,
-    )
+    return render_template("beta.html", active="beta", latest=r["latest"], chart=chart, perf=perf)
 
 
 if __name__ == "__main__":

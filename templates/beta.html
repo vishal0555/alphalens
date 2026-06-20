@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %} · Beta{% endblock %}
+
+{% block head %}
+<style>
+  .tiles { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+  .tile { background:var(--bg-card); border-radius:16px; padding:14px 16px; border:1px solid var(--border); }
+  .tile .l { font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .tile .v { font-size:20px; font-weight:800; letter-spacing:-.02em; margin-top:4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="today-header">
+  <div>
+    <div class="greet">Risk-managed beta</div>
+    <h1>Beta</h1>
+  </div>
+</div>
+
+{% if not latest %}
+<div class="card"><div class="widget-body empty-state">
+  <div class="empty-icon" style="font-size:48px;opacity:.4;">📈</div>
+  No beta data yet. Run <code>python -m scripts.beta_run</code> in the thematic system.
+</div></div>
+{% else %}
+
+<div class="card"><div class="card-pad">
+  <div class="eyebrow">Equity curve</div>
+  <div style="display:flex;align-items:baseline;gap:12px;margin-top:6px;">
+    <span class="num" style="font-size:30px;font-weight:800;">{{ latest.nav | money2 }}</span>
+    {% if perf and perf.strat is not none %}
+    <span class="num {{ perf.strat | pnl_class }}" style="font-size:14px;font-weight:700;">{{ '%+.0f'|format(perf.strat) }}%</span>
+    {% endif %}
+    {% if perf and perf.bench is not none %}
+    <span class="muted" style="font-size:12px;">vs SPY hold {{ '%+.0f'|format(perf.bench) }}%</span>
+    {% endif %}
+  </div>
+  {% if chart %}
+  {% set col = 'var(--green)' if chart.up else 'var(--red)' %}
+  <svg viewBox="0 0 {{ chart.w }} {{ chart.h }}" preserveAspectRatio="none" style="width:100%;height:72px;margin-top:8px;display:block;">
+    {% if chart.area %}<path d="{{ chart.area }}" fill="{{ col }}" opacity=".10"/>{% endif %}
+    <path d="{{ chart.line }}" fill="none" stroke="{{ col }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  {% endif %}
+  <div class="muted" style="font-size:11px;margin-top:4px;">as of {{ latest.as_of_date }} · SPY + 200d de-risk overlay · paper, net of costs</div>
+</div></div>
+
+<div class="tiles">
+  <div class="tile">
+    <div class="l">Status</div>
+    <div class="v" style="font-size:15px;color:{{ 'var(--red)' if latest.trend_below else 'var(--green)' }};">
+      {{ 'De-risked' if latest.trend_below else 'Invested' }}
+    </div>
+  </div>
+  <div class="tile">
+    <div class="l">Equity weight</div>
+    <div class="num v">{% if latest.equity_weight is not none %}{{ '%.0f'|format(latest.equity_weight*100) }}%{% else %}—{% endif %}</div>
+  </div>
+  <div class="tile">
+    <div class="l">Drawdown</div>
+    <div class="num v {{ 'neg' if (latest.drawdown_pct is not none and latest.drawdown_pct < -0.10) else '' }}">{% if latest.drawdown_pct is not none %}{{ '%.1f'|format(latest.drawdown_pct*100) }}%{% else %}—{% endif %}</div>
+  </div>
+</div>
+
+<p class="muted" style="font-size:12px;margin:14px 4px;line-height:1.5;">
+  Holds SPY and de-risks (half to cash) when SPY closes below its 200-day average.
+  The one approach that held up across honest testing (walk-forward, through 2008): not
+  alpha, but a durable Sharpe / drawdown improvement over buy-and-hold. Computed by the
+  thematic beta runner; AlphaLens only renders it.
+</p>
+{% endif %}
+{% endblock %}
